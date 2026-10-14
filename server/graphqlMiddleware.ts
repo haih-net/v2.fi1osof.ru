@@ -8,6 +8,8 @@ import cors from 'cors'
 import express from 'express'
 
 import { schema } from './schema'
+import { createContext } from './context'
+import { db } from './database'
 import { graphqlObservability, logEvent } from './observability'
 import type { Context } from './schema/builder'
 
@@ -41,7 +43,7 @@ export async function setupGraphqlMiddleware(
     expressMiddleware(apolloServer, {
       context: async ({ req, res }) => {
         res.setHeader('Cache-Control', 'no-store')
-        return { req }
+        return createContext(req)
       },
     }),
   )
@@ -59,6 +61,8 @@ export async function setupGraphqlMiddleware(
       ) {
         throw err
       }
+    } finally {
+      await db.destroy()
     }
   }
 }

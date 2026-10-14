@@ -10,6 +10,7 @@ const unusedImports = require('eslint-plugin-unused-imports')
 module.exports = [
   {
     ignores: [
+      'docker/supabase/data',
       'node_modules/**',
       'coverage/**',
       'playwright-report/**',

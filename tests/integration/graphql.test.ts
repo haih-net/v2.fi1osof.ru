@@ -9,6 +9,7 @@ import {
   graphqlObservability,
   startMetricsServer,
 } from '../../server/observability'
+import { db } from '../../server/database'
 import type { Context } from '../../server/schema/builder'
 
 afterEach(() => vi.unstubAllEnvs())
@@ -41,7 +42,9 @@ test('GraphQL execution errors with HTTP 200 are recorded as server failures', a
   app.use(
     '/api',
     express.json(),
-    expressMiddleware(api, { context: async ({ req }) => ({ req }) }),
+    expressMiddleware(api, {
+      context: async ({ req }) => ({ req, db, currentUser: null }),
+    }),
   )
   const server: Server = createServer(app)
   onTestFinished(

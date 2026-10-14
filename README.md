@@ -213,3 +213,43 @@ Stack tests require the [monitoring preview](docker/monitoring/README.md), its p
 Add unit tests under `tests/unit/`, or colocate `*.test.ts` / `*.test.tsx` in `app/` (`*.test.ts` in `server/`). Put local integration tests in `tests/integration/`, stack checks in `tests/stack/`, and browser `*.spec.ts` files in `tests/e2e/`. Each runner discovers its own suite. Unit tests currently use the Node environment; browser behavior belongs in Playwright. Configurations use CommonJS exports to avoid adding default exports. Coverage measures the configured SEO and server source scope; it is unit coverage, not combined integration/browser coverage.
 
 Playwright checks hydration errors, same-document navigation, heading focus, metadata updates, browser history, deep-link refresh and 404 responses. Its default local server run does not prove Traefik/Varnish cache behavior or development HMR.
+
+## Пользователи и авторизация fi1osof.ru — Knex
+
+Сервер читает локальный `.env` из корня проекта. Образец — `server/env.example`.
+Переменные окружения процесса имеют приоритет. Для подключения можно задать
+`DATABASE_URL` либо `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`.
+Текущая локальная база: `fi1osof-ru--agent` на `127.0.0.1:5432`.
+Приложение использует существующие таблицы PostgreSQL: схему не создаёт и не меняет.
+
+Запуск вне Docker: `npm run dev`. Порт берётся из `PORT` (локально `3111`),
+GraphQL доступен по `http://localhost:3111/api`. Из корня проекта можно
+переопределить порт: `PORT=3112 npm run dev`.
+
+Перенесены `user`, `users`, `usersCount`, `me`, `signin`, `updateCurrentUser`,
+`updateUser`. Сохранены имена аргументов оригинальной схемы, фильтры, сортировка
+по `createdAt` по убыванию и пагинация `skip`/`take` (неотрицательные значения).
+Email, EthAccount, TelegramAccount и Balance доступны только владельцу записи.
+Редактировать чужой статус или пароль может только sudo; свой профиль меняется
+через `updateCurrentUser`. При изменении пароля используется bcrypt с cost 10,
+при изменении content проверяется синтаксис MDX. Заполнение связанных аккаунтов,
+операции баланса и его Transactions на этом этапе не переносились.
+
+Авторизация: `Authorization: Bearer <token>`. Сохранён формат JWT
+`{userId, type: "Auth", tokenId}` и таблица Token. Для совместимости с прежними
+JWT нужен прежний `JWT_SECRET` и соответствующие записи Token в этой базе.
+Секрет находится только в игнорируемом `.env`. Проверяются подпись HS256, тип,
+владелец и наличие записи токена, JWT exp и Token.expiredAt. Удаление записи
+Token отзывает доступ. Как в оригинале, новые токены входа не имеют срока
+действия; статус blocked сам по себе не запрещает вход. Правила списков тоже
+сохранены: по умолчанию активные пользователи и собственная запись; sudo видит
+все статусы, явный фильтр status применяется для любого посетителя.
+
+Регистрация и создание реферальных токенов не добавлены. Существующие ошибки
+входа сохранены. Контейнер приложения и настройки Compose не изменялись.
+
+Проверки: `npm run types`, `npm run test:integration` (включает сборку).
+Только проверки пользователей: `npx vitest run -c vitest.integration.config.cjs
+ tests/integration/users.test.ts` — выполнить одной строкой. Нужны доступ к
+локальной базе и JWT_SECRET. Тесты создают собственные записи внутри транзакций
+и откатывают их после каждого теста; существующих пользователей не меняют.
