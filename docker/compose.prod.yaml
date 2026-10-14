@@ -1,5 +1,7 @@
 name: haih-site
 services:
+  supabase:
+    restart: unless-stopped
   app:
     restart: unless-stopped
     build:

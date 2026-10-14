@@ -1,5 +1,8 @@
 name: haih-site-dev
 services:
+  supabase:
+    ports:
+      - 5432:5432
   app:
     build:
       target: development
