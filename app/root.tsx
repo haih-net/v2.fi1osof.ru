@@ -2,11 +2,15 @@ import { App as CustomApp } from './Custom/components/pages/_App'
 import { Statistics } from './components/Statistics'
 import { errorPageStatusCode } from './components/Statistics/status'
 import { HtmlStyled } from './components/Layout/styles'
-import { SeoHeaders, unavailableSeoMeta } from './components/seo/SeoHeaders'
+import { SeoHeaders } from './components/seo/SeoHeaders'
 
-export const meta = unavailableSeoMeta
+export const meta = () => [
+  { title: 'Fi1osof' },
+  { name: 'robots', content: 'noindex' },
+]
 import type { ReactNode } from 'react'
-import { Layout as SiteLayout } from './components/Layout'
+import { SiteLayout } from './Custom/components/SiteLayout'
+import { locationParts } from './Custom/pages/Site/data'
 import {
   Links,
   Outlet,
@@ -14,17 +18,19 @@ import {
   ScrollRestoration,
   isRouteErrorResponse,
   useRouteError,
+  useLocation,
 } from 'react-router'
 
 const betterlyticsId = import.meta.env.BETTERLYTICS_SITE_ID
 
 export function Layout({ children }: { children: ReactNode }) {
+  const { locale } = locationParts(useLocation().pathname)
   return (
-    <HtmlStyled lang="en">
+    <HtmlStyled lang={locale}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+        <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
         <SeoHeaders />
         <Links />
         {betterlyticsId && (

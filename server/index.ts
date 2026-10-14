@@ -1,3 +1,4 @@
+import { setupSiteMetadata } from '../app/Custom/server/site/metadata'
 import { setupMedia } from '../app/Custom/server/media'
 import './env'
 import express from 'express'
@@ -47,6 +48,7 @@ async function startServer() {
   const app = express()
   app.set('trust proxy', true)
   app.disable('x-powered-by')
+  setupSiteMetadata(app)
 
   setupMedia(app)
 
@@ -61,6 +63,7 @@ async function startServer() {
     // Development: Vite dev server with HMR
     const { createServer: createVite } = await import('vite')
     vite = await createVite({
+      cacheDir: `node_modules/.vite-${port}`,
       server: { middlewareMode: true, ws: { server: httpServer } },
       appType: 'custom',
     })
