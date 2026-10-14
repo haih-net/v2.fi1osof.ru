@@ -43,7 +43,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       wyw({ include: ['**/*.{ts,tsx}'] }),
       // React Router owns the application build pipeline, not the test runner.
-      !process.env.VITEST && reactRouter(),
+      !process.env.VITEST && !process.env.STORYBOOK && reactRouter(),
       serveShared(),
     ],
     server: {

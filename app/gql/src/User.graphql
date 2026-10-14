@@ -1,13 +1,19 @@
-query meUser {
+query me {
   me {
-    ...User_
+    ...meUser
   }
+}
+
+fragment meUser on User {
+  ...User_
 }
 
 fragment UserNoNesting on User {
   id
   username
   fullname
+  sudo
+  status
 }
 
 fragment User_ on User {

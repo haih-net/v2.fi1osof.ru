@@ -1,0 +1,35 @@
+query file($where: FileWhereUniqueInput!) {
+  file(where: $where) {
+    ...File_
+  }
+}
+mutation singleUpload($data: SingleUploadInput!) {
+  singleUpload(data: $data) {
+    ...File_
+  }
+}
+mutation updateFile($data: FileUpdateInput!, $where: FileWhereUniqueInput!) {
+  response: updateFile(data: $data, where: $where) {
+    ...File_
+  }
+}
+
+fragment FileNoNesting on File {
+  id
+  createdAt
+  path
+  filename
+  name
+  description
+  content
+  mimetype
+  createdById
+  hash
+}
+
+fragment File_ on File {
+  ...FileNoNesting
+  CreatedBy {
+    ...UserNoNesting
+  }
+}

@@ -1,3 +1,4 @@
+import { App as CustomApp } from './Custom/components/pages/_App'
 import { Statistics } from './components/Statistics'
 import { errorPageStatusCode } from './components/Statistics/status'
 import { HtmlStyled } from './components/Layout/styles'
@@ -36,7 +37,9 @@ export function Layout({ children }: { children: ReactNode }) {
         )}
       </head>
       <body>
-        <SiteLayout>{children}</SiteLayout>
+        <CustomApp>
+          <SiteLayout>{children}</SiteLayout>
+        </CustomApp>
         <ScrollRestoration />
         <Scripts />
       </body>

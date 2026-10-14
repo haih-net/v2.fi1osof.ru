@@ -1,3 +1,4 @@
+import { GraphQLUpload } from 'graphql-upload-minimal'
 import SimpleObjectsPlugin from '@pothos/plugin-simple-objects'
 import type { Request } from 'express'
 import type { Knex } from 'knex'
@@ -14,6 +15,7 @@ export interface Context {
 export const builder = new SchemaBuilder<{
   Context: Context
   Scalars: {
+    Upload: { Input: unknown; Output: unknown }
     DateTime: {
       Input: Date
       Output: Date
@@ -26,6 +28,8 @@ export const builder = new SchemaBuilder<{
 }>({
   plugins: [SimpleObjectsPlugin],
 })
+
+builder.addScalarType('Upload', GraphQLUpload)
 
 builder.addScalarType('DateTime', DateTimeResolver)
 builder.addScalarType('Json', JSONResolver)

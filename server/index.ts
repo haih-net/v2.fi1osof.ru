@@ -1,3 +1,4 @@
+import { setupMedia } from '../app/Custom/server/media'
 import './env'
 import express from 'express'
 import { createServer } from 'node:http'
@@ -46,6 +47,8 @@ async function startServer() {
   const app = express()
   app.set('trust proxy', true)
   app.disable('x-powered-by')
+
+  setupMedia(app)
 
   const httpServer = createServer(app)
 

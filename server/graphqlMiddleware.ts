@@ -1,3 +1,4 @@
+import { graphqlUploadExpress } from 'graphql-upload-minimal'
 import type { Express } from 'express'
 import type { Server } from 'node:http'
 import { ApolloServer } from '@apollo/server'
@@ -39,6 +40,7 @@ export async function setupGraphqlMiddleware(
   app.use(
     '/api',
     cors<cors.CorsRequest>(),
+    graphqlUploadExpress({ maxFileSize: 50 * 1024 * 1024, maxFiles: 10 }),
     express.json(),
     expressMiddleware(apolloServer, {
       context: async ({ req, res }) => {
