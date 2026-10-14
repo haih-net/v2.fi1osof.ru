@@ -1,3 +1,10 @@
+import {
+  TaskActions,
+  WorkLogActions,
+  TaskForm,
+  CreateTaskLink,
+} from './editing'
+import { TimerControl } from '../../components/TimerControl'
 import * as React from 'react'
 import { Link, useLoaderData, useLocation, useNavigate } from 'react-router'
 import { gql, type TypedDocumentNode } from '@apollo/client'
@@ -166,6 +173,7 @@ const EntryCard: React.FC<{ item: Entry; section: string; locale: Locale }> = ({
             {item.Task?.title}
           </Link>
         </h3>
+        <TimerControl timer={item} />
         <div className="metadata">
           {labels[locale].started}: {date(item.startedAt, locale)} ·{' '}
           {item.startedAt?.slice(11, 19)}
@@ -197,6 +205,7 @@ const EntryCard: React.FC<{ item: Entry; section: string; locale: Locale }> = ({
             : item.title || item.id}
         </Link>
       </h2>
+      {section === 'tasks' && <TaskActions key={item.id} task={item} />}
       {section !== 'worklogs' && <Metadata item={item} locale={locale} />}
       <Markdown>
         {section === 'worklogs' ? item.content : item.description || item.intro}
@@ -246,7 +255,14 @@ export const SitePage: React.FC = () => {
           {detail && <> / {page.title}</>}
         </p>
       )}
-      {section === 'signin' ? (
+      {page.path === '/tasks/create' ? (
+        <>
+          <h1>Создать задачу</h1>
+          <TaskForm
+            projectId={new URLSearchParams(location.search).get('projectId')}
+          />
+        </>
+      ) : section === 'signin' ? (
         <Signin locale={locale} />
       ) : section === 'about' ? (
         <>
@@ -282,6 +298,16 @@ export const SitePage: React.FC = () => {
           <article className="article">
             <h1 tabIndex={-1}>{page.title}</h1>
             {section !== 'concept' && <Metadata item={item} locale={locale} />}
+            {section === 'tasks' && (
+              <TaskActions key={item.id} task={item} full />
+            )}
+            {section === 'worklogs' && (
+              <WorkLogActions
+                key={item.id}
+                taskId={item.Task?.id || ''}
+                workLog={item}
+              />
+            )}
             <Markdown>{item.content || item.description}</Markdown>
             {section === 'concept' && (
               <Metadata item={item} locale={locale} />
@@ -294,6 +320,7 @@ export const SitePage: React.FC = () => {
               </p>
             )}
           </article>
+          {section === 'projects' && <CreateTaskLink projectId={item.id} />}
           {section === 'projects' && items.length > 0 && (
             <>
               <h2>{t.tasks}</h2>
@@ -320,10 +347,18 @@ export const SitePage: React.FC = () => {
               ))}
             </>
           )}
+          {section === 'tasks' && (
+            <WorkLogActions key={item.id} taskId={item.id} />
+          )}
         </>
       ) : (
         <>
           <h1 tabIndex={-1}>{page.title}</h1>
+          {section === 'tasks' && (
+            <CreateTaskLink
+              projectId={new URLSearchParams(location.search).get('projectId')}
+            />
+          )}
           {section === 'projects' && (
             <p className="lead">{projects.hero.description}</p>
           )}

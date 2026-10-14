@@ -20,6 +20,7 @@ export interface Entry {
   updatedAt?: string
   commercial?: boolean
   status?: string | null
+  createdById?: string
   startedAt?: string
   stoppedAt?: string | null
   CreatedBy?: Person | null
@@ -179,11 +180,12 @@ const person = 'CreatedBy { id fullname username }'
 const content = `id title:name description intro content image createdAt updatedAt ${person}`
 const task = `id title description content status createdAt updatedAt Project {id title:name} ${person} Assignee {id fullname username}`
 const worklog = `id content createdAt ${person} Task {id title Project {id title:name}}`
-const timer = 'id startedAt stoppedAt Task {id title}'
+const timer = 'id createdById startedAt stoppedAt Task {id title}'
 export const activeTimerQuery: TypedDocumentNode<{ timers: Entry[] }> = gql`
   query SiteActiveTimer {
     timers(activeOnly: true, take: 1) {
       id
+      createdById
       startedAt
       stoppedAt
       Task {
@@ -255,6 +257,8 @@ export async function loadPage(
       projectId: url.searchParams.get('projectId') || undefined,
     }
     query = `($where:SiteTaskWhereInput,$skip:Int,$take:Int){items:tasks(where:$where,skip:$skip,take:$take){${task}} count:tasksCount(where:$where)}`
+  } else if (path === '/tasks/create') {
+    result.title = 'Создать задачу'
   } else if (section === 'tasks' && id && path.split('/').length === 3) {
     query = `($where:SiteObjectWhereUniqueInput!){item:task(where:$where){${task} WorkLogs {${worklog}}}}`
   } else if (path === '/worklogs') {

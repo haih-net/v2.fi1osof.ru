@@ -19,6 +19,12 @@ export const meta: MetaFunction = ({ loaderData: value, error, location }) => {
   if (error || !page) {
     return [{ title: '404 — Fi1osof' }, { name: 'robots', content: 'noindex' }]
   }
+  if (page.path === '/tasks/create') {
+    return [
+      { title: page.title },
+      { name: 'robots', content: 'noindex, nofollow' },
+    ]
+  }
   const canonical = `https://fi1osof.ru${location.pathname}${page.page > 1 ? `?page=${page.page}` : ''}`
   return [
     { title: page.title },

@@ -1,3 +1,4 @@
+import { registerSiteMutations } from './mutations'
 import type { Knex } from 'knex'
 import { GraphQLError } from 'graphql'
 import { builder, type Context } from '../../../../server/schema/builder'
@@ -27,7 +28,7 @@ interface ProjectRecord extends ContentRecord {
   commercial: boolean
   status: string | null
 }
-interface TaskRecord extends RecordBase {
+export interface TaskRecord extends RecordBase {
   title: string
   description: string | null
   content: string | null
@@ -35,11 +36,11 @@ interface TaskRecord extends RecordBase {
   projectId: string | null
   assigneeId: string | null
 }
-interface WorkLogRecord extends RecordBase {
+export interface WorkLogRecord extends RecordBase {
   content: string
   taskId: string
 }
-interface TimerRecord extends RecordBase {
+export interface TimerRecord extends RecordBase {
   taskId: string
   startedAt: Date
   stoppedAt: Date | null
@@ -75,11 +76,11 @@ function visibleConcepts(ctx: Context) {
   return ctx.db<ConceptRecord>('KBConcept').where('visibility', 'public')
 }
 const Project = builder.objectRef<ProjectRecord>('Project')
-const Task = builder.objectRef<TaskRecord>('Task')
-const WorkLog = builder.objectRef<WorkLogRecord>('TaskWorkLog')
+export const Task = builder.objectRef<TaskRecord>('Task')
+export const WorkLog = builder.objectRef<WorkLogRecord>('TaskWorkLog')
 const Concept = builder.objectRef<ConceptRecord>('KBConcept')
-const Timer = builder.objectRef<TimerRecord>('Timer')
-const Unique = builder.inputType('SiteObjectWhereUniqueInput', {
+export const Timer = builder.objectRef<TimerRecord>('Timer')
+export const Unique = builder.inputType('SiteObjectWhereUniqueInput', {
   fields: (t) => ({ id: t.string(), uri: t.string() }),
 })
 const TaskWhere = builder.inputType('SiteTaskWhereInput', {
@@ -238,6 +239,7 @@ Concept.implement({
 Timer.implement({
   fields: (t) => ({
     id: t.exposeID('id', { nullable: false }),
+    createdById: t.exposeString('createdById', { nullable: false }),
     startedAt: t.expose('startedAt', { type: 'DateTime', nullable: false }),
     stoppedAt: t.expose('stoppedAt', { type: 'DateTime' }),
     Task: t.field({
@@ -393,3 +395,5 @@ builder.queryField('timers', (t) =>
     },
   }),
 )
+
+registerSiteMutations()

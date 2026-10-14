@@ -1,3 +1,4 @@
+import { TimerControl } from '../TimerControl'
 import * as React from 'react'
 import {
   Link,
@@ -73,6 +74,7 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
             >
               ● {timer ? timer.Task?.title || t.running : t.idle}
             </Link>
+            {timer && <TimerControl timer={timer} />}
             <nav className="desktop-nav" aria-label={t.navigation}>
               {links}
             </nav>

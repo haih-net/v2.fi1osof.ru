@@ -1,6 +1,16 @@
 import { styled } from '@linaria/react'
 
 export const PageStyled = styled.div`
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin: 16px 0;
+  }
+  .actions form {
+    flex-basis: 100%;
+  }
   .breadcrumb {
     font: 12px monospace;
     color: #8a8578;
@@ -207,5 +217,35 @@ export const PageStyled = styled.div`
     .grid {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
+  }
+`
+
+export const EditorFormStyled = styled.form`
+  margin: 20px 0;
+  min-width: 0;
+  fieldset {
+    border: 0;
+    padding: 0;
+    min-width: 0;
+  }
+  label {
+    display: block;
+    margin: 16px 0;
+  }
+  input {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #e6e1d6;
+    border-radius: 4px;
+  }
+  [role='alert'] {
+    color: #b7410e;
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0;
   }
 `
