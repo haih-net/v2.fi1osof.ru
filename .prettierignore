@@ -1,4 +1,5 @@
 /docker/supabase/data/
+generated
 /node_modules
 /build
 /.react-router

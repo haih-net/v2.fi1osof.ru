@@ -11,6 +11,7 @@ module.exports = [
   {
     ignores: [
       'docker/supabase/data',
+      'generated/**',
       'node_modules/**',
       'coverage/**',
       'playwright-report/**',

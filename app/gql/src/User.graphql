@@ -1,0 +1,15 @@
+query meUser {
+  me {
+    ...User_
+  }
+}
+
+fragment UserNoNesting on User {
+  id
+  username
+  fullname
+}
+
+fragment User_ on User {
+  ...UserNoNesting
+}
