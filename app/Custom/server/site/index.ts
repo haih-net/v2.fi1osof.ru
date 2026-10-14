@@ -178,7 +178,7 @@ Task.implement({
         c
           .db<WorkLogRecord>('TaskWorkLog')
           .where('taskId', r.id)
-          .orderBy('createdAt', 'desc'),
+          .orderBy('createdAt', 'asc'),
     }),
   }),
 })
