@@ -38,6 +38,8 @@ test('hydration, SPA navigation, metadata, focus and browser history', async ({
 
 test('public deep links survive refresh', async ({ page }) => {
   const response = await page.goto('/en/projects')
+  await expect(page).toHaveURL(/\/projects$/)
+  await expect(page.getByRole('combobox', { name: 'Language' })).toHaveCount(0)
   expect(response?.status()).toBe(200)
   await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible()
   const title: string = await page.title()
@@ -46,7 +48,7 @@ test('public deep links survive refresh', async ({ page }) => {
   await expect(page).toHaveTitle(title)
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     'href',
-    'https://fi1osof.ru/en/projects',
+    'https://fi1osof.ru/projects',
   )
 })
 

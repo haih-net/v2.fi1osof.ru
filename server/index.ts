@@ -48,6 +48,14 @@ async function startServer() {
   const app = express()
   app.set('trust proxy', true)
   app.disable('x-powered-by')
+  app.use((req, res, next) => {
+    if (/^\/(en|vi)(?=\/|\?|$)/.test(req.url)) {
+      const destination = req.url.replace(/^\/(en|vi)\/*/, '/')
+      res.redirect(301, destination)
+      return
+    }
+    next()
+  })
   setupSiteMetadata(app)
 
   setupMedia(app)

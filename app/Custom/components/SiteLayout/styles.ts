@@ -111,13 +111,6 @@ export const SiteShell = styled.div`
     text-decoration: underline;
     text-underline-offset: 5px;
   }
-  .language {
-    max-width: 58px;
-    background: transparent;
-    border: 1px solid #e6e1d6;
-    border-radius: 5px;
-    padding: 5px;
-  }
   .burger {
     border: 0;
     background: none;

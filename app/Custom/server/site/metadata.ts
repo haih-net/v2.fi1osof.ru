@@ -58,11 +58,8 @@ export function setupSiteMetadata(app: Express): void {
         const rows = await db<{ id: string }>(table).select('id')
         paths = rows.map((row) => `/${name}/${row.id}`)
       }
-      const urls = paths.flatMap((path) =>
-        ['', '/en', '/vi'].map(
-          (prefix) =>
-            `<url><loc>${escapeXml(origin + prefix + path)}</loc></url>`,
-        ),
+      const urls = paths.map(
+        (path) => `<url><loc>${escapeXml(origin + path)}</loc></url>`,
       )
       res
         .type('application/xml')

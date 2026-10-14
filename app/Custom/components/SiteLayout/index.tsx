@@ -13,7 +13,6 @@ import {
   localized,
   locationParts,
   type PageData,
-  type Locale,
 } from '../../pages/Site/data'
 import { useAppContext } from '../../hooks/useAppContext'
 import { SiteShell } from './styles'
@@ -23,7 +22,7 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
   const location = useLocation()
   const navigate = useNavigate()
   const matches = useMatches()
-  const { locale, path } = locationParts(location.pathname)
+  const { locale } = locationParts(location.pathname)
   const t = labels[locale]
   const page = matches.at(-1)?.loaderData as PageData | undefined
   const [open, setOpen] = React.useState(false)
@@ -55,14 +54,6 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
     await client.resetStore()
     await navigate(localized('/', locale))
   }, [client, navigate, locale])
-  const changeLanguage = React.useCallback(
-    (event: React.ChangeEvent<HTMLSelectElement>): void => {
-      void navigate(
-        localized(path, event.target.value as Locale) + location.search,
-      )
-    },
-    [navigate, path, location.search],
-  )
   const toggleMenu = React.useCallback(() => setOpen((value) => !value), [])
   return (
     <SiteShell>
@@ -85,16 +76,6 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
             <nav className="desktop-nav" aria-label={t.navigation}>
               {links}
             </nav>
-            <select
-              className="language"
-              aria-label="Language"
-              value={locale}
-              onChange={changeLanguage}
-            >
-              <option value="ru">🇷🇺</option>
-              <option value="en">🇬🇧</option>
-              <option value="vi">🇻🇳</option>
-            </select>
             <button
               type="button"
               className="burger"

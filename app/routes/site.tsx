@@ -37,11 +37,5 @@ export const meta: MetaFunction = ({ loaderData: value, error, location }) => {
       },
     },
     { property: 'og:url', content: canonical },
-    ...(['ru', 'en', 'vi'] as const).map((locale) => ({
-      tagName: 'link',
-      rel: 'alternate',
-      hrefLang: locale,
-      href: `https://fi1osof.ru${locale === 'ru' ? '' : '/' + locale}${page.path}`,
-    })),
   ]
 }

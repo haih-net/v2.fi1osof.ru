@@ -57,8 +57,6 @@ for (const path of [
   '/timers',
   '/about',
   '/users',
-  '/en/projects',
-  '/vi/tasks',
 ]) {
   test(`${path} serves database content and metadata in SSR HTML`, async () => {
     const response = await fetch(origin + path)
@@ -71,7 +69,7 @@ for (const path of [
     assert.ok(head.includes('name="description"'))
     assert.ok(head.includes('property="og:description"'))
     assert.ok(head.includes('application/ld+json'))
-    assert.equal((head.match(/rel="alternate"/g) || []).length, 3)
+    assert.equal((head.match(/rel="alternate"/g) || []).length, 0)
     assert.ok(!head.includes('haih.site'))
     assert.match(html, /<h1/)
     assert.match(response.headers.get('cache-control'), /no-store/)
@@ -94,12 +92,12 @@ test('database sitemaps contain resolvable detail pages', async () => {
     assert.match(await response.text(), /<h1/)
   }
 })
-test('legacy journal redirects preserve locale and query', async () => {
+test('localized journal redirects remove locale and preserve query', async () => {
   const response = await fetch(origin + '/en/work-logs/example?page=2', {
     redirect: 'manual',
   })
   assert.equal(response.status, 301)
-  assert.equal(response.headers.get('location'), '/en/worklogs/example?page=2')
+  assert.equal(response.headers.get('location'), '/work-logs/example?page=2')
 })
 test('unknown records and assets return 404 without canonical', async () => {
   for (const path of [
