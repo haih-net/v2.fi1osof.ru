@@ -1,9 +1,16 @@
 import { builder } from './builder'
 import './statistics'
-import './types/User'
-import '../../app/Custom/server/site'
+import './types/Project'
+import './types/Task'
+import './types/TaskWorkLog'
+import './types/Timer'
 
-import '../../app/Custom/server/files'
-import '../../app/Custom/server/imageGeneration'
+import './types/User'
+import './types/EthAccount'
+import './types/KBConcept'
+import './types/files'
+import './types/imageGeneration'
+import './types/ChatMessage'
+import './types/ChatDialogue'
 
 export const schema = builder.toSchema()

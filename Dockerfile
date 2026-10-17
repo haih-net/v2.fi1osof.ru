@@ -1,7 +1,10 @@
 FROM node:22.22.3-bookworm-slim AS dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && rm -rf /var/lib/apt/lists/* \
+    && npm ci
 
 FROM dependencies AS development
 COPY . .
@@ -16,8 +19,16 @@ FROM node:22.22.3-bookworm-slim AS production
 ENV NODE_ENV=production
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 make g++ \
+    && npm ci --omit=dev \
+    && npm cache clean --force \
+    && apt-get purge -y --auto-remove python3 make g++ \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/build ./build
+COPY scripts/create-admin.mjs ./scripts/create-admin.mjs
+COPY server/database/schema.ts ./server/database/schema.ts
+RUN mkdir -p /app/server/database/data && chown -R node:node /app/server/database
 USER node
 EXPOSE 3000
 CMD ["npm", "run", "start"]

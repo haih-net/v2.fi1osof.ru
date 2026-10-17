@@ -113,3 +113,23 @@ export const Statistics: React.FC<StatisticsProps> = ({
   }, [])
   return null
 }
+
+export const recordStatistics = (
+  eventId: import('./transport').ChatStatisticsEvent['eventId'],
+  data: Record<string, unknown>,
+): void => {
+  const state = getStatistics()
+  state.queue.enqueue({
+    visitorId: state.visitorId,
+    tabId: state.tabId,
+    events: [
+      {
+        ...data,
+        eventId,
+        eventKey: createId(),
+        timestamp: Date.now(),
+        url: location.href,
+      },
+    ],
+  })
+}

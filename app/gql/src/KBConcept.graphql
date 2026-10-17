@@ -1,0 +1,78 @@
+query concept(
+  $where: KBConceptWhereUniqueInput!
+  $detailedInfo: Boolean = true
+) {
+  concept(where: $where) {
+    ...KBConcept_
+  }
+}
+
+query concepts(
+  $where: KBConceptWhereInput
+  $orderBy: KBConceptOrderByInput
+  $skip: Int
+  $take: Int
+  $detailedInfo: Boolean = true
+) {
+  response: concepts(
+    where: $where
+    orderBy: $orderBy
+    skip: $skip
+    take: $take
+  ) {
+    ...KBConcept_
+  }
+}
+
+query conceptsCount($where: KBConceptWhereInput) {
+  kBConceptsCount(where: $where)
+}
+
+query conceptsConnection(
+  $where: KBConceptWhereInput
+  $orderBy: KBConceptOrderByInput
+  $skip: Int
+  $take: Int
+  $detailedInfo: Boolean = false
+) {
+  concepts(where: $where, orderBy: $orderBy, skip: $skip, take: $take) {
+    ...KBConcept_
+  }
+  kBConceptsCount(where: $where)
+}
+
+fragment KBConceptNoNesting on KBConcept {
+  id
+  # createdAt
+  updatedAt
+  type
+  name
+  description
+  intro
+  image
+  createdById
+  code
+  parentId
+  rootId
+  uri
+  path
+  quality
+  visibility
+  data
+  lat
+  lng
+  content @include(if: $detailedInfo)
+}
+
+fragment KBConcept_ on KBConcept {
+  ...KBConceptNoNesting
+  CreatedBy {
+    ...UserNoNesting
+  }
+  Files {
+    id
+    File {
+      ...FileNoNesting
+    }
+  }
+}

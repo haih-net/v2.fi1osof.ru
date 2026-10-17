@@ -11,10 +11,18 @@ export interface PageViewEvent extends PageOutcome {
   viewport: { width: number; height: number }
 }
 
+export interface ChatStatisticsEvent {
+  eventId: 'chat.message.sent' | 'chat.message.received' | 'chat.message.error'
+  eventKey: string
+  timestamp: number
+  url: string
+  [key: string]: unknown
+}
+
 export interface StatisticsPacket {
   visitorId: string
   tabId: string
-  events: [PageViewEvent]
+  events: [PageViewEvent | ChatStatisticsEvent]
 }
 
 export type DeliveryResult = 'accepted' | 'retry' | 'discard' | 'disabled'

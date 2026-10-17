@@ -1,14 +1,15 @@
 import { GraphQLUpload } from 'graphql-upload-minimal'
 import SimpleObjectsPlugin from '@pothos/plugin-simple-objects'
 import type { Request } from 'express'
-import type { Knex } from 'knex'
-import type { UserRecord } from './types/User/interfaces'
 import SchemaBuilder from '@pothos/core'
 import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
+import { UserRecord } from './types/User/interfaces'
+import { Knex } from 'knex'
 
 export interface Context {
   req: Request
   dbOld: Knex
+  db: Knex
   currentUser: UserRecord | null
 }
 

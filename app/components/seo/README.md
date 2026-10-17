@@ -18,7 +18,7 @@ Page coverage:
 
 All indexable pages have distinct descriptions and share the same description across normal, Open Graph and Twitter metadata. Every route explicitly supplies its social image through the typed image parameter. The reusable SEO module imports no page assets and has no implicit image fallback; omitted images produce no image tags. Images use absolute production URLs, intrinsic dimensions and alternative text. Structured data describes the content; it does not promise a ranking boost or a special search result. Blog and collection semantics follow https://schema.org/Blog, https://schema.org/CollectionPage and https://schema.org/ItemList.
 
-When adding a public page, update its route handle, prerender list and `public/sitemap.xml`. Keep `lastmod` absent unless a real content modification date is maintained. `robots.txt` announces the sitemap; it is not an access-control mechanism.
+When adding a public page, update its route handle, prerender list and `server/sitemap/index.ts`. Keep `lastmod` absent unless a real content modification date is maintained. `robots.txt` announces the sitemap; it is not an access-control mechanism.
 
 Verification: `npm run types`, `npm run lint`, `npm test`, then `npm run test:integration`. The SEO tests inspect the built HTML rather than the Vite endpoint and cover canonical uniqueness, JSON-LD escaping, author/ORCID, snapshot evidence and the unknown-route fallback. `npm run e2e` checks browser navigation, hydration errors and metadata updates; structured data does not guarantee a search rich result.
 

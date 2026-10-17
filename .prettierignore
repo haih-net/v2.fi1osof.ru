@@ -1,4 +1,7 @@
 /docker/supabase/data/
+server/database/data
+storage
+uploads
 generated
 /node_modules
 /build

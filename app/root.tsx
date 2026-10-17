@@ -11,6 +11,18 @@ export const meta = () => [
 import type { ReactNode } from 'react'
 import { SiteLayout } from './Custom/components/SiteLayout'
 import { locationParts } from './Custom/pages/Site/data'
+import { loadRoot } from './request/rootLoader.server'
+import { requestMiddleware } from './request/context.server'
+
+export const middleware = [requestMiddleware]
+export const loader = loadRoot
+// Refresh runtime configuration when leaving a prerendered page.
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  currentUrl,
+  nextUrl,
+  defaultShouldRevalidate,
+}) => defaultShouldRevalidate || currentUrl.pathname !== nextUrl.pathname
+import type { ShouldRevalidateFunction } from 'react-router'
 import {
   Links,
   Outlet,
@@ -19,12 +31,14 @@ import {
   isRouteErrorResponse,
   useRouteError,
   useLocation,
+  useRouteLoaderData,
 } from 'react-router'
 
 const betterlyticsId = import.meta.env.BETTERLYTICS_SITE_ID
 
 export function Layout({ children }: { children: ReactNode }) {
   const { locale } = locationParts(useLocation().pathname)
+  const rootData = useRouteLoaderData<typeof loader>('root')
   return (
     <HtmlStyled lang={locale}>
       <head>
@@ -33,6 +47,10 @@ export function Layout({ children }: { children: ReactNode }) {
         <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
         <SeoHeaders />
         <Links />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap"
+          rel="stylesheet"
+        />
         {betterlyticsId && (
           <script
             async
@@ -43,7 +61,7 @@ export function Layout({ children }: { children: ReactNode }) {
         )}
       </head>
       <body>
-        <CustomApp>
+        <CustomApp initialApolloState={rootData?.initialApolloState}>
           <SiteLayout>{children}</SiteLayout>
         </CustomApp>
         <ScrollRestoration />

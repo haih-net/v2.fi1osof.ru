@@ -79,3 +79,14 @@ export const UserUpdateDataInput = builder.inputType('UserUpdateDataInput', {
     password: t.string(),
   }),
 })
+
+export const UserSignupDataInput = builder.inputType('UserSignupDataInput', {
+  fields: (t) => ({
+    fullname: t.string(),
+    username: t.string(),
+    email: t.string(),
+    password: t.string({ required: true }),
+    referrerToken: t.string(),
+    isAiAgent: t.boolean(),
+  }),
+})

@@ -100,11 +100,6 @@ export const LayoutStyled = styled.div`
     margin: 0;
   }
 
-  & :focus-visible {
-    outline: 2px solid #0052cc;
-    outline-offset: 4px;
-  }
-
   .skip-link {
     position: fixed;
     inset-block-start: 0.5rem;

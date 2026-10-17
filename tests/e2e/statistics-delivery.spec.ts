@@ -59,6 +59,7 @@ test('forwards browser 404 and rendering failures through the real API with fail
       env: {
         ...process.env,
         NODE_ENV: 'production',
+        DATABASE_FILENAME: ':memory:',
         PORT: String(appPort),
         METRICS_PORT: '',
         AGENTS_CENTER_ENDPOINT: `http://127.0.0.1:${receiverPort}/api/`,

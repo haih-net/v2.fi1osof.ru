@@ -29,6 +29,7 @@ async function query(
           headers: { 'x-locale': locale },
         }),
         dbOld: trx,
+        db: trx,
         currentUser: null,
       },
     },

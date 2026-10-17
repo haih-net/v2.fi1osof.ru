@@ -1,3 +1,5 @@
+storage/
+uploads/
 node_modules/
 build/
 .react-router/

@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 import type { Knex } from 'knex'
 import type { TokenRecord, UserRecord } from '../interfaces'
 
-function jwtSecret(): string {
+export function jwtSecret(): string {
   const secret = process.env.JWT_SECRET
   if (!secret) {
     throw new Error('JWT_SECRET env is empty')
@@ -12,7 +12,10 @@ function jwtSecret(): string {
   return secret
 }
 
-export async function createToken(user: UserRecord, dbOld: Knex): Promise<string> {
+export async function createToken(
+  user: UserRecord,
+  dbOld: Knex,
+): Promise<string> {
   const id = randomUUID()
   const token = jwt.sign(
     { userId: user.id, type: 'Auth', tokenId: id },
@@ -57,7 +60,8 @@ export async function authenticate(
     return null
   }
   return (
-    (await dbOld<UserRecord>('User').where({ id: payload.userId }).first()) ?? null
+    (await dbOld<UserRecord>('User').where({ id: payload.userId }).first()) ??
+    null
   )
 }
 

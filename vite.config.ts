@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         app: resolve(import.meta.dirname, 'app'),
+        server: resolve(import.meta.dirname, 'server'),
       },
     },
     plugins: [
@@ -47,6 +48,16 @@ export default defineConfig(({ mode }) => {
       serveShared(),
     ],
     server: {
+      fs: {
+        deny: [
+          '.env',
+          '.env.*',
+          '*.{crt,pem}',
+          '**/.git/**',
+          '**/storage/**',
+          '**/server/database/data/**',
+        ],
+      },
       allowedHosts: ['haih.localhost'],
       ws: { path: '/__vite_hmr' },
     },

@@ -184,6 +184,22 @@ This isn't methodology theater. It's how we actually build — and how AI assist
 
 The site includes an illustrated homepage, Solutions and a blog. The current integration combines prerendering, hydration, SPA navigation, route bundles, request-time SSR and a GraphQL API. See the test commands below for reproducible checks; production cache behavior and development HMR require checks against their actual endpoints.
 
+React Router's root middleware creates a request context for each HTTP request.
+Loaders obtain Apollo through `getRequestApollo(context)`: the first call creates
+the client, and subsequent calls reuse it, including concurrent loaders. Server
+rendering uses the same client through `RequestApolloContext`. Middleware stops
+the client when request handling finishes, including errors and redirects;
+clients and authorization headers are never shared between HTTP requests.
+
+The root loader exposes one `initialApolloState` getter, evaluated when completed
+loader data is rendered or serialized, so it includes the results of parallel
+loaders. Page loaders return their page properties without separate cache
+snapshots. The browser merges the root snapshot into its persistent Apollo cache
+on hydration and SPA navigation. Context creation and cache inspection alone do
+not instantiate Apollo; the first loader or rendering consumer requesting the
+client does. Run `npx vitest run app/request/context.test.ts` to check lifecycle,
+request isolation, SSR reuse and SPA data serialization.
+
 ## License
 
 See repository for license details.
@@ -201,6 +217,35 @@ The shell uses mobile-first Linaria styled components from colocated `styles.ts`
 ## Server monitoring
 
 The [monitoring runbook](docker/monitoring/README.md) describes the production-artifact preview, Grafana dashboard, internal per-site probes, request/application logs and optional email/Telegram alerts. The installation is shared by sites behind one Traefik and uses an explicit site registry. [Verification results](docker/monitoring/verification.md) distinguish the local checks from unverified production behavior. Request filtering is deferred.
+
+## Wallet sign-in
+
+`/signin` supports passwords and MetaMask. Wallet authentication uses
+`ethAccountNonce` and `authEthAccount`, the existing `User`, `EthAccount` and
+`Token` tables, and the server's `JWT_SECRET`. Signatures are checked with
+[ethers verifyMessage](https://docs.ethers.org/v6/api/hashing/#verifyMessage).
+Challenges expire after five minutes and are consumed transactionally on use.
+No blockchain transaction or RPC service is required.
+
+The registration policy matches the old site: an existing linked wallet can
+sign in regardless of `NEXT_PUBLIC_SITE_SIGNUP_STRATEGY`. A new wallet requires
+a valid stored `Referrer` JWT unless that variable is exactly `ANY`. Invalid,
+revoked or expired invitations are rejected even in `ANY` mode. Invitation links
+use `/signin?referrerToken=...`; no separate registration page is enabled.
+The server reads the policy at runtime. An authenticated user can link a new
+wallet, but cannot take a wallet from another account.
+
+The auth tests use an isolated in-memory SQLite database and need no external service:
+
+```bash
+npx vitest run server/schema/types/EthAccount/auth.test.ts
+npx vitest run app/Custom/components/Auth/MetaMaskAuth/index.test.tsx
+npx playwright test tests/e2e/signin.spec.ts --project=chromium --project=mobile-chromium
+```
+
+Browser tests simulate the injected wallet and GraphQL responses. They verify
+session refresh, bearer headers, redirect and mobile layout; they do not replace
+a manual check with the real MetaMask extension.
 
 ## Tests
 
@@ -229,42 +274,73 @@ Add unit tests under `tests/unit/`, or colocate `*.test.ts` / `*.test.tsx` in `a
 
 Playwright checks hydration errors, same-document navigation, heading focus, metadata updates, browser history, deep-link refresh and 404 responses. Its default local server run does not prove Traefik/Varnish cache behavior or development HMR.
 
-## Пользователи и авторизация fi1osof.ru — Knex
+## Shared model client
 
-Сервер читает локальный `.env` из корня проекта. Образец — `server/env.example`.
-Переменные окружения процесса имеют приоритет. Для подключения можно задать
-`DATABASE_URL` либо `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE`.
-Текущая локальная база: `fi1osof-ru--agent` на `127.0.0.1:5432`.
-Приложение использует существующие таблицы PostgreSQL: схему не создаёт и не меняет.
+`server/llm/client.ts` exports a single `llmClient` for chat, web search and image generation. `complete({ model, messages, ... }, signal)` accepts the model and parameters for each request; the client does not retain history, the selected model or an AbortController between requests. It returns the original Response, preserving the stream, HTTP status, headers and error body for the calling code's existing diagnostics.
 
-Запуск вне Docker: `npm run dev`. Порт берётся из `PORT` (локально `3111`),
-GraphQL доступен по `http://localhost:3111/api`. Из корня проекта можно
-переопределить порт: `PORT=3112 npm run dev`.
+All requests use the server-side `CHAT_API_BASE_URL` and `CHAT_API_KEY`. The URL is required: there is no implicit fallback to another provider. `CHAT_MODEL` specifies the chat model; `CHAT_WEB_SEARCH_MODEL` allows a different search model to be selected, falling back to the chat model when empty. `CHAT_WEB_SEARCH_TOOL` defaults to `openrouter:web_search` with `engine: native` when unset or empty. For Polza, set `CHAT_API_BASE_URL=https://polza.ai/api/v1`, use a Polza API key and set `CHAT_WEB_SEARCH_TOOL=polza:web_search`; this tool uses Polza search engines, so the client omits `engine: native`. See the [OpenRouter](https://openrouter.ai/docs/guides/features/server-tools/web-search) and [Polza](https://polza.ai/docs/gaidy/server-tools) tool documentation. Native search capabilities depend on the model and endpoint; OpenRouter may fall back to another engine for unsupported models. Image generation passes its own model from the incoming GraphQL request and uses the same URL and key; the former OPENROUTER_API_URL and OPENROUTER_API_KEY are no longer used. The legacy GraphQL provider name OPENROUTER is retained for client compatibility and does not determine the API URL.
 
-Перенесены `user`, `users`, `usersCount`, `me`, `signin`, `updateCurrentUser`,
-`updateUser`. Сохранены имена аргументов оригинальной схемы, фильтры, сортировка
-по `createdAt` по убыванию и пагинация `skip`/`take` (неотрицательные значения).
-Email, EthAccount, TelegramAccount и Balance доступны только владельцу записи.
-Редактировать чужой статус или пароль может только sudo; свой профиль меняется
-через `updateCurrentUser`. При изменении пароля используется bcrypt с cost 10,
-при изменении content проверяется синтаксис MDX. Заполнение связанных аккаунтов,
-операции баланса и его Transactions на этом этапе не переносились.
+## Local database
 
-Авторизация: `Authorization: Bearer <token>`. Сохранён формат JWT
-`{userId, type: "Auth", tokenId}` и таблица Token. Для совместимости с прежними
-JWT нужен прежний `JWT_SECRET` и соответствующие записи Token в этой базе.
-Секрет находится только в игнорируемом `.env`. Проверяются подпись HS256, тип,
-владелец и наличие записи токена, JWT exp и Token.expiredAt. Удаление записи
-Token отзывает доступ. Как в оригинале, новые токены входа не имеют срока
-действия; статус blocked сам по себе не запрещает вход. Правила списков тоже
-сохранены: по умолчанию активные пользователи и собственная запись; sudo видит
-все статусы, явный фильтр status применяется для любого посетителя.
+The server uses SQLite through Knex and better-sqlite3. Set the required
+`DATABASE_FILENAME` environment variable to the SQLite file path; missing or
+blank values cause startup to fail. For local development, set
+`DATABASE_FILENAME=server/database/data/database.sqlite` in `.env`. Relative
+paths resolve from the working directory. The schema initializes on first use.
+Docker Compose passes `/app/server/database/data/database.sqlite` by default;
+set `DATABASE_FILENAME` in `docker/.env` to override it. Tests use `:memory:`. `DATABASE_URL` is no longer used. Data and SQLite journal files are
+excluded from Git and Docker build contexts. Docker Compose mounts the data
+directory so it survives container replacement; it must be writable by the
+container user (UID 1000 in the production image).
 
-Регистрация и создание реферальных токенов не добавлены. Существующие ошибки
-входа сохранены. Контейнер приложения и настройки Compose не изменялись.
+Connections enable WAL, foreign keys and a five-second busy timeout. Dates are
+stored as Unix milliseconds and returned as JavaScript Dates; boolean fields
+are restored on reads. Schema version 2 includes the user, token, wallet,
+Telegram account, balance, file, concept, route and chat tables used by the resolvers.
+Existing version 1 databases are upgraded automatically without replacing their records.
+Existing PostgreSQL data is not imported. Back up the database with SQLite's
+backup API, or stop the server before copying the entire data directory.
 
-Проверки: `npm run types`, `npm run test:integration` (включает сборку).
-Только проверки пользователей: `npx vitest run -c vitest.integration.config.cjs
- tests/integration/users.test.ts` — выполнить одной строкой. Нужны доступ к
-локальной базе и JWT_SECRET. Тесты создают собственные записи внутри транзакций
-и откатывают их после каждого теста; существующих пользователей не меняют.
+### First administrator
+
+Run from the project directory:
+
+```bash
+ADMIN_PASSWORD='your-password' npm run user:create-admin -- --username admin --email admin@example.com
+```
+
+Alternatively, use `--password-stdin` to read the password from standard input.
+The script creates an active user with `sudo = true` and a bcrypt password hash.
+It initializes a new database if necessary. If **any user** already exists,
+it exits with code 1 without adding or changing users. The emptiness check and
+insert run in one immediate SQLite transaction, including for concurrent CLI runs.
+`--database <path>` overrides the database file for isolated environments;
+`--help` lists the options. The script uses Node.js 22.22.3+ and is also included
+in the production image (`npm run user:create-admin -- --username admin`).
+
+### Chat persistence and legacy import
+
+Chat dialogues, messages (including tool logs, errors, token usage and page URLs),
+and the signing key now use the same SQLite database. The REST and GraphQL APIs
+and guest token format are unchanged. Each appended message and its index data
+are stored in a single row; history is read in insertion order. Tool messages
+remain visible only in administrator history and are excluded from the message index.
+Unknown success status and missing usage counters remain distinct from false and zero.
+
+If an installation has legacy chat files, stop its server and run this command
+from the project directory **before starting the updated server for the first time**:
+
+```bash
+npm run chat:migrate -- /absolute/path/to/storage/chats
+```
+
+The command uses `DATABASE_FILENAME` and imports `messages.json` histories,
+directory creation times and `.signing-key` in one transaction. Keeping that key
+preserves existing guest tokens. The message index is rebuilt from JSON histories;
+`messages.csv` is retained as an archive and is not used as an import source.
+Rows without message IDs or timestamps remain in history but are not indexed.
+All original files are retained. A repeated import of the same directory is a no-op.
+Malformed histories or an already populated chat database cause import to fail;
+an existing different signing key is never overwritten. Other application tables
+may already contain data. For a fresh installation with no legacy chats, no import
+command is necessary.

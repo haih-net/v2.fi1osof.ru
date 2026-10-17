@@ -1,7 +1,8 @@
-import { setupSiteMetadata } from '../app/Custom/server/site/metadata'
-import { setupMedia } from '../app/Custom/server/media'
 import './env'
-import express from 'express'
+import { db } from './database'
+import express, { type ErrorRequestHandler } from 'express'
+import { logDevError } from './errorLogging'
+import { setupChat } from './chat'
 import { createServer } from 'node:http'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -10,6 +11,10 @@ import type { ServerBuild } from 'react-router'
 import type { ViteDevServer } from 'vite'
 
 import { setupGraphqlMiddleware } from './graphqlMiddleware'
+import { setupMedia } from './schema/types/media'
+import { imageResizerMiddleware } from './middleware/imageResizer'
+import { setupTileServer } from './middleware/tileServer'
+import { setupSitemap } from './sitemap'
 
 const dev = process.env.NODE_ENV === 'development'
 const port = Number(process.env.PORT || 3000)
@@ -45,6 +50,7 @@ function setupShutdown(server: ReturnType<typeof createServer>) {
 }
 
 async function startServer() {
+  await db.raw('SELECT 1')
   const app = express()
   app.set('trust proxy', true)
   app.disable('x-powered-by')
@@ -56,9 +62,16 @@ async function startServer() {
     }
     next()
   })
-  setupSiteMetadata(app)
 
   setupMedia(app)
+
+  setupSitemap(app)
+  setupChat(app)
+
+  app.use('/images/resized/', imageResizerMiddleware)
+  app.use('/assets/images/', imageResizerMiddleware)
+  setupMedia(app)
+  setupTileServer(app)
 
   const httpServer = createServer(app)
 
@@ -93,6 +106,9 @@ async function startServer() {
     )
   } else {
     // Production: serve static files and prebuilt SSR bundle
+    app.use(
+      express.static(resolve('shared'), { dotfiles: 'deny', index: false }),
+    )
     const sirv = (await import('sirv')).default
     app.use(sirv('build/client', { extensions: [] }))
 
@@ -102,6 +118,12 @@ async function startServer() {
     const build: ServerBuild = (await import(buildUrl)) as ServerBuild
     app.all('/{*splat}', createRequestHandler({ build }))
   }
+
+  const logRequestError: ErrorRequestHandler = (error, req, _res, next) => {
+    logDevError('http.error', error, { method: req.method, path: req.path })
+    next(error)
+  }
+  app.use(logRequestError)
 
   metricsServer = startMetricsServer()
   setupShutdown(httpServer)
