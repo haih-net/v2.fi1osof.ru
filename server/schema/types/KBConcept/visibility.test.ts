@@ -64,7 +64,7 @@ describe('Concept visibility during migration', () => {
         },
       }) as ReturnType<typeof dbOld.client.runner>
     const context: Context = {
-      dbOld: dbOld,
+      db: dbOld,
       dbOld,
       req: {} as Request,
       currentUser: null,

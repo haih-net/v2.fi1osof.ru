@@ -20,7 +20,7 @@ import { SiteShell } from './styles'
 import { ChatProvider } from '../Chat/ChatWidget/context'
 import { ChatWidget } from '../Chat/ChatWidget'
 
-const sections = ['concepts', 'projects', 'tasks', 'worklogs', 'about'] as const
+const sections = ['about', 'projects', 'worklogs', 'concepts'] as const
 
 export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
   const location = useLocation()
@@ -81,21 +81,21 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
           <div className="header-row">
             <Link className="brand" to={localized('/', locale)}>
               <strong>
-                Fi1osof<span className="full-name"> · {t.name}</span>
+                Fi<span className="brand-accent">1</span>osof
               </strong>
-              <small>{t.tagline}</small>
+              <span className="full-name">{t.name}</span>
             </Link>
-            <Link
-              className="timer"
-              to={localized('/timers', locale)}
-              title={timer?.Task?.title || t.idle}
-            >
-              ● {timer ? timer.Task?.title || t.running : t.idle}
-            </Link>
-            {timer && <TimerControl timer={timer} />}
             <nav className="desktop-nav" aria-label={t.navigation}>
               {links}
             </nav>
+            <a
+              className="contact-button"
+              href="https://t.me/Fi1osof"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Написать Николаю
+            </a>
             <button
               type="button"
               className="burger"
@@ -106,6 +106,17 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
             >
               ☰
             </button>
+          </div>
+          <div className="activity-row">
+            <Link
+              className="timer"
+              to={localized('/timers', locale)}
+              title={timer?.Task?.title || t.idle}
+            >
+              ● {timer ? timer.Task?.title || t.running : t.idle}
+            </Link>
+            {timer && <TimerControl timer={timer} />}
+            <Link to={localized('/tasks', locale)}>{t.tasks}</Link>
           </div>
           {open && (
             <nav
@@ -125,27 +136,30 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
         <div className="wrap">
           <div className="footer-grid">
             <div>
-              <h3>fi1osof</h3>
-              <p className="muted">{t.footer}</p>
+              <Link className="brand" to={localized('/', locale)}>
+                <strong>
+                  Fi<span className="brand-accent">1</span>osof
+                </strong>
+                <span>{t.name}</span>
+              </Link>
+              <p className="muted">
+                Программист, исследователь, ИТ / ИИ-консультант
+              </p>
             </div>
-            <nav aria-label={t.navigation}>
-              <p className="caption">{t.navigation}</p>
-              {links}
-            </nav>
+            <nav aria-label={t.navigation}>{links}</nav>
             <div>
-              <p className="caption">{t.contact}</p>
               <p>
                 <a
                   href="https://github.com/fi1osof"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  GitHub · Fi1osof
+                  GitHub: Fi1osof
                 </a>
               </p>
               <p>
                 <a href="https://t.me/Fi1osof" target="_blank" rel="noreferrer">
-                  Telegram · Fi1osof
+                  Telegram: @Fi1osof
                 </a>
               </p>
             </div>
@@ -169,14 +183,9 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
           </p>
         </div>
       </footer>
+      <ChatWidget />
     </SiteShell>
   )
 
-  return (
-    <ChatProvider>
-      {layout}
-
-      <ChatWidget />
-    </ChatProvider>
-  )
+  return <ChatProvider>{layout}</ChatProvider>
 }
