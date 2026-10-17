@@ -659,7 +659,7 @@ it('preserves an unknown success status in the database', async () => {
   ])
 })
 
-it('explains and logs read_skill calls through the same tool loop as GraphQL', async () => {
+it('объясняет вызов неизвестного навыка и сохраняет ошибку инструмента', async () => {
   const provider = express()
   provider.use(express.json())
   let requests = 0
@@ -672,7 +672,6 @@ it('explains and logs read_skill calls through the same tool loop as GraphQL', a
     ).toEqual([
       'graphql_request',
       'read_skill',
-      'get_current_page',
       'web_search',
       'get_system_info',
     ])
@@ -684,7 +683,9 @@ it('explains and logs read_skill calls through the same tool loop as GraphQL', a
     } else {
       const result = req.body.messages.at(-1)
       expect(result).toMatchObject({ role: 'tool', tool_call_id: 'skill-1' })
-      expect(JSON.parse(result.content).content).toContain('<company id=')
+      expect(JSON.parse(result.content).error).toContain(
+        'Unknown skill: bathhouse-cards',
+      )
       res.end(
         'data: {"choices":[{"delta":{"content":"Готово"}}]}\n\ndata: [DONE]\n\n',
       )
@@ -694,6 +695,8 @@ it('explains and logs read_skill calls through the same tool loop as GraphQL', a
   const base = await configure()
   const response = await postMessage(base)
   const output = await response.text()
+  expect(output).toContain('Проверю правила')
+  expect(output).toContain('Готово')
   expect(output.indexOf('Проверю правила')).toBeLessThan(
     output.indexOf('Готово'),
   )
@@ -705,20 +708,29 @@ it('explains and logs read_skill calls through the same tool loop as GraphQL', a
     'tool',
     'assistant',
   ])
-  expect(saved[2].success).toBe(true)
+  expect(saved[2].success).toBe(false)
+  expect(JSON.parse(saved[2].content)).toMatchObject({
+    toolCallId: 'skill-1',
+    result: {
+      error: expect.stringContaining('Unknown skill: bathhouse-cards'),
+    },
+  })
+  expect(saved[3]).toMatchObject({ role: 'assistant', success: true })
   expect((await storage.listMessages()).map(({ role }) => role)).toEqual([
     'user',
     'assistant',
   ])
 })
 
-it('makes the current page visible to the model and preserves it with the user message', async () => {
+it('сохраняет URL текущей страницы вместе с сообщением пользователя', async () => {
   const provider = express()
   provider.use(express.json())
   const pageUrl = 'http://localhost:3111/city/kirov/bath?tab=reviews#form'
   provider.post('/chat/completions', (req, res) => {
-    expect(req.body.messages[0].content).toContain(pageUrl)
-    expect(req.body.messages[0].content).toContain('get_current_page')
+    expect(req.body.messages).toContainEqual({
+      role: 'user',
+      content: 'What is this company?',
+    })
     res.setHeader('Content-Type', 'text/event-stream')
     res.end(
       'data: {"choices":[{"delta":{"content":"Answer"}}]}\n\ndata: [DONE]\n\n',

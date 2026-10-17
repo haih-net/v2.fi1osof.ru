@@ -90,7 +90,7 @@ const ConceptFile = builder
         nullable: true,
         resolve: async (relation, _args, ctx) =>
           (await ctx
-            .db<FileRecord>('File')
+            .dbOld<FileRecord>('File')
             .where('id', relation.fileId)
             .first()) ?? null,
       }),
@@ -110,7 +110,7 @@ const Concept = builder.objectRef<ConceptRecord>('KBConcept').implement({
           return concept.uri
         }
         const route = await ctx
-          .db<{ path: string }>('SiteRoute')
+          .dbOld<{ path: string }>('SiteRoute')
           .select('path')
           .where('kBConceptId', concept.id)
           .first()
@@ -139,7 +139,7 @@ const Concept = builder.objectRef<ConceptRecord>('KBConcept').implement({
       nullable: true,
       resolve: async (concept, _args, ctx) =>
         (await ctx
-          .db<UserRecord>('User')
+          .dbOld<UserRecord>('User')
           .where('id', concept.createdById)
           .first()) ?? null,
     }),
@@ -148,7 +148,7 @@ const Concept = builder.objectRef<ConceptRecord>('KBConcept').implement({
       nullable: false,
       resolve: (concept, _args, ctx) =>
         ctx
-          .db<ConceptFileRecord>('KBConceptFile')
+          .dbOld<ConceptFileRecord>('KBConceptFile')
           .select('id', 'fileId', 'kBConceptId')
           .where('kBConceptId', concept.id)
           .orderBy('createdAt', 'asc')
@@ -161,7 +161,7 @@ function conceptsQuery(
   ctx: Context,
   where: typeof Where.$inferInput | null | undefined,
 ) {
-  const query = ctx.db<ConceptRecord>('KBConcept')
+  const query = ctx.dbOld<ConceptRecord>('KBConcept')
   if (where?.visibility) {
     query.where('visibility', where.visibility)
   } else {
@@ -285,7 +285,7 @@ builder.queryField('concept', (t) =>
         query.where(function () {
           this.where('uri', uri).orWhereIn(
             'id',
-            ctx.db('SiteRoute').select('kBConceptId').where('path', uri),
+            ctx.dbOld('SiteRoute').select('kBConceptId').where('path', uri),
           )
           const fallback = /^\/concepts\/([^/]+)$/.exec(uri)
           if (fallback) {

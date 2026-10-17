@@ -50,9 +50,9 @@ describe('Concept visibility during migration', () => {
     ],
   ])('%s', async (source, predicate, visibility) => {
     const queries: { sql: string; bindings: readonly unknown[] }[] = []
-    const db = knex({ client: 'better-sqlite3', useNullAsDefault: true })
+    const dbOld = knex({ client: 'better-sqlite3', useNullAsDefault: true })
     // Capture the executed SQL without connecting to or changing a database.
-    db.client.runner = (builder: ReturnType<typeof db>) =>
+    dbOld.client.runner = (builder: ReturnType<typeof dbOld>) =>
       ({
         run: async (): Promise<unknown> => {
           const query = builder.toSQL()
@@ -62,10 +62,10 @@ describe('Concept visibility during migration', () => {
           }
           return query.method === 'first' ? undefined : []
         },
-      }) as ReturnType<typeof db.client.runner>
+      }) as ReturnType<typeof dbOld.client.runner>
     const context: Context = {
-      dbOld: db,
-      db,
+      dbOld: dbOld,
+      dbOld,
       req: {} as Request,
       currentUser: null,
     }
@@ -77,7 +77,7 @@ describe('Concept visibility during migration', () => {
       expect(queries[0].bindings[0]).toBe(visibility)
       expect(queries[0].sql.match(/`visibility`/g)).toHaveLength(1)
     } finally {
-      await db.destroy()
+      await dbOld.destroy()
     }
   })
 })

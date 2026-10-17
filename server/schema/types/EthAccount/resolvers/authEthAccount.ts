@@ -41,9 +41,9 @@ export async function authEthAccount(
     return { success: false, message: 'Недействительная подпись', token: null }
   }
   const normalizedAddress = normalizeAddress(address)
-  return ctx.db.transaction(async (db) => {
+  return ctx.dbOld.transaction(async (dbOld) => {
     // Claim the challenge inside the transaction so concurrent replays cannot sign in.
-    const consumed = await db<TokenRecord>('Token')
+    const consumed = await dbOld<TokenRecord>('Token')
       .where({ id: nonceId })
       .whereNull('userId')
       .where('expiredAt', '>', new Date())
@@ -57,7 +57,7 @@ export async function authEthAccount(
     }
     // Serialize first-time sign-ins for the same wallet across server instances.
     // SQLite's preceding DELETE holds the write lock until this transaction ends.
-    const account = await db<EthAccountRecord>('EthAccount')
+    const account = await dbOld<EthAccountRecord>('EthAccount')
       .where({ address: normalizedAddress })
       .first()
     if (
@@ -73,9 +73,9 @@ export async function authEthAccount(
     }
     let userId = account?.userId ?? ctx.currentUser?.id
     if (!userId) {
-      const referrerId = await checkReferrerToken(referrerToken, db)
+      const referrerId = await checkReferrerToken(referrerToken, dbOld)
       userId = randomUUID()
-      await db<UserRecord & { referrerId: string | null }>('User').insert({
+      await dbOld<UserRecord & { referrerId: string | null }>('User').insert({
         id: userId,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -86,18 +86,18 @@ export async function authEthAccount(
       })
     }
     if (!account?.userId) {
-      const existingWallet = await db<EthAccountRecord>('EthAccount')
+      const existingWallet = await dbOld<EthAccountRecord>('EthAccount')
         .where({ userId })
         .first()
       if (existingWallet && existingWallet.id !== account?.id) {
         throw new Error('К учётной записи уже привязан кошелёк')
       }
       if (account) {
-        await db<EthAccountRecord>('EthAccount')
+        await dbOld<EthAccountRecord>('EthAccount')
           .where({ id: account.id })
           .update({ userId, updatedAt: new Date() })
       } else {
-        await db<EthAccountRecord>('EthAccount').insert({
+        await dbOld<EthAccountRecord>('EthAccount').insert({
           id: randomUUID(),
           address: normalizedAddress,
           userId,
@@ -106,11 +106,15 @@ export async function authEthAccount(
         })
       }
     }
-    const user = await db<UserRecord>('User').where({ id: userId }).first()
+    const user = await dbOld<UserRecord>('User').where({ id: userId }).first()
     if (!user) {
       throw new Error('Пользователь не найден')
     }
-    return { success: true, message: null, token: await createToken(user, db) }
+    return {
+      success: true,
+      message: null,
+      token: await createToken(user, dbOld),
+    }
   })
 }
 

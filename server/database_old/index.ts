@@ -2,15 +2,14 @@ import '../env'
 import knex, { type Knex } from 'knex'
 
 export function createDatabase(): Knex {
+  const connection = process.env.DATABASE_URL
+  if (!connection) {
+    throw new Error('Не задана переменная окружения DATABASE_URL')
+  }
+
   return knex({
     client: 'pg',
-    connection: process.env.DATABASE_URL || {
-      host: process.env.PGHOST || '127.0.0.1',
-      port: Number(process.env.PGPORT || 5432),
-      user: process.env.PGUSER || 'postgres',
-      password: process.env.PGPASSWORD,
-      database: process.env.PGDATABASE,
-    },
+    connection,
     pool: { min: 0, max: 10 },
     acquireConnectionTimeout: 10000,
   })

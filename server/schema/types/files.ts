@@ -70,7 +70,7 @@ const FileType = builder.objectRef<FileRecord>('File').implement({
       resolve: async (file, _, ctx) =>
         file.createdById
           ? ((await ctx
-              .db<UserRecord>('User')
+              .dbOld<UserRecord>('User')
               .where('id', file.createdById)
               .first()) ?? null)
           : null,
@@ -106,7 +106,7 @@ export async function findFile(
   }
   return (
     (await ctx
-      .db<FileRecord>('File')
+      .dbOld<FileRecord>('File')
       .where(Object.fromEntries(conditions))
       .first()) ?? null
   )
@@ -137,7 +137,7 @@ builder.mutationField('updateFile', (t) =>
         throw new GraphQLError('Can not edit alien file')
       }
       const [updated] = await ctx
-        .db<FileRecord>('File')
+        .dbOld<FileRecord>('File')
         .where('id', file.id)
         .update({ ...args.data, updatedAt: new Date() })
         .returning('*')
@@ -181,7 +181,7 @@ builder.mutationField('singleUpload', (t) =>
         )
         const digest = hash.digest('hex')
         const existing = await ctx
-          .db<FileRecord>('File')
+          .dbOld<FileRecord>('File')
           .where('hash', digest)
           .first()
         if (existing) {
@@ -189,7 +189,7 @@ builder.mutationField('singleUpload', (t) =>
           return existing
         }
         const [file] = await ctx
-          .db<FileRecord>('File')
+          .dbOld<FileRecord>('File')
           .insert({
             id: randomUUID(),
             path: `uploads/${relative}`,
@@ -210,7 +210,7 @@ builder.mutationField('singleUpload', (t) =>
           return file
         }
         const duplicate = await ctx
-          .db<FileRecord>('File')
+          .dbOld<FileRecord>('File')
           .where('hash', digest)
           .first()
         if (!duplicate) {

@@ -5,7 +5,7 @@ import type { TokenRecord, UserRecord } from '../interfaces'
 
 export async function checkReferrerToken(
   referrerToken: string | null | undefined,
-  db: Knex,
+  dbOld: Knex,
 ): Promise<string | null> {
   if (!referrerToken) {
     if (process.env.NEXT_PUBLIC_SITE_SIGNUP_STRATEGY !== 'ANY') {
@@ -27,13 +27,13 @@ export async function checkReferrerToken(
   ) {
     throw new Error('Приглашение недействительно или срок его действия истёк')
   }
-  const token = await db<TokenRecord>('Token')
+  const token = await dbOld<TokenRecord>('Token')
     .where({ id: payload.tokenId, userId: payload.userId })
     .first()
   if (
     !token ||
     (token.expiredAt && token.expiredAt.getTime() <= Date.now()) ||
-    !(await db<UserRecord>('User').where({ id: payload.userId }).first())
+    !(await dbOld<UserRecord>('User').where({ id: payload.userId }).first())
   ) {
     throw new Error('Приглашение недействительно или срок его действия истёк')
   }

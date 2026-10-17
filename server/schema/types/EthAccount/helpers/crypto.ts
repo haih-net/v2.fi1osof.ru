@@ -11,7 +11,7 @@ export function normalizeAddress(address: string): string {
 
 export async function generateNonce(
   address: string,
-  db: Knex,
+  dbOld: Knex,
 ): Promise<string> {
   const normalizedAddress = normalizeAddress(address)
   const tokenId = randomUUID()
@@ -20,7 +20,7 @@ export async function generateNonce(
     jwtSecret(),
     { algorithm: 'HS256', expiresIn: '5m' },
   )
-  await db<TokenRecord>('Token').insert({
+  await dbOld<TokenRecord>('Token').insert({
     id: tokenId,
     userId: null,
     createdAt: new Date(),

@@ -7,18 +7,18 @@ const { graphql } = createRequire(import.meta.url)(
 ) as typeof import('graphql')
 
 it('регистрация возвращает заглушку и не обращается к базе', async () => {
-  const db = vi.fn(() => {
+  const dbOld = vi.fn(() => {
     throw new Error('Обращение к базе запрещено')
   })
   const result = await graphql({
     schema,
     source:
       'mutation { signup(data: {password: "Example123"}) { success message token } }',
-    contextValue: { currentUser: null, db },
+    contextValue: { currentUser: null, dbOld },
   })
   expect(result.errors?.map((error) => error.message)).toEqual([
     'Еще не реализовано',
   ])
   expect(result.data?.signup).toBeNull()
-  expect(db).not.toHaveBeenCalled()
+  expect(dbOld).not.toHaveBeenCalled()
 })

@@ -199,6 +199,7 @@ export const activeTimerQuery: TypedDocumentNode<{ timers: Entry[] }> = gql`
 export async function loadPage(
   client: ApolloClient,
   url: URL,
+  fetchPolicy: 'no-cache' | 'network-only' = 'no-cache',
 ): Promise<PageData> {
   const { locale, path } = locationParts(url.pathname)
   if (path === '/work-logs' || path.startsWith('/work-logs/')) {
@@ -287,7 +288,7 @@ export async function loadPage(
     const response = await client.query({
       query: document,
       variables,
-      fetchPolicy: 'no-cache',
+      fetchPolicy,
       context: { headers: { 'x-locale': locale } },
     })
     const data = response.data
@@ -308,7 +309,7 @@ export async function loadPage(
   }
   const active = await client.query({
     query: activeTimerQuery,
-    fetchPolicy: 'no-cache',
+    fetchPolicy,
     context: { headers: { 'x-locale': locale } },
   })
   result.activeTimer = active.data?.timers?.[0] || null

@@ -1,5 +1,5 @@
+import React, { useMemo } from 'react'
 import { TimerControl } from '../TimerControl'
-import * as React from 'react'
 import {
   Link,
   NavLink,
@@ -17,8 +17,11 @@ import {
 } from '../../pages/Site/data'
 import { useAppContext } from '../../hooks/useAppContext'
 import { SiteShell } from './styles'
+import { ChatProvider } from '../Chat/ChatWidget/context'
+import { ChatWidget } from '../Chat/ChatWidget'
 
 const sections = ['concepts', 'projects', 'tasks', 'worklogs', 'about'] as const
+
 export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
   const location = useLocation()
   const navigate = useNavigate()
@@ -45,18 +48,33 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
       .querySelector<HTMLElement>('main h1')
       ?.focus({ preventScroll: true })
   }, [location.pathname, locale])
-  const links = sections.map((section) => (
-    <NavLink key={section} to={localized('/' + section, locale)}>
-      {t[section]}
-    </NavLink>
-  ))
+
+  const links = useMemo(() => {
+    const links = sections.map((section) => (
+      <NavLink key={section} to={localized('/' + section, locale)}>
+        {t[section]}
+      </NavLink>
+    ))
+
+    if (user?.sudo === true) {
+      links.push(
+        <NavLink key={'admin'} to={localized('/' + 'admin', locale)}>
+          Admin
+        </NavLink>,
+      )
+    }
+
+    return links
+  }, [locale, t, user])
+
   const logout = React.useCallback(async (): Promise<void> => {
     localStorage.removeItem('token')
     await client.resetStore()
     await navigate(localized('/', locale))
   }, [client, navigate, locale])
   const toggleMenu = React.useCallback(() => setOpen((value) => !value), [])
-  return (
+
+  const layout = (
     <SiteShell>
       <header>
         <div className="wrap">
@@ -152,5 +170,13 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
         </div>
       </footer>
     </SiteShell>
+  )
+
+  return (
+    <ChatProvider>
+      {layout}
+
+      <ChatWidget />
+    </ChatProvider>
   )
 }

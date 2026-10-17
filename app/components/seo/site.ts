@@ -1,5 +1,5 @@
 export const site = {
-  origin: 'http://localhost:3000',
+  origin: 'https://fi1osof.ru',
   name: '',
   language: 'ru',
   description: '',
