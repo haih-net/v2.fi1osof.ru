@@ -10,7 +10,7 @@ import express from 'express'
 
 import { schema } from './schema'
 import { createContext } from './context'
-import { db } from './database'
+import { dbOld } from './database_old'
 import { graphqlObservability, logEvent } from './observability'
 import type { Context } from './schema/builder'
 
@@ -64,7 +64,7 @@ export async function setupGraphqlMiddleware(
         throw err
       }
     } finally {
-      await db.destroy()
+      await dbOld.destroy()
     }
   }
 }

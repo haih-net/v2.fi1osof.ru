@@ -8,7 +8,7 @@ import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
 
 export interface Context {
   req: Request
-  db: Knex
+  dbOld: Knex
   currentUser: UserRecord | null
 }
 

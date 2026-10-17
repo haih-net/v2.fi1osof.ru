@@ -39,13 +39,13 @@ function setup(currentUser: UserRecord | null = user) {
     update: vi.fn().mockReturnThis(),
     returning: vi.fn().mockResolvedValue([{ ...file, name: 'New' }]),
   }
-  const db = vi.fn().mockReturnValue(query)
+  const dbOld = vi.fn().mockReturnValue(query)
   const context: Context = {
-    db: db as unknown as Knex,
+    dbOld: dbOld as unknown as Knex,
     currentUser,
     req: {} as Request,
   }
-  return { query, db, context }
+  return { query, dbOld, context }
 }
 const update =
   'mutation { updateFile(where: {id: "file-1"}, data: {name: "New"}) {id name} }'
@@ -62,24 +62,24 @@ describe('Markdown file API (mock database only)', () => {
     expect(query.where).toHaveBeenCalledWith({ id: 'file-1' })
   })
   it('rejects an empty identifier without reading arbitrary rows', async () => {
-    const { context, db } = setup()
+    const { context, dbOld } = setup()
     const result = await graphql({
       schema,
       source: '{file(where: {}) {id}}',
       contextValue: context,
     })
     expect(result.errors?.[0].message).toContain('exactly one')
-    expect(db).not.toHaveBeenCalled()
+    expect(dbOld).not.toHaveBeenCalled()
   })
   it('denies anonymous metadata edits without database access', async () => {
-    const { context, db } = setup(null)
+    const { context, dbOld } = setup(null)
     const result = await graphql({
       schema,
       source: update,
       contextValue: context,
     })
     expect(result.errors?.[0].message).toBe('Unauthorized')
-    expect(db).not.toHaveBeenCalled()
+    expect(dbOld).not.toHaveBeenCalled()
   })
   it('denies editing another user’s file', async () => {
     const { context, query } = setup({ ...user, id: 'other' })
@@ -139,7 +139,7 @@ describe('upload storage with mock database', () => {
     await mkdir(testRoot, { recursive: true })
     const directory = await mkdtemp(join(testRoot, 'upload-'))
     vi.stubEnv('UPLOADS_DIR', directory)
-    const { context, query, db } = setup()
+    const { context, query, dbOld } = setup()
     const insert = vi.fn().mockReturnThis()
     const insertQuery = {
       insert,
@@ -148,7 +148,7 @@ describe('upload storage with mock database', () => {
       returning: vi.fn().mockResolvedValue([{ id: 'saved' }]),
     }
     query.first.mockResolvedValue(null)
-    db.mockReturnValueOnce(query).mockReturnValueOnce(insertQuery)
+    dbOld.mockReturnValueOnce(query).mockReturnValueOnce(insertQuery)
     try {
       const resolver = schema.getMutationType()?.getFields()
         .singleUpload.resolve
@@ -192,7 +192,7 @@ describe('upload storage with mock database', () => {
     }
   })
   it('denies uploads for inactive accounts before filesystem or database work', async () => {
-    const { context, db } = setup({ ...user, status: 'newbie' })
+    const { context, dbOld } = setup({ ...user, status: 'newbie' })
     const resolver = schema.getMutationType()?.getFields().singleUpload.resolve
     if (!resolver) {
       throw new Error('Upload resolver missing')
@@ -205,6 +205,6 @@ describe('upload storage with mock database', () => {
         {} as import('graphql').GraphQLResolveInfo,
       ),
     ).rejects.toThrow('Active account required')
-    expect(db).not.toHaveBeenCalled()
+    expect(dbOld).not.toHaveBeenCalled()
   })
 })

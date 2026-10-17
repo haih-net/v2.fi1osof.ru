@@ -17,7 +17,7 @@ builder.queryField('user', (t) =>
     nullable: true,
     args: { where: t.arg({ type: UserWhereUniqueInput, required: true }) },
     resolve: async (_root, { where }, ctx) =>
-      (await findUser(ctx.db, where).first()) ?? null,
+      (await findUser(ctx.dbOld, where).first()) ?? null,
   }),
 )
 builder.queryField('users', (t) =>
@@ -37,7 +37,7 @@ builder.queryField('users', (t) =>
           extensions: { code: 'BAD_USER_INPUT' },
         })
       }
-      const query = usersQuery(ctx.db, where, ctx.currentUser).orderBy(
+      const query = usersQuery(ctx.dbOld, where, ctx.currentUser).orderBy(
         'createdAt',
         'desc',
       )
@@ -55,7 +55,7 @@ builder.queryField('usersCount', (t) =>
   t.int({
     args: { where: t.arg({ type: UserWhereInput }) },
     resolve: async (_root, { where }, ctx) => {
-      const result = await usersQuery(ctx.db, where, ctx.currentUser).count<
+      const result = await usersQuery(ctx.dbOld, where, ctx.currentUser).count<
         { count: string }[]
       >({ count: '*' })
       return Number(result[0]?.count ?? 0)

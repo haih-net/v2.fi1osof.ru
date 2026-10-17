@@ -23,7 +23,7 @@ builder.mutationField('signin', (t) =>
       if (!where.id && !where.email && !where.username) {
         return failure('Email, username or id required')
       }
-      const user = await findUser(ctx.db, where).first()
+      const user = await findUser(ctx.dbOld, where).first()
       if (!user) {
         return failure('User not found')
       }
@@ -36,7 +36,7 @@ builder.mutationField('signin', (t) =>
       return {
         success: true,
         message: null,
-        token: await createToken(user, ctx.db),
+        token: await createToken(user, ctx.dbOld),
       }
     },
   }),

@@ -1,5 +1,5 @@
 import type { Express } from 'express'
-import { db } from '../../../../server/database'
+import { dbOld } from '../../../../server/database_old'
 
 const origin = 'https://fi1osof.ru'
 const namespaces = 'xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'
@@ -34,7 +34,7 @@ export function setupSiteMetadata(app: Express): void {
       if (name === 'main') {
         paths = ['/', '/concepts', '/projects', '/tasks', '/worklogs', '/about']
       } else if (name === 'concepts') {
-        const rows = await db('KBConcept as c')
+        const rows = await dbOld('KBConcept as c')
           .leftJoin('SiteRoute as r', 'r.kBConceptId', 'c.id')
           .where('c.visibility', 'public')
           .select<{ id: string; uri: string | null; path: string | null }[]>(
@@ -55,7 +55,7 @@ export function setupSiteMetadata(app: Express): void {
           res.sendStatus(404)
           return
         }
-        const rows = await db<{ id: string }>(table).select('id')
+        const rows = await dbOld<{ id: string }>(table).select('id')
         paths = rows.map((row) => `/${name}/${row.id}`)
       }
       const urls = paths.map(

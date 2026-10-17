@@ -41,7 +41,7 @@ builder.mutationField('updateCurrentUser', (t) =>
         changes.password = await hashPassword(password)
       }
       const [user] = await ctx
-        .db<UserRecord>('User')
+        .dbOld<UserRecord>('User')
         .where('id', ctx.currentUser.id)
         .update(changes)
         .returning('*')
@@ -81,7 +81,7 @@ builder.mutationField('updateUser', (t) =>
         changes.password = await hashPassword(data.password)
       }
       const [user] = await ctx
-        .db<UserRecord>('User')
+        .dbOld<UserRecord>('User')
         .where('id', where.id)
         .update(changes)
         .returning('*')

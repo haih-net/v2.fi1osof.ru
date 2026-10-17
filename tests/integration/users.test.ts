@@ -7,7 +7,7 @@ const { graphql } = graphqlModule
 import type { Request } from 'express'
 import type { Knex } from 'knex'
 import jwt from 'jsonwebtoken'
-import { db } from '../../server/database'
+import { dbOld } from '../../server/database_old'
 import { schema } from '../../server/schema'
 import { createContext } from '../../server/context'
 import {
@@ -39,14 +39,14 @@ async function run(
     schema,
     source: query,
     variableValues: variables,
-    contextValue: { req: { headers: {} }, db: trx, currentUser: user },
+    contextValue: { req: { headers: {} }, dbOld: trx, currentUser: user },
   })
 }
 const signin =
   'mutation($where: UserWhereUniqueInput!, $data: UserSigninDataInput!) { signin(where: $where, data: $data) { success message token } }'
 
 beforeEach(async () => {
-  trx = await db.transaction()
+  trx = await dbOld.transaction()
   hash ??= await hashPassword(password)
   const rows = await trx<UserRecord>('User')
     .insert([
@@ -81,7 +81,7 @@ afterEach(async () => {
   await trx?.rollback()
 })
 afterAll(async () => {
-  await db.destroy()
+  await dbOld.destroy()
 })
 
 describe('Пользователи и авторизация через Knex', () => {

@@ -96,7 +96,7 @@ export function registerSiteMutations(): void {
       resolve: async (_, { data }, ctx) => {
         const user = authenticated(ctx)
         const rows = await ctx
-          .db<TaskRecord>('Task')
+          .dbOld<TaskRecord>('Task')
           .insert({
             ...data,
             id: randomUUID(),
@@ -121,7 +121,7 @@ export function registerSiteMutations(): void {
       resolve: async (_, { where, data }, ctx) => {
         const user = authenticated(ctx)
         const id = requiredId(where.id)
-        const task = await ctx.db<TaskRecord>('Task').where({ id }).first()
+        const task = await ctx.dbOld<TaskRecord>('Task').where({ id }).first()
         if (!task) {
           throw new GraphQLError('Задача не найдена')
         }
@@ -130,7 +130,7 @@ export function registerSiteMutations(): void {
         }
         return (
           await ctx
-            .db<TaskRecord>('Task')
+            .dbOld<TaskRecord>('Task')
             .where({ id })
             .update({
               ...data,
@@ -153,12 +153,12 @@ export function registerSiteMutations(): void {
       args: { data: t.arg({ type: WorkLogCreate, required: true }) },
       resolve: async (_, { data }, ctx) => {
         const user = authenticated(ctx)
-        if (!(await ctx.db('Task').where({ id: data.taskId }).first())) {
+        if (!(await ctx.dbOld('Task').where({ id: data.taskId }).first())) {
           throw new GraphQLError('Задача не найдена')
         }
         return (
           await ctx
-            .db<WorkLogRecord>('TaskWorkLog')
+            .dbOld<WorkLogRecord>('TaskWorkLog')
             .insert({
               id: randomUUID(),
               taskId: data.taskId,
@@ -181,7 +181,7 @@ export function registerSiteMutations(): void {
         const user = authenticated(ctx)
         const filter = { id: requiredId(where.id), createdById: user.id }
         const log = await ctx
-          .db<WorkLogRecord>('TaskWorkLog')
+          .dbOld<WorkLogRecord>('TaskWorkLog')
           .where(filter)
           .first()
         if (!log) {
@@ -192,7 +192,7 @@ export function registerSiteMutations(): void {
         }
         return (
           await ctx
-            .db<WorkLogRecord>('TaskWorkLog')
+            .dbOld<WorkLogRecord>('TaskWorkLog')
             .where(filter)
             .update({ content: nonempty(data.content) })
             .returning('*')
@@ -206,7 +206,7 @@ export function registerSiteMutations(): void {
       args: { data: t.arg({ type: TimerCreate, required: true }) },
       resolve: async (_, { data }, ctx) => {
         const user = authenticated(ctx)
-        return ctx.db.transaction(async (trx) => {
+        return ctx.dbOld.transaction(async (trx) => {
           // Сериализация запусков одного пользователя сохраняет единственный активный таймер.
           await trx('User').where({ id: user.id }).forUpdate().first()
           if (!(await trx('Task').where({ id: data.taskId }).first())) {
@@ -244,7 +244,7 @@ export function registerSiteMutations(): void {
       resolve: async (_, { where, data }, ctx) => {
         const user = authenticated(ctx)
         const id = requiredId(where.id)
-        const timer = await ctx.db<TimerRecord>('Timer').where({ id }).first()
+        const timer = await ctx.dbOld<TimerRecord>('Timer').where({ id }).first()
         if (!timer) {
           throw new GraphQLError('Таймер не найден')
         }
@@ -253,7 +253,7 @@ export function registerSiteMutations(): void {
         }
         return (
           await ctx
-            .db<TimerRecord>('Timer')
+            .dbOld<TimerRecord>('Timer')
             .where({ id })
             .update({
               startedAt: data.startedAt ?? undefined,

@@ -73,7 +73,7 @@ function windowed<T extends object>(
   return query.offset(skip ?? 0).limit(take ?? 20)
 }
 function visibleConcepts(ctx: Context) {
-  return ctx.db<ConceptRecord>('KBConcept').where('visibility', 'public')
+  return ctx.dbOld<ConceptRecord>('KBConcept').where('visibility', 'public')
 }
 const Project = builder.objectRef<ProjectRecord>('Project')
 export const Task = builder.objectRef<TaskRecord>('Task')
@@ -92,7 +92,7 @@ const TaskWhere = builder.inputType('SiteTaskWhereInput', {
 })
 type TaskFilter = typeof TaskWhere.$inferInput
 function tasks(ctx: Context, where?: TaskFilter | null) {
-  const q = ctx.db<TaskRecord>('Task')
+  const q = ctx.dbOld<TaskRecord>('Task')
   if (where?.projectId) {
     q.where('projectId', where.projectId)
   }
@@ -135,7 +135,7 @@ Project.implement({
     CreatedBy: t.field({
       type: User,
       resolve: (r, _, c) =>
-        c.db<UserRecord>('User').where('id', r.createdById).first(),
+        c.dbOld<UserRecord>('User').where('id', r.createdById).first(),
     }),
   }),
 })
@@ -157,26 +157,26 @@ Task.implement({
       type: Project,
       resolve: (r, _, c) =>
         r.projectId
-          ? c.db<ProjectRecord>('Project').where('id', r.projectId).first()
+          ? c.dbOld<ProjectRecord>('Project').where('id', r.projectId).first()
           : null,
     }),
     CreatedBy: t.field({
       type: User,
       resolve: (r, _, c) =>
-        c.db<UserRecord>('User').where('id', r.createdById).first(),
+        c.dbOld<UserRecord>('User').where('id', r.createdById).first(),
     }),
     Assignee: t.field({
       type: User,
       resolve: (r, _, c) =>
         r.assigneeId
-          ? c.db<UserRecord>('User').where('id', r.assigneeId).first()
+          ? c.dbOld<UserRecord>('User').where('id', r.assigneeId).first()
           : null,
     }),
     WorkLogs: t.field({
       type: [WorkLog],
       resolve: (r, _, c) =>
         c
-          .db<WorkLogRecord>('TaskWorkLog')
+          .dbOld<WorkLogRecord>('TaskWorkLog')
           .where('taskId', r.id)
           .orderBy('createdAt', 'asc'),
     }),
@@ -193,12 +193,12 @@ WorkLog.implement({
     Task: t.field({
       type: Task,
       resolve: (r, _, c) =>
-        c.db<TaskRecord>('Task').where('id', r.taskId).first(),
+        c.dbOld<TaskRecord>('Task').where('id', r.taskId).first(),
     }),
     CreatedBy: t.field({
       type: User,
       resolve: (r, _, c) =>
-        c.db<UserRecord>('User').where('id', r.createdById).first(),
+        c.dbOld<UserRecord>('User').where('id', r.createdById).first(),
     }),
   }),
 })
@@ -223,7 +223,7 @@ Concept.implement({
         r.uri ||
         (
           await c
-            .db<{ path: string }>('SiteRoute')
+            .dbOld<{ path: string }>('SiteRoute')
             .where('kBConceptId', r.id)
             .first()
         )?.path ||
@@ -232,7 +232,7 @@ Concept.implement({
     CreatedBy: t.field({
       type: User,
       resolve: (r, _, c) =>
-        c.db<UserRecord>('User').where('id', r.createdById).first(),
+        c.dbOld<UserRecord>('User').where('id', r.createdById).first(),
     }),
   }),
 })
@@ -245,7 +245,7 @@ Timer.implement({
     Task: t.field({
       type: Task,
       resolve: (r, _, c) =>
-        c.db<TaskRecord>('Task').where('id', r.taskId).first(),
+        c.dbOld<TaskRecord>('Task').where('id', r.taskId).first(),
     }),
   }),
 })
@@ -255,7 +255,7 @@ builder.queryField('projects', (t) =>
     args: { skip: t.arg.int(), take: t.arg.int() },
     resolve: (_, a, c) =>
       windowed(
-        c.db<ProjectRecord>('Project').orderBy('updatedAt', 'desc'),
+        c.dbOld<ProjectRecord>('Project').orderBy('updatedAt', 'desc'),
         a.skip,
         a.take ?? 100,
       ),
@@ -267,7 +267,7 @@ builder.queryField('project', (t) =>
     args: { where: t.arg({ type: Unique, required: true }) },
     resolve: (_, a, c) =>
       a.where.id
-        ? c.db<ProjectRecord>('Project').where('id', a.where.id).first()
+        ? c.dbOld<ProjectRecord>('Project').where('id', a.where.id).first()
         : null,
   }),
 )
@@ -299,7 +299,7 @@ builder.queryField('task', (t) =>
     args: { where: t.arg({ type: Unique, required: true }) },
     resolve: (_, a, c) =>
       a.where.id
-        ? c.db<TaskRecord>('Task').where('id', a.where.id).first()
+        ? c.dbOld<TaskRecord>('Task').where('id', a.where.id).first()
         : null,
   }),
 )
@@ -309,7 +309,7 @@ builder.queryField('taskWorkLogs', (t) =>
     args: { skip: t.arg.int(), take: t.arg.int() },
     resolve: (_, a, c) =>
       windowed(
-        c.db<WorkLogRecord>('TaskWorkLog').orderBy('createdAt', 'desc'),
+        c.dbOld<WorkLogRecord>('TaskWorkLog').orderBy('createdAt', 'desc'),
         a.skip,
         a.take,
       ),
@@ -318,7 +318,7 @@ builder.queryField('taskWorkLogs', (t) =>
 builder.queryField('taskWorkLogCount', (t) =>
   t.int({
     resolve: async (_, __, c) =>
-      Number((await c.db('TaskWorkLog').count('* as count'))[0].count),
+      Number((await c.dbOld('TaskWorkLog').count('* as count'))[0].count),
   }),
 )
 builder.queryField('taskWorkLog', (t) =>
@@ -327,7 +327,7 @@ builder.queryField('taskWorkLog', (t) =>
     args: { where: t.arg({ type: Unique, required: true }) },
     resolve: (_, a, c) =>
       a.where.id
-        ? c.db<WorkLogRecord>('TaskWorkLog').where('id', a.where.id).first()
+        ? c.dbOld<WorkLogRecord>('TaskWorkLog').where('id', a.where.id).first()
         : null,
   }),
 )
@@ -365,7 +365,7 @@ builder.queryField('concept', (t) =>
         return null
       }
       const route = await c
-        .db<{ kBConceptId: string | null }>('SiteRoute')
+        .dbOld<{ kBConceptId: string | null }>('SiteRoute')
         .where('path', a.where.uri)
         .first()
       return q
@@ -387,7 +387,7 @@ builder.queryField('timers', (t) =>
     type: [Timer],
     args: { skip: t.arg.int(), take: t.arg.int(), activeOnly: t.arg.boolean() },
     resolve: (_, a, c) => {
-      const q = c.db<TimerRecord>('Timer').orderBy('createdAt', 'desc')
+      const q = c.dbOld<TimerRecord>('Timer').orderBy('createdAt', 'desc')
       if (a.activeOnly) {
         q.whereNull('stoppedAt')
       }

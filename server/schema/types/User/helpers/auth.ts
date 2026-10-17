@@ -12,14 +12,14 @@ function jwtSecret(): string {
   return secret
 }
 
-export async function createToken(user: UserRecord, db: Knex): Promise<string> {
+export async function createToken(user: UserRecord, dbOld: Knex): Promise<string> {
   const id = randomUUID()
   const token = jwt.sign(
     { userId: user.id, type: 'Auth', tokenId: id },
     jwtSecret(),
     { algorithm: 'HS256' },
   )
-  await db<TokenRecord>('Token').insert({
+  await dbOld<TokenRecord>('Token').insert({
     id,
     userId: user.id,
     createdAt: new Date(),
@@ -30,7 +30,7 @@ export async function createToken(user: UserRecord, db: Knex): Promise<string> {
 
 export async function authenticate(
   token: string,
-  db: Knex,
+  dbOld: Knex,
 ): Promise<UserRecord | null> {
   const secret = jwtSecret()
   let payload: jwt.JwtPayload | string
@@ -47,7 +47,7 @@ export async function authenticate(
   ) {
     return null
   }
-  const stored = await db<TokenRecord>('Token')
+  const stored = await dbOld<TokenRecord>('Token')
     .where({ id: payload.tokenId, userId: payload.userId })
     .first()
   if (
@@ -57,7 +57,7 @@ export async function authenticate(
     return null
   }
   return (
-    (await db<UserRecord>('User').where({ id: payload.userId }).first()) ?? null
+    (await dbOld<UserRecord>('User').where({ id: payload.userId }).first()) ?? null
   )
 }
 

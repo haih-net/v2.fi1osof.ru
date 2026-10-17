@@ -16,4 +16,4 @@ export function createDatabase(): Knex {
   })
 }
 
-export const db: Knex = createDatabase()
+export const dbOld: Knex = createDatabase()

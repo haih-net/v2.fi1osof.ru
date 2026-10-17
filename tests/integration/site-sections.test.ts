@@ -5,7 +5,7 @@ import type { Knex } from 'knex'
 import type { Request } from 'express'
 import type { Context } from '../../server/schema/builder'
 import { schema } from '../../server/schema'
-import { db } from '../../server/database'
+import { dbOld } from '../../server/database_old'
 
 const api = new ApolloServer<Context>({ schema })
 let trx: Knex.Transaction
@@ -28,7 +28,7 @@ async function query(
         req: Object.assign(Object.create(request) as Request, {
           headers: { 'x-locale': locale },
         }),
-        db: trx,
+        dbOld: trx,
         currentUser: null,
       },
     },
@@ -39,7 +39,7 @@ async function query(
   return result.body.singleResult
 }
 beforeAll(async () => {
-  trx = await db.transaction()
+  trx = await dbOld.transaction()
   userId = randomUUID()
   conceptId = randomUUID()
   hiddenId = randomUUID()
@@ -89,7 +89,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await trx?.rollback()
   await api.stop()
-  await db.destroy()
+  await dbOld.destroy()
 })
 
 test('resolves public content by SiteRoute and falls back to source language', async () => {

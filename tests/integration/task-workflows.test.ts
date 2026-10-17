@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeEach, expect, test } from 'vitest'
 import graphqlModule from 'graphql/index.js'
 import type { Knex } from 'knex'
 import { schema } from '../../server/schema'
-import { db } from '../../server/database'
+import { dbOld } from '../../server/database_old'
 import type { UserRecord } from '../../server/schema/types/User/interfaces'
 
 let trx: Knex.Transaction
@@ -33,11 +33,11 @@ async function run(
     schema,
     source,
     variableValues: variables,
-    contextValue: { db: trx, currentUser: user, req: { headers: {} } },
+    contextValue: { dbOld: trx, currentUser: user, req: { headers: {} } },
   })
 }
 beforeEach(async () => {
-  trx = await db.transaction()
+  trx = await dbOld.transaction()
   ;[owner, other, admin] = await trx<UserRecord>('User')
     .insert(
       [false, false, true].map((sudo) => ({
@@ -61,7 +61,7 @@ afterEach(async () => {
   await trx?.rollback()
 })
 afterAll(async () => {
-  await db.destroy()
+  await dbOld.destroy()
 })
 
 test('создаёт задачу с автором и исполнителем, редактирует поля и очищает проект', async () => {

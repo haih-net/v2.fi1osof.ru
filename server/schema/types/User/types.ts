@@ -79,7 +79,7 @@ export const User = builder.objectRef<UserRecord>('User').implement({
       resolve: async (user, _args, ctx) =>
         user.id === ctx.currentUser?.id
           ? ((await ctx
-              .db<EthAccountRecord>('EthAccount')
+              .dbOld<EthAccountRecord>('EthAccount')
               .where('userId', user.id)
               .first()) ?? null)
           : null,
@@ -90,7 +90,7 @@ export const User = builder.objectRef<UserRecord>('User').implement({
       resolve: async (user, _args, ctx) =>
         user.id === ctx.currentUser?.id
           ? ((await ctx
-              .db<TelegramAccountRecord>('TelegramAccount')
+              .dbOld<TelegramAccountRecord>('TelegramAccount')
               .where('userId', user.id)
               .first()) ?? null)
           : null,
@@ -101,7 +101,7 @@ export const User = builder.objectRef<UserRecord>('User').implement({
       resolve: async (user, _args, ctx) =>
         user.id === ctx.currentUser?.id
           ? ((await ctx
-              .db<BalanceRecord>('Balance')
+              .dbOld<BalanceRecord>('Balance')
               .where('userId', user.id)
               .first()) ?? null)
           : null,
