@@ -1,0 +1,14 @@
+mutation ethAccountNonce($address: String!) {
+  ethAccountNonce(address: $address) {
+    nonce
+    message
+  }
+}
+
+mutation authEthAccount($data: EthAccountAuthInput!) {
+  response: authEthAccount(data: $data) {
+    success
+    message
+    token
+  }
+}

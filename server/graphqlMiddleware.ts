@@ -1,3 +1,4 @@
+import { graphqlUploadExpress } from 'graphql-upload-minimal'
 import type { Express } from 'express'
 import type { Server } from 'node:http'
 import { ApolloServer } from '@apollo/server'
@@ -10,6 +11,7 @@ import express from 'express'
 import { schema } from './schema'
 import { graphqlObservability, logEvent } from './observability'
 import type { Context } from './schema/builder'
+import { createContext } from './context'
 
 export async function setupGraphqlMiddleware(
   app: Express,
@@ -37,11 +39,12 @@ export async function setupGraphqlMiddleware(
   app.use(
     '/api',
     cors<cors.CorsRequest>(),
+    graphqlUploadExpress({ maxFileSize: 50 * 1024 * 1024, maxFiles: 10 }),
     express.json(),
     expressMiddleware(apolloServer, {
       context: async ({ req, res }) => {
         res.setHeader('Cache-Control', 'no-store')
-        return { req }
+        return createContext(req)
       },
     }),
   )

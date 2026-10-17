@@ -4,6 +4,7 @@
 const testConfig = {
   test: {
     environment: 'node',
+    env: { DATABASE_FILENAME: ':memory:' },
     include: [
       'tests/unit/**/*.test.{ts,tsx,mjs}',
       'app/**/*.test.{ts,tsx}',

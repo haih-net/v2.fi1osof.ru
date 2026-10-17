@@ -1,0 +1,27 @@
+query chatMessageIndexes {
+  chatMessageIndexes {
+    ...ChatMessageIndex_
+  }
+}
+
+fragment ChatMessageIndex_ on ChatMessageIndex {
+  id
+  chatId
+  status
+  createdAt
+  role
+  pageUrl
+  success
+  usage {
+    inputTokens
+    cachedTokens
+    outputTokens
+  }
+}
+
+query chatDialogues {
+  chatDialogues {
+    chatId
+    createdAt
+  }
+}

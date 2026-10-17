@@ -1,0 +1,11 @@
+mutation llmImageGeneration($input: LLMImageGenerationInput!) {
+  llmImageGeneration(input: $input) {
+    choices {
+      message {
+        images {
+          imageUrl
+        }
+      }
+    }
+  }
+}

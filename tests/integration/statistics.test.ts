@@ -1,6 +1,7 @@
 import { afterAll, afterEach, expect, test, vi } from 'vitest'
 import { ApolloServer } from '@apollo/server'
 import type { FormattedExecutionResult } from 'graphql'
+import { db } from '../../server/database'
 import type { Context } from '../../server/schema/builder'
 import express from 'express'
 import type { Request } from 'express'
@@ -22,7 +23,7 @@ const executeStatistics = async (
       query: 'mutation ($data: Json!) { logStats(data: $data) { id } }',
       variables: { data },
     },
-    { contextValue: { req: request } },
+    { contextValue: { req: request, db, currentUser: null } },
   )
   if (response.body.kind !== 'single') {
     throw new Error('Expected a single response')

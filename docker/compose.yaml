@@ -7,6 +7,9 @@ services:
     init: true
     volumes:
       - ../shared:/app/shared
+      - ../uploads:/app/uploads
+      - ../storage:/app/storage
+      - ../server/database/data:/app/server/database/data
     networks:
       default:
         aliases:
@@ -21,6 +24,7 @@ services:
       monitoring.logs: 'true'
       monitoring.site: haih.site
     environment:
+      DATABASE_FILENAME: ${DATABASE_FILENAME:-/app/server/database/data/database.sqlite}
       METRICS_HOST: 0.0.0.0
       METRICS_PORT: '9464'
   traefik:

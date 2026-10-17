@@ -1,0 +1,30 @@
+query chatMessage($chatId: String!, $messageId: String!) {
+  chatMessage(chatId: $chatId, messageId: $messageId) {
+    ...ChatMessage_
+  }
+}
+
+query chatMessages($chatId: String!, $token: String) {
+  chatMessages(chatId: $chatId, token: $token) {
+    ...ChatMessageNoNesting
+  }
+}
+
+fragment ChatMessageNoNesting on ChatMessage {
+  id
+  createdAt
+  role
+  pageUrl
+  success
+  usage {
+    inputTokens
+    cachedTokens
+    outputTokens
+  }
+  content
+  replyToId
+}
+
+fragment ChatMessage_ on ChatMessage {
+  ...ChatMessageNoNesting
+}

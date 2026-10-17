@@ -1,9 +1,8 @@
 export const site = {
-  origin: 'https://haih.site',
-  name: 'HAIH',
-  language: 'en',
-  description:
-    'Building a website with AI, starting from requirements. Explore the working implementation, technology choices, experiments and lessons from HAIH.',
+  origin: 'http://localhost:3000',
+  name: '',
+  language: 'ru',
+  description: '',
 }
 
 // Preserve the identity published at https://fi1osof.ru/about.

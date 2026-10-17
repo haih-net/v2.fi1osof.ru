@@ -1,3 +1,4 @@
+import { logDevError } from './errorLogging'
 import { createServer, type Server } from 'node:http'
 import type { ApolloServerPlugin } from '@apollo/server'
 import { collectDefaultMetrics, Counter, Registry } from '@prometheus-io/client'
@@ -49,6 +50,11 @@ export const graphqlObservability: ApolloServerPlugin<Context> = {
           graphqlErrors.inc({ kind })
           // Do not log queries, variables, credentials or arbitrary error messages.
           logEvent('error', 'graphql_error', { kind, code })
+          logDevError('graphql.error', error.originalError ?? error, {
+            operationName: context.operationName,
+            path: error.path,
+            code,
+          })
         }
       },
     }

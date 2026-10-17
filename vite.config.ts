@@ -38,15 +38,26 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         app: resolve(import.meta.dirname, 'app'),
+        server: resolve(import.meta.dirname, 'server'),
       },
     },
     plugins: [
       wyw({ include: ['**/*.{ts,tsx}'] }),
       // React Router owns the application build pipeline, not the test runner.
-      !process.env.VITEST && reactRouter(),
+      !process.env.VITEST && !process.env.STORYBOOK && reactRouter(),
       serveShared(),
     ],
     server: {
+      fs: {
+        deny: [
+          '.env',
+          '.env.*',
+          '*.{crt,pem}',
+          '**/.git/**',
+          '**/storage/**',
+          '**/server/database/data/**',
+        ],
+      },
       allowedHosts: ['haih.localhost'],
       ws: { path: '/__vite_hmr' },
     },

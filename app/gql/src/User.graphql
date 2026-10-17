@@ -1,0 +1,37 @@
+query me {
+  me {
+    ...meUser
+  }
+}
+
+fragment meUser on User {
+  ...User_
+}
+
+fragment UserNoNesting on User {
+  id
+  username
+  fullname
+  sudo
+  status
+}
+
+fragment User_ on User {
+  ...UserNoNesting
+}
+
+mutation signin($where: UserWhereUniqueInput!, $data: UserSigninDataInput!) {
+  response: signin(where: $where, data: $data) {
+    success
+    message
+    token
+  }
+}
+
+mutation signup($data: UserSignupDataInput!) {
+  response: signup(data: $data) {
+    success
+    message
+    token
+  }
+}
