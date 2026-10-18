@@ -48,6 +48,7 @@ type ChatProviderProps = {
   welcomeTitle?: string
   welcomeText?: string
   placeholder?: string
+  stream?: boolean
 }
 
 export const ChatProvider: React.FC<ChatProviderProps> = ({
@@ -55,6 +56,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
   welcomeTitle = 'Здравствуйте! Чем я могу помочь?',
   welcomeText = 'Задайте мне любой вопрос',
   placeholder = 'Напишите сообщение...',
+  stream = true,
 }) => {
   const snackbar = useSnackbar()
   const [isOpen, setIsOpen] = useState(false)
@@ -274,6 +276,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
             onError: handleError,
           },
           controller.signal,
+          stream,
         )
       } catch (error) {
         handleError(error instanceof Error ? error : new Error(String(error)))
@@ -281,6 +284,7 @@ export const ChatProvider: React.FC<ChatProviderProps> = ({
     },
     [
       snackbar,
+      stream,
       getSessionId,
       startTypingTimer,
       resetTypingTimer,

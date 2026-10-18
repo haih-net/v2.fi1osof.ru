@@ -86,8 +86,13 @@ describe('Ethereum authentication against SQLite', () => {
     expect(result.errors).toBeUndefined()
     expect(result.data?.ethAccountNonce).toMatchObject({
       nonce: expect.any(String),
-      message: expect.stringContaining('Городские бани'),
+      message: expect.any(String),
     })
+    const challenge = result.data?.ethAccountNonce as {
+      nonce: string
+      message: string
+    }
+    expect(challenge.message).toContain(challenge.nonce)
     const invalid = await graphql({
       schema,
       source: 'mutation{ethAccountNonce(address:"invalid"){nonce}}',

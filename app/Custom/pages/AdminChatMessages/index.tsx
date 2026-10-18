@@ -10,8 +10,8 @@ export const AdminChatMessagesPage: React.FC = () => {
     <AdminChatMessagesStyled>
       {user?.sudo === true && !userLoading && (
         <nav>
-          <Link to="/admin">← Админка</Link>
-          <Link to="/admin/chat/dialogues">Диалоги чата</Link>
+          <Link to="/admin-panel">← Админка</Link>
+          <Link to="/admin-panel/chat/dialogues">Диалоги чата</Link>
         </nav>
       )}
       <h1 tabIndex={-1}>Сообщения чат-помощника</h1>

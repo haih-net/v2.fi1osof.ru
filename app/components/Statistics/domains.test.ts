@@ -9,7 +9,7 @@ afterEach(() => {
 })
 
 test.each([
-  ['xn-----7kcbauaijpauj5couvu.xn--p1ai', 'ии-поддержка-сайта.рф'],
+  ['xn--e1afmkfd.test', 'пример.test'],
   ['www.xn--e1afmkfd.xn--p1ai', 'www.пример.рф'],
   ['пример.рф', 'пример.рф'],
   ['site.test', 'site.test'],
@@ -21,10 +21,7 @@ test.each([
 })
 
 test.each([
-  [
-    'https://xn-----7kcbauaijpauj5couvu.xn--p1ai/',
-    'https://ии-поддержка-сайта.рф/',
-  ],
+  ['https://xn--e1afmkfd.test/', 'https://пример.test/'],
   [
     'http://www.xn--e1afmkfd.xn--p1ai:8080/%D0%BF/xn--p1ai?next=xn--p1ai&value=%2F#xn--p1ai',
     'http://www.пример.рф:8080/%D0%BF/xn--p1ai?next=xn--p1ai&value=%2F#xn--p1ai',

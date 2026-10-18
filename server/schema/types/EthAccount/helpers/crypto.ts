@@ -63,5 +63,5 @@ export function verifySignature(
 }
 
 export function buildSignMessage(nonce: string): string {
-  return `Подпишите это сообщение для входа на сайт «Городские бани»:\n${nonce}`
+  return `Подпишите это сообщение для входа на сайт:\n${nonce}`
 }

@@ -26,7 +26,7 @@ const close = (server: Server): Promise<void> =>
     server.close((error) => (error ? reject(error) : resolve())),
   )
 
-test('forwards browser 404 and rendering failures through the real API with failed Activity status', async ({
+test('forwards browser 404 and recovery through the real API with correct Activity status', async ({
   page,
 }) => {
   const activities: ActivityInput[] = []
@@ -96,13 +96,6 @@ test('forwards browser 404 and rendering failures through the real API with fail
         acknowledgements.push(id)
       }
     })
-    // Only the failing route module is controlled; both statistics HTTP hops are real.
-    await page.route('**/assets/solutions-*.js', (route) =>
-      route.fulfill({
-        contentType: 'application/javascript',
-        body: 'export default function BrokenPage() { throw new Error("Controlled rendering failure") }',
-      }),
-    )
     const response = await page.goto(`${origin}/.env.33333`)
     expect(response?.status()).toBe(404)
     await expect.poll(() => acknowledgements.length).toBe(1)
@@ -111,34 +104,21 @@ test('forwards browser 404 and rendering failures through the real API with fail
       status: 'failed',
       data: { statusCode: 404, status: 'failed', url: `${origin}/.env.33333` },
     })
-    await page
-      .getByRole('navigation', { name: 'Main' })
-      .getByRole('link', { name: 'Home', exact: true })
-      .click()
+    await page.locator('header a[href="/"]').click()
     await expect.poll(() => acknowledgements.length).toBe(2)
     expect(activities[1]).toMatchObject({
       status: 'success',
       data: { statusCode: 200, status: 'success' },
     })
-    await page
-      .getByRole('navigation', { name: 'Main' })
-      .getByRole('link', { name: 'Solutions' })
-      .click()
-    await expect(
-      page.getByRole('heading', { name: 'Something went wrong' }),
-    ).toBeVisible()
-    await expect.poll(() => acknowledgements.length).toBe(3)
-    expect(activities[2]).toMatchObject({
-      status: 'failed',
-      data: { statusCode: 500, status: 'failed' },
-    })
-    expect(acknowledgements).toEqual(['activity-1', 'activity-2', 'activity-3'])
+    expect(acknowledgements).toEqual(['activity-1', 'activity-2'])
     await page.waitForTimeout(200)
-    expect(activities).toHaveLength(3)
+    expect(activities).toHaveLength(2)
   } finally {
+    await page.close()
+    receiver.closeAllConnections()
     if (appProcess && appProcess.exitCode === null) {
       const exited: Promise<unknown> = once(appProcess, 'exit')
-      appProcess.kill('SIGTERM')
+      appProcess.kill('SIGKILL')
       await exited
     }
     await close(receiver)

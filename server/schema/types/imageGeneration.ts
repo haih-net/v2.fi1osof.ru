@@ -46,13 +46,14 @@ interface ProviderResponse {
 }
 builder.mutationField('llmImageGeneration', (t) =>
   t.field({
+    authScopes: { sudo: true },
     type: Response,
     nullable: false,
     args: { input: t.arg({ type: Input, required: true }) },
     resolve: async (_, { input }, ctx) => {
       const user = requireUser(ctx)
       if (user.status !== 'active') {
-        throw new Error('Active account required')
+        throw new Error('Требуется активная учётная запись')
       }
       if (process.env.ALLOW_GENERATE_IMAGES !== 'true') {
         throw new Error('Image generation is disabled')

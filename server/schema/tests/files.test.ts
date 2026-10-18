@@ -1,3 +1,4 @@
+import { Upload } from 'graphql-upload-minimal'
 import { describe, it, expect, vi } from 'vitest'
 import { createRequire } from 'node:module'
 const { graphql } = createRequire(import.meta.url)(
@@ -7,8 +8,8 @@ import type { Request } from 'express'
 import type { Knex } from 'knex'
 import { schema } from 'server/schema'
 import type { Context } from 'server/schema/builder'
-import type { UserRecord } from './User/interfaces'
-import { resolveUploadPath } from './files'
+import type { UserRecord } from '../types/User/interfaces'
+import { resolveUploadPath } from '../types/files'
 
 const user: UserRecord = {
   id: 'owner',
@@ -51,8 +52,8 @@ function setup(currentUser: UserRecord | null = user) {
 const update =
   'mutation { updateFile(where: {id: "file-1"}, data: {name: "New"}) {id name} }'
 describe('Markdown file API (mock database only)', () => {
-  it('reads a file and preserves public path format', async () => {
-    const { context, query } = setup()
+  it('allows sudo to read a file and preserves public path format', async () => {
+    const { context, query } = setup({ ...user, sudo: true })
     const result = await graphql({
       schema,
       source: '{file(where: {id: "file-1"}) {id path}}',
@@ -62,14 +63,30 @@ describe('Markdown file API (mock database only)', () => {
     expect(result.data?.file).toEqual({ id: 'file-1', path: 'owner/test.txt' })
     expect(query.where).toHaveBeenCalledWith({ id: 'file-1' })
   })
+  it.each([null, user])(
+    'denies file reads without sudo before database access (%s)',
+    async (currentUser) => {
+      const { context, db } = setup(currentUser)
+      const result = await graphql({
+        schema,
+        source: '{file(where:{id:"file-1"}){id path}}',
+        contextValue: context,
+      })
+      expect(result.errors?.[0].message).toBe('Доступ запрещён')
+      expect(result.data?.file).toBeNull()
+      expect(db).not.toHaveBeenCalled()
+    },
+  )
   it('rejects an empty identifier without reading arbitrary rows', async () => {
-    const { context, db } = setup()
+    const { context, db } = setup({ ...user, sudo: true })
     const result = await graphql({
       schema,
       source: '{file(where: {}) {id}}',
       contextValue: context,
     })
-    expect(result.errors?.[0].message).toContain('exactly one')
+    expect(result.errors?.[0].message).toBe(
+      'Укажите ровно один идентификатор файла',
+    )
     expect(db).not.toHaveBeenCalled()
   })
   it('denies anonymous metadata edits without database access', async () => {
@@ -79,7 +96,7 @@ describe('Markdown file API (mock database only)', () => {
       source: update,
       contextValue: context,
     })
-    expect(result.errors?.[0].message).toBe('Unauthorized')
+    expect(result.errors?.[0].message).toBe('Доступ запрещён')
     expect(db).not.toHaveBeenCalled()
   })
   it('denies editing another user’s file', async () => {
@@ -89,7 +106,7 @@ describe('Markdown file API (mock database only)', () => {
       source: update,
       contextValue: context,
     })
-    expect(result.errors?.[0].message).toContain('alien file')
+    expect(result.errors?.[0].message).toBe('Нельзя редактировать чужой файл')
     expect(query.update).not.toHaveBeenCalled()
   })
   it.each([user, { ...user, id: 'admin', sudo: true }])(
@@ -111,10 +128,10 @@ describe('Markdown file API (mock database only)', () => {
   )
   it('rejects filesystem traversal and absolute paths', () => {
     expect(() => resolveUploadPath('../uploads-other/file')).toThrow(
-      'Invalid upload path',
+      'Некорректный путь загрузки',
     )
     expect(() => resolveUploadPath('/etc/passwd')).toThrow(
-      'Invalid upload path',
+      'Некорректный путь загрузки',
     )
   })
   it('denies anonymous generation without calling the provider', async () => {
@@ -126,7 +143,7 @@ describe('Markdown file API (mock database only)', () => {
       source:
         'mutation { llmImageGeneration(input: { provider: OPENROUTER, model: GEMINI3_1_FLASH_IMAGE, prompt: "test" }) { choices { message { images {imageUrl} } } } }',
     })
-    expect(result.errors?.[0].message).toBe('Unauthorized')
+    expect(result.errors?.[0].message).toBe('Доступ запрещён')
     expect(fetch).not.toHaveBeenCalled()
   })
 })
@@ -194,18 +211,23 @@ describe('upload storage with mock database', () => {
   })
   it('denies uploads for inactive accounts before filesystem or database work', async () => {
     const { context, db } = setup({ ...user, status: 'newbie' })
-    const resolver = schema.getMutationType()?.getFields().singleUpload.resolve
-    if (!resolver) {
-      throw new Error('Upload resolver missing')
-    }
-    await expect(
-      resolver(
-        {},
-        { data: { file: null } },
-        context,
-        {} as import('graphql').GraphQLResolveInfo,
-      ),
-    ).rejects.toThrow('Active account required')
+    const createReadStream = vi.fn()
+    const upload = new Upload()
+    upload.promise = Promise.resolve({
+      filename: 'test.txt',
+      fieldName: 'file',
+      mimetype: 'text/plain',
+      encoding: '7bit',
+      createReadStream,
+    })
+    const result = await graphql({
+      schema,
+      source: 'mutation($file:Upload!){singleUpload(data:{file:$file}){id}}',
+      variableValues: { file: upload },
+      contextValue: context,
+    })
+    expect(result.errors?.[0].message).toBe('Доступ запрещён')
+    expect(createReadStream).not.toHaveBeenCalled()
     expect(db).not.toHaveBeenCalled()
   })
 })

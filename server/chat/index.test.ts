@@ -143,44 +143,66 @@ it('отклоняет клиентскую системную инструкц�
   vi.stubEnv('CHAT_API_KEY', '')
   expect((await post('user')).status).toBe(503)
 })
-it('отмена браузером закрывает запрос к провайдеру', async () => {
-  const provider = express()
-  let disconnected!: () => void
-  const closed = new Promise<void>((resolve) => {
-    disconnected = resolve
-  })
-  provider.post('/chat/completions', (_req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream')
-    res.write('data: {"choices":[{"delta":{"content":"Начало"}}]}\n\n')
-    res.on('close', disconnected)
-  })
-  vi.stubEnv('CHAT_API_BASE_URL', await listen(provider))
-  const base = await configure()
-  const controller = new AbortController()
-  const response = await fetch(`${base}/api/chat`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ message: 'Вопрос' }),
-    signal: controller.signal,
-  })
-  if (!response.body) {
-    throw new Error('Нет потока')
-  }
-  const reader = response.body.getReader()
-  await reader.read()
-  controller.abort()
-  await closed
-  await expect
-    .poll(async () =>
-      (await storage.listMessages()).map(({ status }) => status),
-    )
-    .toEqual(['success', 'error'])
-  const saved = await storage.read(token.split('.')[0])
-  expect(JSON.parse(saved[1].content).abortReason).toBe('disconnect')
-})
+it.each([true, false])(
+  'отмена закрывает запрос к провайдеру, stream=%s',
+  async (stream) => {
+    const provider = express()
+    let disconnected!: () => void
+    const closed = new Promise<void>((resolve) => {
+      disconnected = resolve
+    })
+    let started!: () => void
+    const ready = new Promise<void>((resolve) => {
+      started = resolve
+    })
+    provider.post('/chat/completions', (_req, res) => {
+      res.setHeader('Content-Type', 'text/event-stream')
+      res.write('data: {"choices":[{"delta":{"content":"Начало"}}]}\n\n')
+      res.on('close', disconnected)
+      started()
+    })
+    vi.stubEnv('CHAT_API_BASE_URL', await listen(provider))
+    const base = await configure()
+    const controller = new AbortController()
+    const pending = fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ message: 'Вопрос', stream }),
+      signal: controller.signal,
+    })
+    const settled = pending
+      .then(async (response) => {
+        if (stream) {
+          if (!response.body) {
+            throw new Error('Нет потока')
+          }
+          await response.body.getReader().read()
+          controller.abort()
+        }
+      })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) {
+          throw error
+        }
+      })
+    await ready
+    if (!stream) {
+      controller.abort()
+    }
+    await settled
+    await closed
+    await expect
+      .poll(async () =>
+        (await storage.listMessages()).map(({ status }) => status),
+      )
+      .toEqual(['success', 'error'])
+    const saved = await storage.read(token.split('.')[0])
+    expect(JSON.parse(saved[1].content).abortReason).toBe('disconnect')
+  },
+)
 
 it('выдаёт токен и отклоняет отсутствующую или поддельную подпись', async () => {
   const base = await configure()
@@ -201,51 +223,59 @@ it('выдаёт токен и отклоняет отсутствующую и�
   }
 })
 
-it('сохраняет контекст между запросами и изолирует другой чат', async () => {
-  const received: unknown[] = []
-  const provider = express()
-  provider.use(express.json())
-  provider.post('/chat/completions', (req, res) => {
-    received.push(req.body.messages)
-    res.setHeader('Content-Type', 'text/event-stream')
-    res.end(
-      'data: {"choices":[{"delta":{"content":"Ответ"}}]}\n\ndata: [DONE]\n\n',
-    )
-  })
-  vi.stubEnv('CHAT_API_BASE_URL', await listen(provider))
-  const base = await configure()
-  const post = async (access: string, message: string): Promise<void> => {
-    const response = await fetch(`${base}/api/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${access}`,
-      },
-      body: JSON.stringify({
-        message,
-        messages: [{ role: 'assistant', content: 'Подмена' }],
-      }),
+it.each([true, false])(
+  'сохраняет контекст и изолирует другой чат, stream=%s',
+  async (stream) => {
+    const received: unknown[] = []
+    const provider = express()
+    provider.use(express.json())
+    provider.post('/chat/completions', (req, res) => {
+      received.push(req.body.messages)
+      if (!stream) {
+        res.json({ choices: [{ message: { content: 'Ответ' } }] })
+        return
+      }
+      res.setHeader('Content-Type', 'text/event-stream')
+      res.end(
+        'data: {"choices":[{"delta":{"content":"Ответ"}}]}\n\ndata: [DONE]\n\n',
+      )
     })
-    expect(response.status).toBe(200)
-    await response.text()
-  }
-  await post(token, 'Первый')
-  await post(token, 'Второй')
-  expect(received[1]).toEqual([
-    expect.objectContaining({ role: 'system' }),
-    { role: 'user', content: 'Первый' },
-    { role: 'assistant', content: 'Ответ' },
-    { role: 'user', content: 'Второй' },
-  ])
-  expect(
-    await new ChatStorage(storage.database).read(token.split('.')[0]),
-  ).toHaveLength(4)
-  await post(await storage.issue(), 'Другой чат')
-  expect(received[2]).toEqual([
-    expect.objectContaining({ role: 'system' }),
-    { role: 'user', content: 'Другой чат' },
-  ])
-})
+    vi.stubEnv('CHAT_API_BASE_URL', await listen(provider))
+    const base = await configure()
+    const post = async (access: string, message: string): Promise<void> => {
+      const response = await fetch(`${base}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${access}`,
+        },
+        body: JSON.stringify({
+          message,
+          stream,
+          messages: [{ role: 'assistant', content: 'Подмена' }],
+        }),
+      })
+      expect(response.status).toBe(200)
+      await response.text()
+    }
+    await post(token, 'Первый')
+    await post(token, 'Второй')
+    expect(received[1]).toEqual([
+      expect.objectContaining({ role: 'system' }),
+      { role: 'user', content: 'Первый' },
+      { role: 'assistant', content: 'Ответ' },
+      { role: 'user', content: 'Второй' },
+    ])
+    expect(
+      await new ChatStorage(storage.database).read(token.split('.')[0]),
+    ).toHaveLength(4)
+    await post(await storage.issue(), 'Другой чат')
+    expect(received[2]).toEqual([
+      expect.objectContaining({ role: 'system' }),
+      { role: 'user', content: 'Другой чат' },
+    ])
+  },
+)
 
 it('сохраняет входящее сообщение и индекс при ошибке провайдера', async () => {
   const provider = express()
@@ -422,98 +452,156 @@ it('одновременное восстановление не перезап�
   ])
 })
 
-it('executes fragmented tool calls anonymously, explains them and keeps tool logs out of the message index', async () => {
-  const provider = express()
-  provider.use(express.json())
-  let requests = 0
-  provider.post('/chat/completions', (req, res) => {
-    res.setHeader('Content-Type', 'text/event-stream')
-    if (requests++ === 0) {
-      expect(req.body.tools[0].function.name).toBe('graphql_request')
-      const args = JSON.stringify({
-        reasoning: 'Проверю доступные данные.',
-        query: 'query Search($city: String!) { search(city: $city) }',
-        variables: { city: 'Киров' },
-      })
-      for (const fragment of [
-        {
-          index: 0,
-          id: 'call-1',
-          function: { name: 'graphql_request', arguments: args.slice(0, 20) },
-        },
-        { index: 0, function: { arguments: args.slice(20) } },
-      ]) {
-        res.write(
-          `data: ${JSON.stringify({ choices: [{ delta: { tool_calls: [fragment] } }] })}\n\n`,
+it.each([true, false])(
+  'выполняет инструменты, сохраняет историю и usage в режиме stream=%s',
+  async (stream) => {
+    const provider = express()
+    provider.use(express.json())
+    let requests = 0
+    provider.post('/chat/completions', (req, res) => {
+      expect(req.body.stream).toBe(stream)
+      expect(req.body.stream_options).toEqual(
+        stream ? { include_usage: true } : undefined,
+      )
+      if (stream) {
+        res.setHeader('Content-Type', 'text/event-stream')
+      }
+      if (requests++ === 0) {
+        expect(req.body.tools[0].function.name).toBe('graphql_request')
+        const args = JSON.stringify({
+          reasoning: 'Проверю доступные данные.',
+          query: 'query Search($term: String!) { search(term: $term) }',
+          variables: { term: 'Example product' },
+        })
+        if (!stream) {
+          res.json({
+            id: 'tool-round',
+            choices: [
+              {
+                message: {
+                  content: null,
+                  tool_calls: [
+                    {
+                      id: 'call-1',
+                      type: 'function',
+                      function: { name: 'graphql_request', arguments: args },
+                    },
+                  ],
+                },
+              },
+            ],
+            usage: {
+              prompt_tokens: 100,
+              prompt_tokens_details: { cached_tokens: 40 },
+              completion_tokens: 10,
+            },
+          })
+          return
+        }
+        for (const fragment of [
+          {
+            index: 0,
+            id: 'call-1',
+            function: { name: 'graphql_request', arguments: args.slice(0, 20) },
+          },
+          { index: 0, function: { arguments: args.slice(20) } },
+        ]) {
+          res.write(
+            `data: ${JSON.stringify({ choices: [{ delta: { tool_calls: [fragment] } }] })}\n\n`,
+          )
+        }
+        res.end(
+          'data: {"choices":[],"usage":{"prompt_tokens":100,"prompt_tokens_details":{"cached_tokens":40},"completion_tokens":10}}\n\ndata: [DONE]\n\n',
+        )
+      } else {
+        expect(req.body.messages.at(-1)).toMatchObject({
+          role: 'tool',
+          tool_call_id: 'call-1',
+          content: '{"data":{"search":[]}}',
+        })
+        if (!stream) {
+          res.json({
+            id: 'final-answer',
+            choices: [{ message: { content: 'Ничего не найдено.' } }],
+            usage: {
+              prompt_tokens: 200,
+              prompt_tokens_details: { cached_tokens: 80 },
+              completion_tokens: 20,
+            },
+          })
+          return
+        }
+        res.end(
+          'data: {"choices":[{"delta":{"content":"Ничего не найдено."}}]}\n\ndata: {"choices":[],"usage":{"prompt_tokens":200,"prompt_tokens_details":{"cached_tokens":80},"completion_tokens":20}}\n\ndata: [DONE]\n\n',
         )
       }
-      res.end(
-        'data: {"choices":[],"usage":{"prompt_tokens":100,"prompt_tokens_details":{"cached_tokens":40},"completion_tokens":10}}\n\ndata: [DONE]\n\n',
-      )
+    })
+    vi.stubEnv('CHAT_API_BASE_URL', await listen(provider))
+    vi.stubEnv('CHAT_API_KEY', 'test-secret')
+    vi.stubEnv('CHAT_MODEL', 'test-model')
+    const app = express()
+    const database = createDatabase()
+    databases.push(database)
+    storage = new ChatStorage(database)
+    token = await storage.issue()
+    setupChat(app, storage)
+    let apiCalls = 0
+    app.post('/api', express.json(), (req, res) => {
+      apiCalls++
+      expect(req.headers.authorization).toBeUndefined()
+      expect(req.headers.cookie).toBeUndefined()
+      expect(req.body.variables).toEqual({ term: 'Example product' })
+      res.json({ data: { search: [] } })
+    })
+    const base = await listen(app)
+    const response = await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        Cookie: 'session=admin',
+      },
+      body: JSON.stringify({ message: 'Найди товар Example product', stream }),
+    })
+    const output = await response.text()
+    expect(output.indexOf('Проверю')).toBeLessThan(output.indexOf('Ничего'))
+    expect(response.headers.get('content-type')).toContain(
+      stream ? 'text/event-stream' : 'application/json',
+    )
+    if (stream) {
+      expect(output).toContain('[DONE]')
     } else {
-      expect(req.body.messages.at(-1)).toMatchObject({
-        role: 'tool',
-        tool_call_id: 'call-1',
-        content: '{"data":{"search":[]}}',
+      expect(JSON.parse(output)).toEqual({
+        id: 'final-answer',
+        success: true,
+        content: '\n\nПроверю доступные данные.\n\nНичего не найдено.',
+        usage: { inputTokens: 300, cachedTokens: 120, outputTokens: 30 },
       })
-      res.end(
-        'data: {"choices":[{"delta":{"content":"Ничего не найдено."}}]}\n\ndata: {"choices":[],"usage":{"prompt_tokens":200,"prompt_tokens_details":{"cached_tokens":80},"completion_tokens":20}}\n\ndata: [DONE]\n\n',
-      )
     }
-  })
-  vi.stubEnv('CHAT_API_BASE_URL', await listen(provider))
-  vi.stubEnv('CHAT_API_KEY', 'test-secret')
-  vi.stubEnv('CHAT_MODEL', 'test-model')
-  const app = express()
-  const database = createDatabase()
-  databases.push(database)
-  storage = new ChatStorage(database)
-  token = await storage.issue()
-  setupChat(app, storage)
-  let apiCalls = 0
-  app.post('/api', express.json(), (req, res) => {
-    apiCalls++
-    expect(req.headers.authorization).toBeUndefined()
-    expect(req.headers.cookie).toBeUndefined()
-    expect(req.body.variables).toEqual({ city: 'Киров' })
-    res.json({ data: { search: [] } })
-  })
-  const base = await listen(app)
-  const response = await fetch(`${base}/api/chat`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      Cookie: 'session=admin',
-    },
-    body: JSON.stringify({ message: 'Найди баню в Кирове' }),
-  })
-  const output = await response.text()
-  expect(output.indexOf('Проверю')).toBeLessThan(output.indexOf('Ничего'))
-  expect(output).toContain('[DONE]')
-  expect(apiCalls).toBe(1)
-  const expectedUsage = {
-    inputTokens: 300,
-    cachedTokens: 120,
-    outputTokens: 30,
-  }
-  expect((await storage.read(token.split('.')[0])).at(-1)?.usage).toEqual(
-    expectedUsage,
-  )
-  expect((await storage.listMessages()).at(-1)?.usage).toEqual(expectedUsage)
-  expect((await storage.listMessages()).at(-1)).toMatchObject({
-    role: 'assistant',
-    status: 'success',
-    usage: expectedUsage,
-  })
-  expect(
-    (await storage.read(token.split('.')[0])).map(({ role }) => role),
-  ).toEqual(['user', 'tool_call', 'tool', 'assistant'])
-  expect((await storage.listMessages()).map(({ role }) => role)).toEqual([
-    'user',
-    'assistant',
-  ])
-})
+    expect(apiCalls).toBe(1)
+    const expectedUsage = {
+      inputTokens: 300,
+      cachedTokens: 120,
+      outputTokens: 30,
+    }
+    expect((await storage.read(token.split('.')[0])).at(-1)?.usage).toEqual(
+      expectedUsage,
+    )
+    expect((await storage.listMessages()).at(-1)?.usage).toEqual(expectedUsage)
+    expect((await storage.listMessages()).at(-1)).toMatchObject({
+      role: 'assistant',
+      status: 'success',
+      usage: expectedUsage,
+    })
+    expect(
+      (await storage.read(token.split('.')[0])).map(({ role }) => role),
+    ).toEqual(['user', 'tool_call', 'tool', 'assistant'])
+    expect((await storage.listMessages()).map(({ role }) => role)).toEqual([
+      'user',
+      'assistant',
+    ])
+  },
+)
 
 const postMessage = (base: string, message = 'Test error'): Promise<Response> =>
   fetch(`${base}/api/chat`, {
@@ -659,7 +747,7 @@ it('preserves an unknown success status in the database', async () => {
   ])
 })
 
-it('объясняет вызов неизвестного навыка и сохраняет ошибку инструмента', async () => {
+it('rejects a skill tool call when no skills are registered', async () => {
   const provider = express()
   provider.use(express.json())
   let requests = 0
@@ -669,12 +757,7 @@ it('объясняет вызов неизвестного навыка и со�
       req.body.tools.map(
         (tool: { function: { name: string } }) => tool.function.name,
       ),
-    ).toEqual([
-      'graphql_request',
-      'read_skill',
-      'web_search',
-      'get_system_info',
-    ])
+    ).toEqual(['graphql_request', 'web_search', 'get_system_info'])
     if (requests++ === 0) {
       res.write(
         `data: ${JSON.stringify({ choices: [{ delta: { tool_calls: [{ index: 0, id: 'skill-1', type: 'function', function: { name: 'read_skill', arguments: JSON.stringify({ id: 'bathhouse-cards', reasoning: 'Проверю правила вывода карточек.' }) } }] } }] })}\n\n`,
@@ -684,7 +767,7 @@ it('объясняет вызов неизвестного навыка и со�
       const result = req.body.messages.at(-1)
       expect(result).toMatchObject({ role: 'tool', tool_call_id: 'skill-1' })
       expect(JSON.parse(result.content).error).toContain(
-        'Unknown skill: bathhouse-cards',
+        'Unknown tool: read_skill',
       )
       res.end(
         'data: {"choices":[{"delta":{"content":"Готово"}}]}\n\ndata: [DONE]\n\n',
@@ -695,11 +778,8 @@ it('объясняет вызов неизвестного навыка и со�
   const base = await configure()
   const response = await postMessage(base)
   const output = await response.text()
-  expect(output).toContain('Проверю правила')
+  expect(output).not.toContain('Проверю правила')
   expect(output).toContain('Готово')
-  expect(output.indexOf('Проверю правила')).toBeLessThan(
-    output.indexOf('Готово'),
-  )
   expect(output).toContain('[DONE]')
   const saved = await storage.read(token.split('.')[0])
   expect(saved.map(({ role }) => role)).toEqual([
@@ -712,7 +792,7 @@ it('объясняет вызов неизвестного навыка и со�
   expect(JSON.parse(saved[2].content)).toMatchObject({
     toolCallId: 'skill-1',
     result: {
-      error: expect.stringContaining('Unknown skill: bathhouse-cards'),
+      error: expect.stringContaining('Unknown tool: read_skill'),
     },
   })
   expect(saved[3]).toMatchObject({ role: 'assistant', success: true })
@@ -725,11 +805,12 @@ it('объясняет вызов неизвестного навыка и со�
 it('сохраняет URL текущей страницы вместе с сообщением пользователя', async () => {
   const provider = express()
   provider.use(express.json())
-  const pageUrl = 'http://localhost:3111/city/kirov/bath?tab=reviews#form'
+  const pageUrl =
+    'http://localhost:3111/products/example?tab=details#description'
   provider.post('/chat/completions', (req, res) => {
     expect(req.body.messages).toContainEqual({
       role: 'user',
-      content: 'What is this company?',
+      content: 'Help me find a product',
     })
     res.setHeader('Content-Type', 'text/event-stream')
     res.end(
@@ -745,7 +826,7 @@ it('сохраняет URL текущей страницы вместе с со�
       Authorization: `Bearer ${token}`,
       'X-Chat-Page-Url': pageUrl,
     },
-    body: JSON.stringify({ message: 'What is this company?' }),
+    body: JSON.stringify({ message: 'Help me find a product' }),
   })
   expect(await response.text()).toContain('[DONE]')
   expect((await storage.read(token.split('.')[0]))[0].pageUrl).toBe(pageUrl)
@@ -796,4 +877,66 @@ it('не подменяет отсутствующие счётчики нуля
     inputTokens: 12,
     outputTokens: 3,
   })
+})
+
+it.each([true, false])(
+  'сохраняет отказ провайдера в режиме stream=%s',
+  async (stream) => {
+    const provider = express()
+    provider.post('/chat/completions', (_req, res) =>
+      res.status(429).json({ error: 'Лимит' }),
+    )
+    vi.stubEnv('CHAT_API_BASE_URL', await listen(provider))
+    const base = await configure()
+    const response = await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ message: 'Вопрос', stream }),
+    })
+    expect(response.status).toBe(429)
+    expect(await response.json()).toMatchObject({ success: false })
+    expect((await storage.read(token.split('.')[0]))[1].success).toBe(false)
+  },
+)
+
+it.each(['{', '{"choices":[]}', '{"error":{"message":"Ошибка"}}'])(
+  'отклоняет некорректный JSON-ответ модели: %s',
+  async (body) => {
+    const provider = express()
+    provider.post('/chat/completions', (_req, res) =>
+      res.type('application/json').send(body),
+    )
+    vi.stubEnv('CHAT_API_BASE_URL', await listen(provider))
+    const base = await configure()
+    const response = await fetch(`${base}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ message: 'Вопрос', stream: false }),
+    })
+    expect(response.status).toBe(502)
+    expect(await response.json()).toMatchObject({ success: false })
+    const saved = await storage.read(token.split('.')[0])
+    expect(saved[1].success).toBe(false)
+    expect(JSON.parse(saved[1].content).responseBody).toBe(body)
+  },
+)
+
+it('отклоняет неboolean режим до записи истории', async () => {
+  const base = await configure()
+  const response = await fetch(`${base}/api/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ message: 'Вопрос', stream: 'false' }),
+  })
+  expect(response.status).toBe(400)
+  expect(await storage.read(token.split('.')[0])).toEqual([])
 })

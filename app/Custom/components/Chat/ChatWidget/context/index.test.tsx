@@ -181,3 +181,25 @@ it('поздняя ошибка отменённого запроса не ос�
   expect(result.current.messages.at(-1)?.text).toBe('Новый ответ')
   expect(result.current.isLoading).toBe(false)
 })
+
+it.each([true, false])(
+  'передаёт режим виджета транспорту, stream=%s',
+  async (stream) => {
+    vi.mocked(sendMessageStream).mockImplementation(
+      async (_text, _session, callbacks) => {
+        callbacks.onChunk('Ответ')
+        callbacks.onDone()
+      },
+    )
+    const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+      <ChatProvider stream={stream}>{children}</ChatProvider>
+    )
+    const { result } = renderHook(useChatContext, { wrapper })
+    await act(async () => {
+      await result.current.submitMessage('Вопрос')
+    })
+    expect(vi.mocked(sendMessageStream).mock.calls[0][4]).toBe(stream)
+    expect(result.current.messages[1].text).toBe('Ответ')
+    expect(result.current.isLoading).toBe(false)
+  },
+)

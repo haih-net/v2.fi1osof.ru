@@ -36,7 +36,7 @@ export const MessageRow: React.FC<MessageRowProps> = ({ entry }) => {
         </span>
         <span>
           <Link
-            to={`/admin/chat/dialogues/${encodeURIComponent(entry.chatId)}`}
+            to={`/admin-panel/chat/dialogues/${encodeURIComponent(entry.chatId)}`}
           >
             Открыть диалог
           </Link>

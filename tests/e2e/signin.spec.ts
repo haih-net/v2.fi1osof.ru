@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-const signMessage = 'Подпишите сообщение для входа на сайт «Городские бани»'
+const signMessage = 'Test sign-in challenge: test-nonce'
 
 test('MetaMask sign-in refreshes the session and redirects to home', async ({
   page,

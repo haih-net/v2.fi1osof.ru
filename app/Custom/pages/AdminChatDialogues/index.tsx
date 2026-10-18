@@ -14,8 +14,8 @@ export const AdminChatDialoguesPage: React.FC = () => {
       ) : user?.sudo === true ? (
         <>
           <nav aria-label="Навигация по админке">
-            <Link to="/admin">Админка</Link>
-            <Link to="/admin/chat/messages">Сообщения чата</Link>
+            <Link to="/admin-panel">Админка</Link>
+            <Link to="/admin-panel/chat/messages">Сообщения чата</Link>
           </nav>
           <DialogueList />
         </>

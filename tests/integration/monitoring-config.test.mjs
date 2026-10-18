@@ -12,9 +12,17 @@ test('two sites sharing one Traefik have separate probes, metric labels and miss
       recursive: true,
       filter: (source) => !source.includes('.secrets'),
     })
-    const sites = JSON.parse(
-      await readFile(join(directory, 'sites.json'), 'utf8'),
-    )
+    const sites = [
+      {
+        site: 'first.example.test',
+        traefik: 'http://traefik',
+        routers: ['first@file'],
+        checks: [
+          { name: 'page', path: '/' },
+          { name: 'api', path: '/api', graphql: true },
+        ],
+      },
+    ]
     sites.push({
       ...sites[0],
       site: 'second.example.com',

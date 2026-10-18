@@ -10,11 +10,11 @@ import { logEvent, startMetricsServer } from './observability'
 import type { ServerBuild } from 'react-router'
 import type { ViteDevServer } from 'vite'
 
-import { setupGraphqlMiddleware } from './graphqlMiddleware'
 import { setupMedia } from './schema/types/media'
-import { imageResizerMiddleware } from './middleware/imageResizer'
-import { setupTileServer } from './middleware/tileServer'
 import { setupSitemap } from './sitemap'
+
+import { setupGraphqlMiddleware } from './middleware/graphql'
+import { imageResizerMiddleware } from './middleware/imageResizer'
 
 const dev = process.env.NODE_ENV === 'development'
 const port = Number(process.env.PORT || 3000)
@@ -71,7 +71,6 @@ async function startServer() {
   app.use('/images/resized/', imageResizerMiddleware)
   app.use('/assets/images/', imageResizerMiddleware)
   setupMedia(app)
-  setupTileServer(app)
 
   const httpServer = createServer(app)
 

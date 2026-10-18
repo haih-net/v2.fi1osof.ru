@@ -2,11 +2,12 @@ import { graphqlRequestTool } from './graphqlRequest'
 import { webSearchTool } from './webSearch'
 import { getSystemInfoTool } from './getSystemInfo'
 import { readSkillTool } from './readSkill'
+import { hasSkills } from '../skills/registry'
 import type { ChatTool, PreparedTool, ToolCall, ToolDefinition } from '../types'
 
 const tools: readonly ChatTool[] = [
   graphqlRequestTool,
-  readSkillTool,
+  ...(hasSkills ? [readSkillTool] : []),
   webSearchTool,
   getSystemInfoTool,
 ]

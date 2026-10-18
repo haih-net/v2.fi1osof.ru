@@ -14,7 +14,7 @@ export const AdminPage: React.FC = () => {
         <>
           <p className="intro">Управление сайтом</p>
           <nav aria-label="Разделы админки">
-            <Link className="section-card" to="/admin/chat/dialogues">
+            <Link className="section-card" to="/admin-panel/chat/dialogues">
               <span>
                 <strong>Диалоги чата</strong>
                 <span className="description">
@@ -26,7 +26,7 @@ export const AdminPage: React.FC = () => {
                 →
               </span>
             </Link>
-            <Link className="section-card" to="/admin/chat/messages">
+            <Link className="section-card" to="/admin-panel/chat/messages">
               <span className="icon" aria-hidden="true">
                 ☰
               </span>

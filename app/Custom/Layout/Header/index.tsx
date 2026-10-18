@@ -105,12 +105,12 @@ export const Header: React.FC = () => {
         >
           {!userLoading && user?.sudo === true && (
             <Link
-              to="/admin"
+              to="/admin-panel"
               onClick={closeMenu}
               aria-current={
-                location.pathname === '/admin'
+                location.pathname === '/admin-panel'
                   ? 'page'
-                  : location.pathname.startsWith('/admin/')
+                  : location.pathname.startsWith('/admin-panel/')
                     ? 'location'
                     : undefined
               }

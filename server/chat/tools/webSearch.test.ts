@@ -9,7 +9,7 @@ const prepare = (extra: Record<string, unknown> = {}) =>
       name: 'web_search',
       arguments: JSON.stringify({
         reasoning: 'Check external reviews',
-        query: 'Макарьевские бани Киров Проезжая 39а отзывы',
+        query: 'Example product independent reviews',
         ...extra,
       }),
     },

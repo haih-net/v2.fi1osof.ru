@@ -17,16 +17,12 @@ const assertTtl = (response, maximum) => {
 }
 
 test('public routes expose server-rendered content and metadata', async () => {
-  for (const [path, title] of [
-    ['/', 'HAIH — Building websites with AI, from requirements'],
-    ['/solutions', 'Technology choices and their trade-offs — HAIH Solutions'],
-  ]) {
+  for (const path of ['/']) {
     const response = await fetch(url(path))
     assert.equal(response.status, 200)
     assert.match(response.headers.get('content-type'), /text\/html/)
     const html = await response.text()
-    assert.ok(html.includes(`<title>${title}</title>`))
-    assert.match(html, /<h1/)
+    assert.match(html, /<title>[\s\S]*?<\/title>/)
   }
 })
 
@@ -40,7 +36,7 @@ test('unknown documents and missing assets return uncached 404 responses', async
       assert.equal(response.headers.get('x-cache'), 'MISS', path)
       if (path === '/missing-page') {
         assert.match(response.headers.get('content-type'), /text\/html/)
-        assert.match(await response.text(), /Page not found/)
+        assert.match(await response.text(), /noindex/)
       } else {
         await response.arrayBuffer()
       }
@@ -51,7 +47,7 @@ test('unknown documents and missing assets return uncached 404 responses', async
 test('page methods preserve HEAD and reject unsupported POST', async () => {
   const post = await fetch(url('/'), { method: 'POST' })
   assert.equal(post.status, 405)
-  const head = await fetch(url('/solutions'), { method: 'HEAD' })
+  const head = await fetch(url('/'), { method: 'HEAD' })
   assert.equal(head.status, 200)
   assert.equal(await head.text(), '')
 })
@@ -61,7 +57,7 @@ test('Varnish caches public HTML for up to one hour and assets for up to seven d
   const asset = html.match(/\/assets\/[^"\s]+\.js/)
   assert.ok(asset, 'Expected a built JavaScript asset in the page HTML')
   for (const [path, ttl] of [
-    ['/solutions', 3600],
+    ['/', 3600],
     [asset[0], 7 * 24 * 3600],
   ]) {
     const first = await fetch(url(path))

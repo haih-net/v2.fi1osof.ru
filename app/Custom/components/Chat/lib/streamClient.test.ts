@@ -18,7 +18,10 @@ it('получает и сохраняет токен до сообщения, �
       expect(options?.headers).toMatchObject({
         Authorization: 'Bearer signed-token',
       })
-      expect(JSON.parse(options?.body as string)).toEqual({ message: 'Вопрос' })
+      expect(JSON.parse(options?.body as string)).toEqual({
+        message: 'Вопрос',
+        stream: true,
+      })
       return new Response('data: [DONE]\n\n', {
         headers: { 'Content-Type': 'text/event-stream' },
       })
@@ -104,3 +107,68 @@ it('sends the current page URL on every message after client-side navigation', a
     history.replaceState({}, '', originalUrl)
   }
 })
+
+it.each([true, false])(
+  'доставляет ответ и передаёт режим stream=%s',
+  async (stream) => {
+    localStorage.setItem(CHAT_TOKEN_STORAGE_KEY, 'signed-token')
+    const controller = new AbortController()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, options: RequestInit) => {
+        expect(JSON.parse(options.body as string)).toEqual({
+          message: 'Вопрос',
+          stream,
+        })
+        expect(new Headers(options.headers).get('Accept')).toBe(
+          stream ? 'text/event-stream' : 'application/json',
+        )
+        expect(options.signal).toBe(controller.signal)
+        return stream
+          ? new Response(
+              'data: {"choices":[{"delta":{"content":"Ответ"}}]}\n\ndata: [DONE]\n\n',
+              { headers: { 'Content-Type': 'text/event-stream' } },
+            )
+          : Response.json({
+              id: 'answer',
+              success: true,
+              content: 'Ответ',
+              usage: {},
+            })
+      }),
+    )
+    const callbacks = { onChunk: vi.fn(), onDone: vi.fn(), onError: vi.fn() }
+    await sendMessageStream(
+      'Вопрос',
+      'session',
+      callbacks,
+      controller.signal,
+      stream,
+    )
+    expect(callbacks.onChunk).toHaveBeenCalledExactlyOnceWith('Ответ')
+    expect(callbacks.onDone).toHaveBeenCalledOnce()
+    expect(callbacks.onError).not.toHaveBeenCalled()
+  },
+)
+
+it.each([true, false])(
+  'сообщает об ошибке ответа в режиме stream=%s',
+  async (stream) => {
+    localStorage.setItem(CHAT_TOKEN_STORAGE_KEY, 'signed-token')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        stream
+          ? new Response('data: {"error":{"message":"Ошибка"}}\n\n', {
+              headers: { 'Content-Type': 'text/event-stream' },
+            })
+          : Response.json({ success: false, error: 'Ошибка' }),
+      ),
+    )
+    const callbacks = { onChunk: vi.fn(), onDone: vi.fn(), onError: vi.fn() }
+    await sendMessageStream('Вопрос', 'session', callbacks, undefined, stream)
+    expect(callbacks.onChunk).not.toHaveBeenCalled()
+    expect(callbacks.onDone).not.toHaveBeenCalled()
+    expect(callbacks.onError).toHaveBeenCalledOnce()
+  },
+)

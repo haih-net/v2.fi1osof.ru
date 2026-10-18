@@ -23,7 +23,7 @@ export const DialogueCard: React.FC<DialogueCardProps> = ({ dialogue }) => {
     <article>
       <div className="dialogue-toolbar">
         <Link
-          to={`/admin/chat/dialogues/${dialogue.chatId}`}
+          to={`/admin-panel/chat/dialogues/${dialogue.chatId}`}
           title={`Открыть диалог: ${dialogue.chatId}`}
           aria-label={`Открыть диалог: ${dialogue.chatId}`}
         >

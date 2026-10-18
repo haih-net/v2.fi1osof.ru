@@ -249,17 +249,17 @@ a manual check with the real MetaMask extension.
 
 ## Tests
 
-| Command                          | Scope and prerequisites                                                                                                                       |
-| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm test`                       | All unit tests; no build, Docker or running server required.                                                                                  |
-| `npm run test:watch`             | Unit tests in watch mode.                                                                                                                     |
-| `npm run test:coverage`          | Unit coverage in the terminal and `coverage/`.                                                                                                |
-| `npm run test:integration`       | Builds the site, then checks generated SEO/SSR output, monitoring configuration generation and GraphQL metrics with isolated local listeners. |
-| `npm run test:integration:watch` | Watches integration tests; run `npm run build` first and rebuild after changing page/build inputs.                                            |
-| `npm run test:integration:stack` | HTTP/cache and monitoring checks against an already running production preview stack.                                                         |
-| `npm run e2e`                    | Playwright: Chromium, WebKit and mobile Chromium; builds and starts the production Node server automatically.                                 |
-| `npm run e2e:webkit`             | Only the WebKit browser project.                                                                                                              |
-| `npm run e2e:report`             | Opens the last Playwright HTML report.                                                                                                        |
+| Command                          | Scope and prerequisites                                                                                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm test`                       | All unit tests; no build, Docker or running server required.                                                                                                       |
+| `npm run test:watch`             | Unit tests in watch mode.                                                                                                                                          |
+| `npm run test:coverage`          | Unit coverage in the terminal and `coverage/`.                                                                                                                     |
+| `npm run test:integration`       | Builds the site, then checks generated SEO/SSR output, monitoring configuration generation, statistics delivery and GraphQL metrics with isolated local listeners. |
+| `npm run test:integration:watch` | Watches integration tests; run `npm run build` first and rebuild after changing page/build inputs.                                                                 |
+| `npm run test:integration:stack` | HTTP/cache and monitoring checks against an already running production preview stack.                                                                              |
+| `npm run e2e`                    | Playwright: Chromium, WebKit and mobile Chromium; builds and starts the production Node server automatically.                                                      |
+| `npm run e2e:webkit`             | Only the WebKit browser project.                                                                                                                                   |
+| `npm run e2e:report`             | Opens the last Playwright HTML report.                                                                                                                             |
 
 Install browser binaries once with `npx playwright install chromium webkit` (Linux hosts may also need `npx playwright install-deps chromium webkit`). Playwright owns port 4317 and fails if it is already occupied. To test an existing server or the real proxy/cache path, supply `PLAYWRIGHT_BASE_URL`; in that mode it does not build or start a server:
 
@@ -270,9 +270,46 @@ TEST_URL=http://haih.localhost MONITORING_TEST_URL=http://127.0.0.1:18080 GRAFAN
 
 Stack tests require the [monitoring preview](docker/monitoring/README.md), its provisioned Grafana password file, and a `TEST_URL` routed through Traefik and Varnish. They are kept separate from local integration tests because they require external infrastructure. The suite fails when that infrastructure is unavailable; it does not silently skip checks. Failure injection and notification fixtures remain explicit `test:monitoring:failure` and `test:monitoring:notifications` commands and are never part of automatic test discovery.
 
-Add unit tests under `tests/unit/`, or colocate `*.test.ts` / `*.test.tsx` in `app/` (`*.test.ts` in `server/`). Put local integration tests in `tests/integration/`, stack checks in `tests/stack/`, and browser `*.spec.ts` files in `tests/e2e/`. Each runner discovers its own suite. Unit tests currently use the Node environment; browser behavior belongs in Playwright. Configurations use CommonJS exports to avoid adding default exports. Coverage measures the configured SEO and server source scope; it is unit coverage, not combined integration/browser coverage.
+Add unit tests under `tests/unit/`, or colocate `*.test.ts` / `*.test.tsx` in `app/` (`*.test.ts` in `server/`). Put local integration tests in `tests/integration/`, stack checks in `tests/stack/`, and browser `*.spec.ts` files in `tests/e2e/`. Each runner discovers its own suite. The default test environment is Node; individual component tests can opt into jsdom. Browser scenarios run in Playwright. Configuration entry points use CommonJS exports, while the shared factory uses a named ESM export. Coverage measures the configured SEO and server source scope; it is unit coverage, not combined integration/browser coverage.
 
-Playwright checks hydration errors, same-document navigation, heading focus, metadata updates, browser history, deep-link refresh and 404 responses. Its default local server run does not prove Traefik/Varnish cache behavior or development HMR.
+### Shared Vitest configuration
+
+All three Vitest entry points call `createTestConfig` from `vitest.shared.mjs`.
+The factory loads `vite.config.ts` once per configuration and merges its aliases,
+plugins and compile-time definitions with the suite's test settings. Keep shared
+Vite resolution settings, including the `app` and `server` aliases, in
+`vite.config.ts`; TypeScript `paths` alone do not configure Vitest resolution.
+The React Router build plugin is disabled during Vitest runs by the existing
+`VITEST` guard in the Vite configuration.
+
+The factory owns the Node environment, in-memory SQLite default, mock restoration
+and default five-second test/hook timeouts. Entry points contain only suite-specific
+settings:
+
+- `vitest.config.cjs`: unit and colocated tests, plus coverage settings.
+- `vitest.integration.config.cjs`: local integration tests, with 15-second timeouts.
+- `vitest.stack.config.cjs`: infrastructure tests, with 90-second timeouts.
+
+Each entry point supplies its own complete `test.include` list. Suites do not
+inherit one another's discovery patterns or coverage settings. Add common runner
+settings to the factory instead of duplicating them in the entry points.
+
+To rerun local integration tests against an existing build:
+
+```bash
+npx vitest run -c vitest.integration.config.cjs
+```
+
+Rebuild first when application or build inputs change. Loading the stack
+configuration does not verify that the external preview infrastructure works.
+Paid search-provider checks remain separate: `npm run test:search:live` requires
+provider credentials and is not included in any of these Vitest suites.
+
+Playwright covers sign-in, chat administration, 404 responses and statistics
+collection/delivery, including SPA navigation and browser history. Tests use
+neutral fixtures or the current configuration rather than fixed site domains,
+branding, article titles or commit IDs. The default local server run does not
+prove Traefik/Varnish cache behavior or development HMR.
 
 ## Shared model client
 
@@ -282,10 +319,9 @@ All requests use the server-side `CHAT_API_BASE_URL` and `CHAT_API_KEY`. The URL
 
 ## Local database
 
-The server uses SQLite through Knex and better-sqlite3. Set the required
-`DATABASE_FILENAME` environment variable to the SQLite file path; missing or
-blank values cause startup to fail. For local development, set
-`DATABASE_FILENAME=server/database/data/database.sqlite` in `.env`. Relative
+The server uses SQLite through Knex and better-sqlite3. The optional
+`DATABASE_FILENAME` environment variable selects the SQLite file path. When unset
+or an empty string, it defaults to `server/database/data/database.sqlite`. Relative
 paths resolve from the working directory. The schema initializes on first use.
 Docker Compose passes `/app/server/database/data/database.sqlite` by default;
 set `DATABASE_FILENAME` in `docker/.env` to override it. Tests use `:memory:`. `DATABASE_URL` is no longer used. Data and SQLite journal files are
@@ -318,7 +354,7 @@ insert run in one immediate SQLite transaction, including for concurrent CLI run
 `--help` lists the options. The script uses Node.js 22.22.3+ and is also included
 in the production image (`npm run user:create-admin -- --username admin`).
 
-### Chat persistence and legacy import
+### Chat persistence
 
 Chat dialogues, messages (including tool logs, errors, token usage and page URLs),
 and the signing key now use the same SQLite database. The REST and GraphQL APIs
@@ -326,21 +362,3 @@ and guest token format are unchanged. Each appended message and its index data
 are stored in a single row; history is read in insertion order. Tool messages
 remain visible only in administrator history and are excluded from the message index.
 Unknown success status and missing usage counters remain distinct from false and zero.
-
-If an installation has legacy chat files, stop its server and run this command
-from the project directory **before starting the updated server for the first time**:
-
-```bash
-npm run chat:migrate -- /absolute/path/to/storage/chats
-```
-
-The command uses `DATABASE_FILENAME` and imports `messages.json` histories,
-directory creation times and `.signing-key` in one transaction. Keeping that key
-preserves existing guest tokens. The message index is rebuilt from JSON histories;
-`messages.csv` is retained as an archive and is not used as an import source.
-Rows without message IDs or timestamps remain in history but are not indexed.
-All original files are retained. A repeated import of the same directory is a no-op.
-Malformed histories or an already populated chat database cause import to fail;
-an existing different signing key is never overwritten. Other application tables
-may already contain data. For a fresh installation with no legacy chats, no import
-command is necessary.

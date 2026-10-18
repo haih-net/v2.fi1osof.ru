@@ -37,13 +37,13 @@ export function resolveUploadPath(path: string): string {
   const root = uploadRoot()
   const result = resolve(root, path)
   if (!result.startsWith(root + sep)) {
-    throw new Error('Invalid upload path')
+    throw new Error('Некорректный путь загрузки')
   }
   return result
 }
 export function requireUser(ctx: Context): UserRecord {
   if (!ctx.currentUser || ctx.currentUser.status === 'blocked') {
-    throw new GraphQLError('Unauthorized', {
+    throw new GraphQLError('Доступ запрещён', {
       extensions: { code: 'UNAUTHENTICATED' },
     })
   }
@@ -102,7 +102,7 @@ export async function findFile(
     ([, value]) => value !== null && value !== undefined,
   )
   if (conditions.length !== 1 || !conditions[0][1]) {
-    throw new GraphQLError('Provide exactly one file identifier')
+    throw new GraphQLError('Укажите ровно один идентификатор файла')
   }
   return (
     (await ctx
@@ -113,6 +113,7 @@ export async function findFile(
 }
 builder.queryField('file', (t) =>
   t.field({
+    authScopes: { sudo: true },
     type: FileType,
     nullable: true,
     args: { where: t.arg({ type: FileWhere, required: true }) },
@@ -121,6 +122,7 @@ builder.queryField('file', (t) =>
 )
 builder.mutationField('updateFile', (t) =>
   t.field({
+    authScopes: { active: true },
     type: FileType,
     nullable: false,
     args: {
@@ -131,10 +133,10 @@ builder.mutationField('updateFile', (t) =>
       const user = requireUser(ctx)
       const file = await findFile(ctx, args.where)
       if (!file) {
-        throw new GraphQLError('File not found')
+        throw new GraphQLError('Файл не найден')
       }
       if (file.createdById !== user.id && !user.sudo) {
-        throw new GraphQLError('Can not edit alien file')
+        throw new GraphQLError('Нельзя редактировать чужой файл')
       }
       const [updated] = await ctx
         .dbOld<FileRecord>('File')
@@ -147,13 +149,14 @@ builder.mutationField('updateFile', (t) =>
 )
 builder.mutationField('singleUpload', (t) =>
   t.field({
+    authScopes: { active: true },
     type: FileType,
     nullable: false,
     args: { data: t.arg({ type: SingleUpload, required: true }) },
     resolve: async (_, args, ctx) => {
       const user = requireUser(ctx)
       if (user.status !== 'active') {
-        throw new GraphQLError('Active account required')
+        throw new GraphQLError('Требуется активная учётная запись')
       }
       const upload = await (args.data.file as Promise<UploadValue>)
       const directory = args.data.directory || ''
@@ -162,7 +165,7 @@ builder.mutationField('singleUpload', (t) =>
         directory.startsWith('/') ||
         directory.includes('\\')
       ) {
-        throw new GraphQLError('Wrong directory')
+        throw new GraphQLError('Некорректный каталог')
       }
       const relative = `${user.id}/${directory ? directory + '/' : ''}${randomUUID()}-${basename(upload.filename)}`
       const target = resolveUploadPath(relative)
@@ -214,7 +217,7 @@ builder.mutationField('singleUpload', (t) =>
           .where('hash', digest)
           .first()
         if (!duplicate) {
-          throw new Error('Upload could not be saved')
+          throw new Error('Не удалось сохранить файл')
         }
         await rm(target)
         return duplicate

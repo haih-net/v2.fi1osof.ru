@@ -58,7 +58,7 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
 
     if (user?.sudo === true) {
       links.push(
-        <NavLink key={'admin'} to={localized('/' + 'admin', locale)}>
+        <NavLink key={'admin'} to={localized('/admin-panel', locale)}>
           Admin
         </NavLink>,
       )

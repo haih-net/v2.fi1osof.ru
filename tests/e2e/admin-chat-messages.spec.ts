@@ -70,7 +70,7 @@ for (const sudo of [false, true]) {
       }
       await route.fulfill({ json: { data } })
     })
-    const response = await page.goto('/admin')
+    const response = await page.goto('/admin-panel')
     expect(response?.status()).toBe(200)
     if (!sudo) {
       await expect(
@@ -100,7 +100,7 @@ for (const sudo of [false, true]) {
     await expect(adminLink).toBeVisible()
     await adminLink.click()
     await page.getByRole('link', { name: /Сообщения чата/ }).click()
-    await expect(page).toHaveURL(/\/admin\/chat\/messages$/)
+    await expect(page).toHaveURL(/\/admin-panel\/chat\/messages$/)
     await expect(page.locator('tbody tr')).toHaveCount(20)
     await expect(
       page.locator('tbody tr').first().getByText('Ошибка', { exact: true }),
@@ -122,7 +122,7 @@ for (const sudo of [false, true]) {
     expect(details).toHaveLength(21)
     await page.getByRole('link', { name: 'Открыть диалог' }).click()
     await expect(page).toHaveURL(
-      new RegExp(`/admin/chat/dialogues/${'a'.repeat(48)}$`),
+      new RegExp(`/admin-panel/chat/dialogues/${'a'.repeat(48)}$`),
     )
     await expect(page.getByText('Полный диалог', { exact: true })).toBeVisible()
     await expect(
@@ -134,6 +134,6 @@ for (const sudo of [false, true]) {
     await page.reload()
     await expect(page.getByText('Полный диалог', { exact: true })).toBeVisible()
     await page.getByRole('link', { name: '← Сообщения чата' }).click()
-    await expect(page).toHaveURL(/\/admin\/chat\/messages$/)
+    await expect(page).toHaveURL(/\/admin-panel\/chat\/messages$/)
   })
 }

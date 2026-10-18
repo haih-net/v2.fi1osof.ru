@@ -14,6 +14,7 @@ import type { UserRecord } from '../interfaces'
 
 builder.mutationField('updateCurrentUser', (t) =>
   t.field({
+    authScopes: { active: true },
     type: User,
     nullable: true,
     args: { data: t.arg({ type: CurrentUserUpdateInput, required: true }) },
@@ -51,6 +52,7 @@ builder.mutationField('updateCurrentUser', (t) =>
 )
 builder.mutationField('updateUser', (t) =>
   t.field({
+    authScopes: { active: true },
     type: User,
     nullable: true,
     args: {

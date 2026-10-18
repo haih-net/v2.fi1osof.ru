@@ -14,6 +14,7 @@ export async function sendMessageStream(
   _sessionId: string,
   callbacks: StreamCallbacks,
   abortSignal?: AbortSignal,
+  stream = true,
 ): Promise<void> {
   try {
     const pageUrl = window.location.href
@@ -22,11 +23,11 @@ export async function sendMessageStream(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
+        Accept: stream ? 'text/event-stream' : 'application/json',
         Authorization: `Bearer ${token}`,
         'X-Chat-Page-Url': pageUrl,
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, stream }),
       signal: abortSignal,
     })
     if (response.status === 401) {
@@ -40,6 +41,25 @@ export async function sendMessageStream(
             ? 'Помощник пока не настроен.'
             : `Не удалось получить ответ (HTTP ${response.status})`,
       )
+    }
+    if (!stream) {
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error('Сервер не вернул JSON-ответ')
+      }
+      const result: unknown = await response.json()
+      if (
+        !result ||
+        typeof result !== 'object' ||
+        !('success' in result) ||
+        result.success !== true ||
+        !('content' in result) ||
+        typeof result.content !== 'string'
+      ) {
+        throw new Error('Некорректный ответ сервера')
+      }
+      callbacks.onChunk(result.content)
+      callbacks.onDone()
+      return
     }
     if (
       !response.body ||

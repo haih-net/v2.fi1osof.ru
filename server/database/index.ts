@@ -32,6 +32,7 @@ function restoreTypes(result: unknown): unknown {
 export function createDatabase(): Knex {
   const filename =
     process.env.DATABASE_FILENAME || 'server/database/data/database.sqlite'
+
   if (filename !== ':memory:') {
     mkdirSync(dirname(filename), { recursive: true })
   }

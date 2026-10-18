@@ -2,6 +2,8 @@ import type { ChatSkill } from './types'
 
 const skills: readonly ChatSkill[] = []
 
+export const hasSkills: boolean = skills.length > 0
+
 export const skillSummaries: string = skills
   .map(({ id, description }) => `- ${id}: ${description}`)
   .join(`\n`)

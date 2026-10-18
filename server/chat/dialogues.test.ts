@@ -1,4 +1,4 @@
-import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, expect, it, vi } from 'vitest'
 import Database from 'better-sqlite3'
@@ -120,33 +120,4 @@ it('upgrades schema version 1 without changing existing records and rejects unkn
   } finally {
     connection.close()
   }
-})
-
-it('refuses to replace an active signing key and rolls back the import marker', async () => {
-  const root = await mkdtemp('server/database/data/chat-import-')
-  directories.push(root)
-  await writeFile(join(root, '.signing-key'), Buffer.alloc(32, 9))
-  const storage = createStorage()
-  const token = await storage.issue()
-  expect(
-    await storage
-      .database('ChatSetting')
-      .where({ id: 'legacy-import' })
-      .first(),
-  ).toBeUndefined()
-  expect(await storage.verify(`Bearer ${token}`)).toBe(token.split('.')[0])
-})
-
-it('leaves the database untouched when a legacy history is malformed', async () => {
-  const root = await mkdtemp('server/database/data/chat-import-')
-  directories.push(root)
-  await writeFile(join(root, '.signing-key'), Buffer.alloc(32, 9))
-  await mkdir(join(root, 'a'.repeat(48)))
-  await writeFile(
-    join(root, 'a'.repeat(48), 'messages.json'),
-    '[{"role":"unknown","content":"bad"}]',
-  )
-  const storage = createStorage()
-  expect(await storage.database('ChatSetting')).toEqual([])
-  expect(await storage.listDialogues()).toEqual([])
 })

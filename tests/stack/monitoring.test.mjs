@@ -5,6 +5,16 @@ import { readFile } from 'node:fs/promises'
 import { test } from 'vitest'
 
 const base = process.env.MONITORING_TEST_URL ?? 'http://127.0.0.1:18080'
+const sites = JSON.parse(
+  await readFile(
+    new URL('../../docker/monitoring/sites.json', import.meta.url),
+    'utf8',
+  ),
+)
+const monitoredSite =
+  sites.find((entry) => entry.site === process.env.MONITORING_TEST_SITE) ??
+  sites[0]
+const siteLabel = JSON.stringify(monitoredSite.site)
 const grafana = process.env.GRAFANA_TEST_URL ?? 'http://127.0.0.1:13000'
 const password = (
   await readFile(
@@ -52,8 +62,8 @@ test('sources, site probes, requests, logs and provisioned dashboard work', asyn
       .versionInfo,
   )
   for (let i = 0; i < 25; i++) {
-    const r = await fetch(base + '/solutions', {
-      headers: { Host: 'haih.site' },
+    const r = await fetch(base + '/', {
+      headers: { Host: monitoredSite.site },
     })
     assert.equal(r.status, 200)
     await r.text()
@@ -63,7 +73,7 @@ test('sources, site probes, requests, logs and provisioned dashboard work', asyn
     base + '/' + marker + '?token=DO_NOT_STORE_QUERY',
     {
       headers: {
-        Host: 'haih.site',
+        Host: monitoredSite.site,
         Authorization: 'Bearer DO_NOT_STORE_HEADER',
       },
     },
@@ -72,7 +82,7 @@ test('sources, site probes, requests, logs and provisioned dashboard work', asyn
   await missing.text()
   const invalid = await fetch(base + '/api', {
     method: 'POST',
-    headers: { Host: 'haih.site', 'Content-Type': 'application/json' },
+    headers: { Host: monitoredSite.site, 'Content-Type': 'application/json' },
     body: JSON.stringify({ query: '{ nonExistentField }' }),
   })
   assert.ok((await invalid.json()).errors.length)
@@ -83,19 +93,19 @@ test('sources, site probes, requests, logs and provisioned dashboard work', asyn
       targets.every((v) => v.value[1] === '1'),
       JSON.stringify(targets),
     )
-    const probes = await query('probe_success{site="haih.site"}')
-    assert.equal(probes.length, 2)
+    const probes = await query(`probe_success{site=${siteLabel}}`)
+    assert.equal(probes.length, monitoredSite.checks.length)
     assert.ok(probes.every((v) => v.value[1] === '1'))
     const requests = await query(
-      'sum(traefik_router_requests_total{site="haih.site"})',
+      `sum(traefik_router_requests_total{site=${siteLabel}})`,
     )
     assert.ok(Number(requests[0].value[1]) >= 25)
     const errors = await query(
-      'haih_graphql_errors_total{kind="client",site="haih.site"}',
+      `haih_graphql_errors_total{kind="client",site=${siteLabel}}`,
     )
     assert.ok(Number(errors[0].value[1]) >= 1)
     const bytes = await query(
-      'sum(traefik_router_responses_bytes_total{site="haih.site"})',
+      `sum(traefik_router_responses_bytes_total{site=${siteLabel}})`,
     )
     assert.ok(Number(bytes[0].value[1]) > 0)
     const logQuery = '{service="traefik"} |= "' + marker + '"'
@@ -110,7 +120,7 @@ test('sources, site probes, requests, logs and provisioned dashboard work', asyn
     assert.ok(!text.includes('DO_NOT_STORE_HEADER'))
   })
   const metrics = await fetch(base + '/metrics', {
-    headers: { Host: 'haih.site' },
+    headers: { Host: monitoredSite.site },
   })
   assert.equal(
     metrics.status,
