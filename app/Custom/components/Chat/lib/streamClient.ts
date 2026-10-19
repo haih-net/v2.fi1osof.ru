@@ -1,3 +1,6 @@
+import { chatErrorMessage, readChatError } from './errors'
+import { initializeApollo } from 'app/gql/apolloClient'
+import { CreateChatTokenDocument } from 'app/gql/generated'
 import { readCompletionStream } from './completionStream'
 
 export type StreamCallbacks = {
@@ -34,13 +37,7 @@ export async function sendMessageStream(
       localStorage.removeItem(CHAT_TOKEN_STORAGE_KEY)
     }
     if (!response.ok) {
-      throw new Error(
-        response.status === 429
-          ? 'Слишком много запросов. Попробуйте немного позже.'
-          : response.status === 503
-            ? 'Помощник пока не настроен.'
-            : `Не удалось получить ответ (HTTP ${response.status})`,
-      )
+      throw new Error(await readChatError(response))
     }
     if (!stream) {
       if (!response.headers.get('content-type')?.includes('application/json')) {
@@ -55,7 +52,7 @@ export async function sendMessageStream(
         !('content' in result) ||
         typeof result.content !== 'string'
       ) {
-        throw new Error('Некорректный ответ сервера')
+        throw new Error(chatErrorMessage(result, 'Некорректный ответ сервера'))
       }
       callbacks.onChunk(result.content)
       callbacks.onDone()
@@ -83,23 +80,12 @@ const getChatToken = async (signal?: AbortSignal): Promise<string> => {
   if (existing) {
     return existing
   }
-  const response = await fetch('/api', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      query: 'mutation CreateChatToken { createChatToken }',
-    }),
-    signal,
+  const result = await initializeApollo({ withWs: false }).mutate({
+    mutation: CreateChatTokenDocument,
+    context: { fetchOptions: { signal } },
   })
-  if (!response.ok) {
-    throw new Error('Не удалось создать чат')
-  }
-  const result = (await response.json()) as {
-    data?: { createChatToken?: unknown } | null
-    errors?: unknown[]
-  }
   const token = result?.data?.createChatToken
-  if (result?.errors?.length || typeof token !== 'string' || !token) {
+  if (typeof token !== 'string' || !token) {
     throw new Error('Сервер не вернул токен чата')
   }
   localStorage.setItem(CHAT_TOKEN_STORAGE_KEY, token)

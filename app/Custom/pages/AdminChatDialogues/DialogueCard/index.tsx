@@ -22,6 +22,9 @@ export const DialogueCard: React.FC<DialogueCardProps> = ({ dialogue }) => {
   return (
     <article>
       <div className="dialogue-toolbar">
+        <span>
+          {dialogue.channel === 'feedback' ? 'Форма обратной связи' : 'ИИ-чат'}
+        </span>
         <Link
           to={`/admin-panel/chat/dialogues/${dialogue.chatId}`}
           title={`Открыть диалог: ${dialogue.chatId}`}

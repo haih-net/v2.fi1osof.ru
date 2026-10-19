@@ -21,6 +21,7 @@ fragment ChatMessageIndex_ on ChatMessageIndex {
 
 query chatDialogues {
   chatDialogues {
+    channel
     chatId
     createdAt
   }

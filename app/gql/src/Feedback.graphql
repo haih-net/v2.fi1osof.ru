@@ -1,0 +1,7 @@
+mutation createFeedbackToken {
+  createChatToken(data: { channel: feedback })
+}
+
+mutation submitFeedback($data: ChatMessageSubmitFeedbackDataInput!) {
+  submitFeedback(data: $data)
+}

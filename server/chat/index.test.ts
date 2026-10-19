@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module'
+import { schema } from '../schema'
 import express from 'express'
 import { createServer, type Server } from 'node:http'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -6,6 +8,12 @@ import { ChatStorage } from './storage'
 import { createDatabase } from '../database'
 import type { Knex } from 'knex'
 import { readCompletionStream } from '../../app/Custom/components/Chat/lib/completionStream'
+
+vi.mock('./skills/registry', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./skills/registry')>()),
+  hasSkills: false,
+  skillSummaries: '',
+}))
 
 const servers: Server[] = []
 const databases: Knex[] = []
@@ -210,7 +218,12 @@ it('выдаёт токен и отклоняет отсутствующую и�
   expect(
     await new ChatStorage(storage.database).verify(`Bearer ${data.token}`),
   ).toBe(data.token.split('.')[0])
-  for (const authorization of ['', `Bearer ${data.token.slice(0, -1)}x`]) {
+  for (const authorization of [
+    '',
+    'Bearer',
+    'Bearer   ',
+    `Bearer ${data.token.slice(0, -1)}x`,
+  ]) {
     const response = await fetch(`${base}/api/chat`, {
       method: 'POST',
       headers: {
@@ -220,6 +233,11 @@ it('выдаёт токен и отклоняет отсутствующую и�
       body: JSON.stringify({ message: 'Вопрос' }),
     })
     expect(response.status).toBe(401)
+    expect(await response.json()).toEqual({
+      error: authorization.includes(data.token.slice(0, -1))
+        ? 'Недействительный токен чата'
+        : 'Не был получен токен',
+    })
   }
 })
 
@@ -334,7 +352,7 @@ it.each(['development', 'production'])(
       })
       expect(response.status).toBe(502)
       expect(await response.json()).toMatchObject({
-        error: 'Провайдер не вернул потоковый ответ',
+        error: 'Insufficient credits',
         success: false,
         id: expect.any(String),
       })
@@ -392,6 +410,7 @@ it('пишет исходную ошибку хранилища со стеко�
       }),
       failure,
     )
+    expect(await response.json()).toMatchObject({ error: failure.message })
     expect(failure.stack).toContain('EACCES')
   } finally {
     read.mockRestore()
@@ -569,6 +588,17 @@ it.each([true, false])(
       stream ? 'text/event-stream' : 'application/json',
     )
     if (stream) {
+      expect(output).toContain(
+        JSON.stringify({
+          id: (await storage.read(token.split('.')[0])).at(-1)?.id,
+          usage: {
+            prompt_tokens: 300,
+            prompt_tokens_details: { cached_tokens: 120 },
+            completion_tokens: 30,
+          },
+          choices: [],
+        }),
+      )
       expect(output).toContain('[DONE]')
     } else {
       expect(JSON.parse(output)).toEqual({
@@ -940,3 +970,27 @@ it('отклоняет неboolean режим до записи истории',
   expect(response.status).toBe(400)
   expect(await storage.read(token.split('.')[0])).toEqual([])
 })
+
+it.each(['', '   ', 'invalid-token'])(
+  'возвращает ошибку токена %j через настоящий HTTP-запрос GraphQL-прокси к чату',
+  async (token) => {
+    const base = await configure()
+    const { graphql } = createRequire(import.meta.url)(
+      'graphql',
+    ) as typeof import('graphql')
+    const result = await graphql({
+      schema,
+      source:
+        'mutation($data: ChatMessageSendDataInput!) { sendChatMessage(data: $data) { content } }',
+      variableValues: { data: { token, message: 'Привет' } },
+      contextValue: {
+        currentUser: null,
+        req: { socket: { localPort: Number(new URL(base).port) } },
+      },
+    })
+    expect(result.data).toBeNull()
+    expect(result.errors?.[0].message).toBe(
+      token.trim() ? 'Недействительный токен чата' : 'Не был получен токен',
+    )
+  },
+)

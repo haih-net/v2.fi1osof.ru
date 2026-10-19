@@ -1,6 +1,7 @@
 import type { ChatSkill } from './types'
+import { servicesSkill } from './services'
 
-const skills: readonly ChatSkill[] = []
+const skills: readonly ChatSkill[] = [servicesSkill]
 
 export const hasSkills: boolean = skills.length > 0
 

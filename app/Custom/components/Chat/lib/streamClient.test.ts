@@ -8,10 +8,10 @@ afterEach(() => vi.unstubAllGlobals())
 it('получает и сохраняет токен до сообщения, затем повторно использует его', async () => {
   const fetchMock = vi.fn(
     async (url: string, options?: RequestInit): Promise<Response> => {
-      if (url === '/api') {
-        expect(JSON.parse(options?.body as string)).toEqual({
-          query: 'mutation CreateChatToken { createChatToken }',
-        })
+      if (new URL(url, window.location.origin).pathname === '/api/') {
+        expect(JSON.parse(options?.body as string).operationName).toBe(
+          'CreateChatToken',
+        )
         return Response.json({ data: { createChatToken: 'signed-token' } })
       }
       expect(localStorage.getItem(CHAT_TOKEN_STORAGE_KEY)).toBe('signed-token')
@@ -32,7 +32,7 @@ it('получает и сохраняет токен до сообщения, �
   await sendMessageStream('Вопрос', 'statistics-session', callbacks)
   await sendMessageStream('Вопрос', 'statistics-session', callbacks)
   expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
-    '/api',
+    `${window.location.origin}/api/`,
     '/api/chat',
     '/api/chat',
   ])
@@ -170,5 +170,25 @@ it.each([true, false])(
     expect(callbacks.onChunk).not.toHaveBeenCalled()
     expect(callbacks.onDone).not.toHaveBeenCalled()
     expect(callbacks.onError).toHaveBeenCalledOnce()
+  },
+)
+
+it.each([false, true])(
+  'показывает исходную ошибку чата, поток: %s',
+  async (stream) => {
+    localStorage.setItem(CHAT_TOKEN_STORAGE_KEY, 'signed-token')
+    const message = 'Недействительный токен чата'
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(Response.json({ error: message }, { status: 401 })),
+    )
+    const callbacks = { onChunk: vi.fn(), onDone: vi.fn(), onError: vi.fn() }
+    await sendMessageStream('Вопрос', 'session', callbacks, undefined, stream)
+    expect(callbacks.onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message }),
+    )
+    expect(callbacks.onDone).not.toHaveBeenCalled()
   },
 )

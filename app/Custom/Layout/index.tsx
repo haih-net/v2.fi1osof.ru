@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react'
 import { useLocation, useNavigationType } from 'react-router'
 import { ChatProvider } from '../components/Chat/ChatWidget/context'
 import { ChatWidget } from '../components/Chat/ChatWidget'
+import { FeedbackForm } from '../components/Feedback'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { CustomLayoutMainStyled, CustomLayoutStyled } from './styles'
@@ -32,6 +33,7 @@ export const Layout: React.FC<React.PropsWithChildren> = ({ children }) => {
           {children}
         </CustomLayoutMainStyled>
         <Footer />
+        <FeedbackForm />
         {location.pathname !== '/ai' && <ChatWidget />}
       </CustomLayoutStyled>
     </ChatProvider>

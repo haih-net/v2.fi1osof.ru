@@ -362,3 +362,31 @@ and guest token format are unchanged. Each appended message and its index data
 are stored in a single row; history is read in insertion order. Tool messages
 remain visible only in administrator history and are excluded from the message index.
 Unknown success status and missing usage counters remain distinct from false and zero.
+
+## Server-side feedback form
+
+The `submitFeedback(data: { token, contacts, message })` mutation is defined in `server/schema/types/ChatMessage/resolvers/submitFeedback.ts`. Message processing and SMTP delivery are implemented in `server/schema/types/ChatMessage/helpers/feedback.ts`, without app dependencies. Contacts are accepted as free text. The client requests a dialogue token immediately before submission, after a five-second delay from opening the form.
+
+Email uses the shared `MAIL_FROM`, `MAIL_TO`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_REQUIRE_TLS` settings from `docker/.env.example`. If `MAIL_TO` is not set, notifications go to `MAIL_FROM`. The shared `sendEmail` function in `ChatMessage/helpers/sendEmail.ts` accepts the recipient, subject, and text. Without `SMTP_HOST`, it uses the recipient's MX records. Disable required TLS for local MailHog. The `FEEDBACK_*` variables are no longer needed. The site address comes from Origin, falling back to the request protocol and Host, and is used only in the notification text.
+
+Form success means the message was saved in the dialogue. Email notification starts after saving and does not delay the visitor's response. Missing email configuration and SMTP errors are logged on the server but do not turn an accepted submission into a failure. Delivery has no queue or automatic retries; stopping the process can interrupt it, while the saved dialogue remains available in the admin panel. Retrying with the same token creates neither another message nor another notification, including after a process restart.
+
+Tokens are signed with the chat key; dialogues are stored in SQLite. Rate limits are kept in process memory and apply to the connection address. Behind a proxy, visitors may share these limits: the service does not trust arbitrary X-Forwarded-For values.
+
+### Feedback dialogues
+
+The existing `AppContext` controls opening the form through `isFeedbackOpen`, `openFeedback`, and `closeFeedback`. `FeedbackForm` is rendered in Layout; fields, timing, and submission remain inside the form. On opening, `useEffect` records the opening time in component state. Before five seconds have elapsed, submission shows an alert with the remaining time without calling the API. After five seconds, the form obtains `createChatToken(data: { channel: feedback })` and immediately calls `submitFeedback`. Retries within the same open form reuse the token. This is a simple client-side delay; the server still validates the token signature, channel, and submission rate.
+
+A dialogue has a `chat` or `feedback` channel, exposed in the API and admin card. SQLite migration version 3 assigns `chat` to existing dialogues while preserving history. The form message and contacts are saved as a `user` message without an agent reply before email delivery. SMTP failure does not delete the message; retries with the same token do not duplicate it. Dialogue tokens do not expire, matching existing chat tokens. The separate `prepareFeedback` mutation is no longer used.
+
+## Error propagation contract
+
+At every server stage, failures must have readable, actionable messages. Raise failures with `throw new Error(message)` and preserve the original error message across HTTP, streaming, and GraphQL boundaries. GraphQL must expose it in `errors[].message`; do not replace an available server explanation with a generic HTTP status or an unspecified internal error. Keep existing diagnostic logs and error causes.
+
+Domain validation belongs to the service that owns the operation. The GraphQL chat proxy forwards inputs accepted by the GraphQL schema without adding token or message validation. `/api/chat` validates the required token regardless of the caller and distinguishes a missing or blank token from an invalid token. The browser obtains a token automatically through `createChatToken` before sending its first message; GraphQL callers must obtain and supply it themselves. A required GraphQL `String!` rejects omitted or null values but permits an empty string, which the chat service must reject.
+
+The proxy must preserve errors returned before streaming as well as errors carried inside the stream. Interrupted streams must fail instead of returning a successful partial response. Use a transport-specific fallback only when no readable server message is available. Tests must verify the messages received by callers, including missing, blank, and invalid chat tokens and HTTP/stream failures.
+
+README documentation must be written in English.
+
+Transport errors raised before the chat returns an HTTP response (such as invalid header characters or a connection failure) are logged in full on the server. The GraphQL caller receives a readable general request error instead of low-level fetch details. Keep the chat token in the Authorization header, not in the JSON request body. Errors returned by the chat itself retain their original messages.

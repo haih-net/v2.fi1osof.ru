@@ -25,7 +25,12 @@ export const ChatDialogue = builder
   .objectRef<DialogueIndex>('ChatDialogue')
   .implement({
     fields: (t) => ({
+      channel: t.exposeString('channel', { nullable: false }),
       chatId: t.exposeString('chatId', { nullable: false }),
       createdAt: t.exposeString('createdAt', { nullable: false }),
     }),
   })
+
+export const DialogueChannel = builder.enumType('DialogueChannel', {
+  values: ['chat', 'feedback'] as const,
+})

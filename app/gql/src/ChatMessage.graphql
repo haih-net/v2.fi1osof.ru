@@ -28,3 +28,20 @@ fragment ChatMessageNoNesting on ChatMessage {
 fragment ChatMessage_ on ChatMessage {
   ...ChatMessageNoNesting
 }
+
+mutation CreateChatToken {
+  createChatToken(data: {})
+}
+
+mutation SendChatMessage($data: ChatMessageSendDataInput!) {
+  sendChatMessage(data: $data) {
+    id
+    success
+    content
+    usage {
+      inputTokens
+      cachedTokens
+      outputTokens
+    }
+  }
+}

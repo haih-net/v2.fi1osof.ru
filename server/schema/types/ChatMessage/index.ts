@@ -1,3 +1,5 @@
 import './types'
 import './resolvers/queries'
 import './resolvers/createChatToken'
+import './resolvers/submitFeedback'
+import './resolvers/sendChatMessage'

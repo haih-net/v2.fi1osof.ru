@@ -1,0 +1,5 @@
+mutation LogStats($data: Json!) {
+  logStats(data: $data) {
+    id
+  }
+}

@@ -110,7 +110,7 @@ it('upgrades schema version 1 without changing existing records and rejects unkn
     )
     initializeSchema(connection)
     initializeSchema(connection)
-    expect(connection.pragma('user_version', { simple: true })).toBe(2)
+    expect(connection.pragma('user_version', { simple: true })).toBe(3)
     expect(connection.prepare('SELECT id FROM User').all()).toEqual([
       { id: 'existing' },
     ])

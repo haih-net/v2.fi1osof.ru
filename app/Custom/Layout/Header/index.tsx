@@ -11,8 +11,12 @@ export const Header: React.FC = () => {
   const toggle = useRef<HTMLButtonElement>(null)
   const header = useRef<HTMLElement>(null)
   const location = useLocation()
-  const { user, userLoading } = useAppContext()
+  const { user, userLoading, openFeedback } = useAppContext()
 
+  const handleFeedback = useCallback(() => {
+    openFeedback()
+    setIsOpen(false)
+  }, [openFeedback])
   const openChat = useOpenChatWithMessage()
   const handleOpenChat = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -118,6 +122,9 @@ export const Header: React.FC = () => {
               Админка
             </Link>
           )}
+          <button type="button" className="ai-button" onClick={handleFeedback}>
+            Написать
+          </button>
           {location.pathname === '/ai' ? (
             <Link to="/ai" className="ai-button" onClick={closeMenu}>
               Спросить ИИ <span aria-hidden="true">↗</span>

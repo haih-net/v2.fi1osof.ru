@@ -3,12 +3,14 @@ import { Link } from 'react-router'
 import { ArrowUpRight, Send } from 'lucide-react'
 import { useChatContext } from '../../../components/Chat/ChatWidget/context'
 import { MainPageViewStyled } from './styles'
+import { useAppContext } from '../../../hooks/useAppContext'
 import portrait from './assets/portrait.webp'
 import technologies from './assets/technologies.webp'
 import projectBefore from './assets/project-before.webp'
 import projectAfter from './assets/project-after.webp'
 
 export const MainPageView: React.FC = () => {
+  const { openFeedback } = useAppContext()
   const chat = useChatContext()
   const { setIsOpen } = chat
   const openChat = useCallback((): void => setIsOpen(true), [setIsOpen])
@@ -41,14 +43,13 @@ export const MainPageView: React.FC = () => {
             задание. Иногда полезнее начать с разговора.
           </p>
           <div className="actions">
-            <a
+            <button
               className="primary-action"
-              href="https://t.me/Fi1osof"
-              target="_blank"
-              rel="noreferrer"
+              type="button"
+              onClick={openFeedback}
             >
               Обсудить вашу задачу
-            </a>
+            </button>
             <button className="text-action" onClick={openChat} type="button">
               Пообщаться с моим ИИ <span aria-hidden="true">→</span>
             </button>
@@ -114,14 +115,9 @@ export const MainPageView: React.FC = () => {
               дальше действовать осознанно.
             </p>
           </div>
-          <a
-            className="text-action"
-            href="https://t.me/Fi1osof"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <button className="text-action" type="button" onClick={openFeedback}>
             Обсудить вопрос <span aria-hidden="true">→</span>
-          </a>
+          </button>
         </div>
         <div className="service-row">
           <h3>ИИ-интегратор</h3>
@@ -137,14 +133,9 @@ export const MainPageView: React.FC = () => {
               память или интеграция с вашей системой.
             </p>
           </div>
-          <a
-            className="text-action"
-            href="https://t.me/Fi1osof"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <button className="text-action" type="button" onClick={openFeedback}>
             Рассказать о процессе <span aria-hidden="true">→</span>
-          </a>
+          </button>
         </div>
         <div className="service-row">
           <h3>Полное сопровождение бизнеса в интернете</h3>
@@ -161,14 +152,9 @@ export const MainPageView: React.FC = () => {
               процессы.
             </p>
           </div>
-          <a
-            className="text-action"
-            href="https://t.me/Fi1osof"
-            target="_blank"
-            rel="noreferrer"
-          >
+          <button className="text-action" type="button" onClick={openFeedback}>
             Показать ваш проект <span aria-hidden="true">→</span>
-          </a>
+          </button>
         </div>
       </section>
 
@@ -196,7 +182,7 @@ export const MainPageView: React.FC = () => {
                 height={44}
                 loading="lazy"
               />
-              <strong>ИИ-помощник Николая</strong>
+              <strong>Мой ИИ-помощник</strong>
             </div>
             <p className="chat-greeting">
               Здравствуйте! Что вы хотели бы обсудить?

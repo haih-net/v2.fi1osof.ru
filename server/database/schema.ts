@@ -4,10 +4,10 @@ export function initializeSchema(connection: Database): void {
   connection
     .transaction(() => {
       const version = connection.pragma('user_version', { simple: true })
-      if (version === 2) {
+      if (version === 3) {
         return
       }
-      if (version !== 0 && version !== 1) {
+      if (version !== 0 && version !== 1 && version !== 2) {
         throw new Error('Unsupported database schema version')
       }
       if (version === 0) {
@@ -90,7 +90,8 @@ export function initializeSchema(connection: Database): void {
       PRAGMA user_version = 1;
     `)
       }
-      connection.exec(`
+      if (version !== 2) {
+        connection.exec(`
         CREATE TABLE "ChatSetting" (
           id TEXT PRIMARY KEY NOT NULL,
           value TEXT NOT NULL
@@ -112,6 +113,11 @@ export function initializeSchema(connection: Database): void {
         CREATE INDEX ChatMessage_id ON "ChatMessage"(chatId, id);
         CREATE INDEX ChatMessage_indexed ON "ChatMessage"(indexed, sequence);
         PRAGMA user_version = 2;
+      `)
+      }
+      connection.exec(`
+        ALTER TABLE "ChatDialogue" ADD COLUMN channel TEXT NOT NULL DEFAULT 'chat' CHECK (channel IN ('chat', 'feedback'));
+        PRAGMA user_version = 3;
       `)
     })
     .immediate()

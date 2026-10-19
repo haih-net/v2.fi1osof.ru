@@ -56,6 +56,9 @@ export const MainPageViewStyled = styled.div`
     margin-top: 24px;
   }
   .primary-action {
+    border: 0;
+    font-family: inherit;
+    cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;

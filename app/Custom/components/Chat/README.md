@@ -1,77 +1,77 @@
-# Чат
+# Chat
 
-Страница `/ai` выводит `ChatContent`; остальные страницы показывают плавающий виджет. Общий `ChatProvider` сохраняет диалог при переходах внутри сайта. После перезагрузки отображаемая переписка очищается, но серверный контекст сохраняется и используется при следующем сообщении с тем же токеном.
+The `/ai` page renders `ChatContent`; other pages show a floating widget. The shared `ChatProvider` preserves the dialogue during site navigation. Reloading clears the displayed conversation, but server context remains available for the next message with the same token.
 
-Перед первым сообщением браузер получает подписанный токен через мутацию `createChatToken` GraphQL API (`POST /api`) и сохраняет его в `localStorage` (`chat_access_token`). В `POST /api/chat` передаются `{ message }`, заголовок `Authorization: Bearer <token>` и URL страницы в `X-Chat-Page-Url`. Без корректной подписи сервер отвечает 401; браузер удаляет отвергнутый токен, следующая отправка создаёт новый чат.
+Before the first message, the browser obtains a signed token through the GraphQL `createChatToken` mutation (`POST /api`) and stores it in `localStorage` (`chat_access_token`). `POST /api/chat` receives `{ message }`, `Authorization: Bearer <token>`, and the page URL in `X-Chat-Page-Url`. The chat service rejects missing, blank, or invalid tokens with a readable 401 error. The browser removes rejected tokens; the next submission creates a new chat.
 
-Express обращается к API, совместимому с Chat Completions, и передаёт текст через SSE. Отмена в браузере отменяет запрос к провайдеру. Оборванный поток без `[DONE]` считается ошибкой.
+Express calls a Chat Completions-compatible API and delivers text through SSE. Browser cancellation cancels the provider request. A stream interrupted before `[DONE]` is an error. Network chunks are buffered until a complete SSE event is available before parsing JSON; splitting an event across network chunks does not invalidate its JSON.
 
-## Настройки
+## Configuration
 
-Сервер читает окружение и корневой `.env`:
+The server reads environment variables and the root `.env`:
 
-- `CHAT_API_BASE_URL` — обязательный базовый URL провайдера; сервер добавляет `/chat/completions`.
-- `CHAT_API_KEY` — ключ провайдера, только на сервере.
-- `CHAT_MODEL` — идентификатор основной модели.
-- `CHAT_SYSTEM_PROMPT` — замена вводной части системной инструкции; общие инструкции движка добавляются после неё.
-- `CHAT_WEB_SEARCH_MODEL` — модель поиска; при отсутствии используется `CHAT_MODEL`.
-- `CHAT_WEB_SEARCH_TOOL` — тип серверного поиска; при отсутствии используется `openrouter:web_search`.
-- `DATABASE_FILENAME` — файл SQLite; по умолчанию `server/database/data/database.sqlite`.
+- `CHAT_API_BASE_URL`: required provider base URL; the server appends `/chat/completions`.
+- `CHAT_API_KEY`: provider key, server-side only.
+- `CHAT_MODEL`: primary model identifier.
+- `CHAT_SYSTEM_PROMPT`: replacement for the introductory system instruction; shared engine instructions are appended.
+- `CHAT_WEB_SEARCH_MODEL`: search model; falls back to `CHAT_MODEL`.
+- `CHAT_WEB_SEARCH_TOOL`: server-side search type; defaults to `openrouter:web_search`.
+- `DATABASE_FILENAME`: SQLite file; defaults to `server/database/data/database.sqlite`.
 
-После изменения окружения сервер необходимо перезапустить. Значения без префикса `VITE_` не передаются в браузер.
+Restart the server after environment changes. Values without the `VITE_` prefix are not sent to the browser.
 
-## История и ограничения
+## History and limits
 
-Чаты хранятся в SQLite через Knex: `ChatDialogue` содержит диалоги, `ChatMessage` — сообщения и индексируемые метаданные, `ChatSetting` — ключ подписи HMAC-SHA256. Ключ создаётся автоматически. При резервном копировании и переносе необходимо сохранять базу вместе с ключом. Токены не имеют срока истечения; смена ключа отзывает их.
+Chats are stored in SQLite through Knex: `ChatDialogue` holds dialogues, `ChatMessage` holds messages and indexed metadata, and `ChatSetting` holds the automatically generated HMAC-SHA256 signing key. Backups and migrations must preserve the database together with the key. Tokens do not expire; replacing the key revokes them.
 
-Сервер принимает сообщение до 16000 символов. Контекст формируется из завершённых пар вопрос–ответ: до 39 сообщений вместе с новым вопросом и до 64000 символов. Полная история остаётся в базе. Результаты инструментов в текущем ходе добавляются отдельно и общим бюджетом контекста не ограничены.
+The server accepts messages up to 16000 characters. Context uses completed question/answer pairs, up to 39 messages including the new question and 64000 characters. Full history remains in the database. Tool results from the current turn are appended separately and are not covered by the overall context budget.
 
-Одновременно выполняется до восьми запросов на процесс, таймаут — 120 секунд. На один чат допускается один активный запрос (409 при повторной отправке). Это ограничение одновременности, а не пользовательская квота. Выдача гостевого токена публичная: подпись изолирует чаты, но сама по себе не защищает от ботов.
+Each process allows up to eight concurrent requests with a 120-second timeout. Each chat permits one active request (409 for a concurrent submission). This is a concurrency limit, not a user quota. Guest token issuance is public: signatures isolate chats but do not themselves provide bot protection.
 
-Сообщение сохраняется до проверки конфигурации и обработки отказа по занятости. Итоговый ответ сохраняется перед `[DONE]`. Записи добавляются в базу отдельно; весь ход диалога не является единой транзакцией. Оборванные и неуспешные ответы не включаются в следующий контекст модели.
+The message is saved before configuration checks and busy rejection handling. The final answer is saved before `[DONE]`. Records are appended separately; a whole turn is not a single transaction. Interrupted and unsuccessful answers are excluded from the next model context.
 
-Прокси должен пропускать `/api/chat` без кеширования и буферизации. События отправки, ответа и ошибки передаются существующей очередью статистики, включая тексты вопросов и ответов.
+The proxy must pass `/api/chat` without caching or buffering. Send, response, and error events use the existing statistics queue, including question and answer text.
 
-## Журнал и доступ
+## Logging and access
 
-Сообщения содержат `id` и `createdAt` (ISO 8601, UTC). Вопрос получает UUID сервера; ответ использует допустимый ID провайдера либо UUID. Ответы связаны с вопросами через `replyToId`. Сохраняются `success` и доступные счётчики токенов. Неуспешные ответы содержат диагностические данные и частичный текст.
+Messages contain `id` and `createdAt` (ISO 8601, UTC). Questions receive a server UUID; answers use a valid provider ID or UUID. Answers reference questions through `replyToId`. Records include `success` and available token counters. Failed answers contain diagnostic details and partial text.
 
-Административные страницы `/admin-panel/chat/messages` и `/admin-panel/chat/dialogues` используют GraphQL:
+The `/admin-panel/chat/messages` and `/admin-panel/chat/dialogues` administration pages use GraphQL:
 
-- `chatMessageIndexes` возвращает индекс пользовательских сообщений и ответов.
-- `chatDialogues` возвращает список диалогов.
-- `chatMessage(chatId, messageId)` возвращает отдельное сообщение.
-- `chatMessages(chatId, token)` возвращает сообщения диалога.
+- `chatMessageIndexes` returns the user-message and answer index.
+- `chatDialogues` lists dialogues.
+- `chatMessage(chatId, messageId)` returns one message.
+- `chatMessages(chatId, token)` returns dialogue messages.
 
-Первые три запроса требуют `currentUser.sudo === true`. Историю своего диалога можно читать с подписанным токеном в аргументе `token` или заголовке Authorization. Администратор видит все роли; владелец токена — только user/assistant. Это также включает диагностическое содержимое неуспешных assistant-сообщений: отдельной публичной проекции ошибок пока нет.
+The first three queries require `currentUser.sudo === true`. Owners can read their history using a signed token in the `token` argument or Authorization header. Administrators see all roles; token owners see only user/assistant messages. This includes diagnostic content in unsuccessful assistant messages: there is no separate public error projection yet.
 
-## Инструменты и навыки
+## Tools and skills
 
-Каждый инструмент содержит определение, проверку аргументов и выполнение в `server/chat/tools/`. Реестр проверяет обязательное непустое `reasoning`; это объяснение показывается перед выполнением и остаётся частью ответа. Сборка потоковых вызовов находится в `toolCalls.ts`, контракты — в `types.ts`, системная инструкция — в `systemMessage.ts`.
+Each tool defines its schema, argument validation, and execution in `server/chat/tools/`. The registry checks the required nonempty `reasoning`, shown before execution and retained in the answer. Streaming tool calls are assembled in `toolCalls.ts`; contracts are in `types.ts`, and the system instruction is in `systemMessage.ts`.
 
-`graphql_request` принимает `query`, необязательные `variables` и `operationName`. AST проверяется на операцию query. Запрос идёт к локальному `/api` без авторизации и cookies; доступ определяют правила анонимного API. Интроспекция позволяет модели изучить поля. Результаты и ошибки возвращаются модели для продолжения.
+`graphql_request` accepts `query`, optional `variables`, and `operationName`. The AST must represent a query operation. Requests go to local `/api` without authorization or cookies; anonymous API rules determine access. Introspection lets the model inspect available fields. Results and errors return to the model for continuation.
 
-Допускается до восьми раундов инструментов, не более восьми вызовов в каждом, затем заключительное обращение к модели без инструментов. Таймаут покрывает весь ход. Аргументы ограничены 64000 символов, результат GraphQL — 128000 символов после чтения тела ответа.
+Up to eight tool rounds are allowed, with at most eight calls each, followed by a final model request without tools. The timeout covers the entire turn. Arguments are limited to 64000 characters; GraphQL results are limited to 128000 characters after reading the response body.
 
-Вызовы и результаты сохраняются с ролями `tool_call` и `tool`. Они исключены из индекса сообщений и контекста следующего вопроса, но доступны в административной истории.
+Calls and results are saved with `tool_call` and `tool` roles. They are excluded from the message index and next-question context but remain available in administrative history.
 
-`get_system_info` возвращает публичные сведения о разработчике, модели и провайдере.
+`get_system_info` returns public developer, model, and provider information.
 
-Механизм навыков сохранён в `server/chat/skills/`. Навык содержит `id`, краткое `description` и полное `content`. Реестр пока пуст: `read_skill` не включается в инструменты, инструкции навыков не добавляются в системное сообщение. Чтобы подключить навык, создайте модуль и зарегистрируйте его в `skills/registry.ts`. После этого список описаний и инструмент чтения включаются автоматически. Чтение допускает только зарегистрированные ID, а не произвольные пути файлов.
+The skill mechanism remains in `server/chat/skills/`. A skill contains `id`, a short `description`, and full `content`. The registry is currently empty: `read_skill` is not included among tools, and skill instructions are not added to the system message. To enable a skill, create a module and register it in `skills/registry.ts`; descriptions and the read tool are then enabled automatically. Reads accept registered IDs only, not arbitrary file paths.
 
-## URL страницы
+## Page URL
 
-Браузер передаёт URL на момент отправки, включая query и fragment, в `X-Chat-Page-Url`. Сервер проверяет HTTP(S) и сохраняет `pageUrl` с вопросом. Сейчас URL не передаётся модели и не используется для автоматического чтения содержимого страницы.
+The browser sends the current URL, including query and fragment, in `X-Chat-Page-Url`. The server validates HTTP(S) and saves `pageUrl` with the question. The URL is currently neither sent to the model nor used to read page content automatically.
 
-## Поиск в интернете
+## Web search
 
-`web_search` выполняет отдельный запрос через общий `llmClient`. Для `openrouter:web_search` передаётся `engine: native`; для `polza:web_search` этот параметр не передаётся. Поддержка поиска и фильтрации доменов зависит от модели и провайдера.
+`web_search` makes a separate request through the shared `llmClient`. `openrouter:web_search` receives `engine: native`; `polza:web_search` does not receive this parameter. Search and domain-filtering support depend on the model and provider.
 
-Аргументы: `query`, обязательное `reasoning`, необязательные `max_uses` (1–5, по умолчанию 3) и `allowed_domains` (до десяти доменов). Действуют общий таймаут и сигнал отмены. Результат сохраняет текст, ссылки, идентификаторы провайдера, usage и время поиска. Ошибки HTTP/провайдера возвращаются как результат с ошибкой и сохраняются в журнале инструментов. Счётчики поиска остаются в результате инструмента и не прибавляются к usage основного ответа.
+Arguments are `query`, required `reasoning`, optional `max_uses` (1–5, default 3), and `allowed_domains` (up to ten domains). The shared timeout and cancellation signal apply. Results preserve text, links, provider identifiers, usage, and search timing. HTTP/provider failures return as error results and are saved in the tool log. Search counters remain in the tool result and are not added to the main answer's usage.
 
-## Проверки
+## Verification
 
-`npm run types`, `npm run lint`, `npm test -- app/Custom/components/Chat server/chat server/statistics.chat.test.ts server/schema/types/Chat.test.ts`.
+`npm run types`, `npm run lint`, `npm test -- app/Custom/components/Chat server/chat server/statistics.chat.test.ts server/schema/tests/Chat.test.ts`.
 
 Run request-contract tests with `npx vitest run server/chat/tools/webSearch.test.ts`.
 Run the paid live checks separately with `npm run test:search:live`, supplying
@@ -87,8 +87,16 @@ The check accepts `usage.server_tool_use.web_search_requests` or
 `usage.server_tool_use_details.web_search_requests`; OpenRouter returned the
 latter. This verifies search execution, not which upstream search engine ran.
 
-### Режим ответа
+### Response mode
 
-`POST /api/chat` принимает `{ message, stream?: boolean }`. Без `stream` или при `true` сохраняется SSE. При `false` обращения к модели выполняются без стрима, а сервер после выполнения инструментов и сохранения истории возвращает JSON `{ id, success: true, content, usage }`. `stream_options` передаётся модели только в потоковом режиме. Ошибки до начала ответа возвращаются с HTTP-статусом и `{ error, id, success: false }`; ошибки после начала SSE передаются событием потока.
+`POST /api/chat` accepts `{ message, stream?: boolean }`. Omitting `stream` or setting it to `true` uses SSE. With `false`, model requests are non-streaming, and the server returns JSON `{ id, success: true, content, usage }` after executing tools and saving history. `stream_options` is sent to the model only in streaming mode. Errors before the response starts use an HTTP status and an error body; errors after SSE starts use a stream event. Original error messages are preserved in both cases.
 
-Для виджета режим задаётся через `<ChatProvider stream={false}>`; по умолчанию `true`. Транспорт `sendMessageStream` принимает режим пятым аргументом, после `AbortSignal`. В JSON-режиме весь ответ передаётся в `onChunk` один раз, затем вызывается `onDone`. Пояснения к инструментам включены в итоговый текст. Общий таймаут 120 секунд, отмена, история и учёт токенов действуют в обоих режимах.
+The widget mode is configured through `<ChatProvider stream={false}>`; the default is `true`. `sendMessageStream` accepts the mode as its fifth argument, after `AbortSignal`. In JSON mode, the whole answer is passed to `onChunk` once, followed by `onDone`. Tool explanations are included in the final text. The shared 120-second timeout, cancellation, history, and token accounting apply in both modes.
+
+### Complete response through GraphQL
+
+The public `sendChatMessage(data: { token, message, pageUrl })` mutation calls streaming `POST /api/chat` over internal HTTP and collects the response until `[DONE]`. `token` is the dialogue token obtained from `createChatToken`; user authentication is not required. `pageUrl` is optional. The mutation returns typed `id`, `success`, `content`, and `usage { inputTokens cachedTokens outputTokens }`. Unknown counters return `null`.
+
+Before `[DONE]`, the stream sends the final ID and aggregate usage across model calls using the existing event format. Errors and interrupted streams produce GraphQL errors rather than successful partial results. Closing the client connection cancels the internal request. The widget continues reading the stream directly; the feedback form uses the separate `submitFeedback` mutation.
+
+The proxy adds no domain validation after GraphQL schema validation. Token checks belong to `/api/chat` for every caller. HTTP and stream errors are propagated through `throw new Error(message)` with the original server explanation, exposed as `errors[].message`. Missing or blank tokens and invalid signatures produce distinct errors. Existing diagnostic logs and error causes are preserved.

@@ -117,13 +117,14 @@ test.each([
     'discard',
   ],
 ])('interprets the GraphQL delivery response', async (body, expected) => {
-  const fetchMock = vi
-    .fn()
-    .mockResolvedValue(new Response(JSON.stringify(body)))
+  const fetchMock = vi.fn().mockResolvedValue(Response.json(body))
   vi.stubGlobal('fetch', fetchMock)
   expect(await sendStatistics(packet)).toBe(expected)
   const options: RequestInit = fetchMock.mock.calls[0][1] as RequestInit
-  expect(options.headers).toEqual({ 'Content-Type': 'application/json' })
+  expect(new Headers(options.headers).get('content-type')).toBe(
+    'application/json',
+  )
+  expect(options.keepalive).toBe(true)
   expect(vi.getTimerCount()).toBe(0)
 })
 

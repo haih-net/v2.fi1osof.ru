@@ -19,7 +19,10 @@ export interface Message {
   pageUrl?: string
 }
 
+export type DialogueChannel = 'chat' | 'feedback'
+
 export interface DialogueIndex {
+  channel: DialogueChannel
   chatId: string
   createdAt: string
 }
@@ -65,13 +68,14 @@ export class ChatStorage {
     return Buffer.from(row.value, 'hex')
   }
 
-  async issue(): Promise<string> {
+  async issue(channel: DialogueChannel = 'chat'): Promise<string> {
     const id = randomBytes(24).toString('hex')
     const signature = createHmac('sha256', await this.getSecret())
       .update(id)
       .digest('hex')
     await this.database('ChatDialogue').insert({
       chatId: id,
+      channel,
       createdAt: Date.now(),
     })
     return `${id}.${signature}`
@@ -99,16 +103,55 @@ export class ChatStorage {
   }
 
   async listDialogues(): Promise<DialogueIndex[]> {
-    const rows = await this.database<{ chatId: string; createdAt: Date }>(
-      'ChatDialogue',
-    )
+    const rows = await this.database<{
+      chatId: string
+      createdAt: Date
+      channel: DialogueChannel
+    }>('ChatDialogue')
       .select('*')
       .orderBy('createdAt', 'desc')
       .orderBy('chatId', 'asc')
-    return rows.map(({ chatId, createdAt }) => ({
+    return rows.map(({ chatId, createdAt, channel }) => ({
+      channel,
       chatId,
       createdAt: createdAt.toISOString(),
     }))
+  }
+
+  async channel(id: string): Promise<DialogueChannel | null> {
+    const row = await this.database<{
+      chatId: string
+      channel: DialogueChannel
+    }>('ChatDialogue')
+      .where({ chatId: id })
+      .first()
+    return row?.channel ?? null
+  }
+
+  async appendFeedback(id: string, content: string): Promise<boolean> {
+    return this.database.transaction(async (trx) => {
+      const storage = new ChatStorage(trx)
+      if ((await storage.channel(id)) !== 'feedback') {
+        throw new Error('Токен не предназначен для формы обратной связи.')
+      }
+      const existing = (await storage.read(id)).find(
+        (message) => message.id === 'feedback',
+      )
+      if (existing) {
+        if (existing.content !== content) {
+          throw new Error('Для нового сообщения откройте форму заново.')
+        }
+        return false
+      }
+      await storage.append(id, {
+        id: 'feedback',
+        role: 'user',
+        content,
+        createdAt: new Date().toISOString(),
+        success: true,
+      })
+      return true
+    })
   }
 
   async listMessages(): Promise<MessageIndex[]> {

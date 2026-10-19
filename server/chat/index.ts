@@ -1,3 +1,4 @@
+import { chatErrorMessage } from '../../app/Custom/components/Chat/lib/errors'
 import { llmClient } from '../llm/client'
 import express, { type Express, type Request, type Response } from 'express'
 import { logDevError } from '../errorLogging'
@@ -30,15 +31,23 @@ export const setupChat = (
     async (req: Request, res: Response): Promise<void> => {
       res.setHeader('Cache-Control', 'no-store, no-transform')
       let chatId: string | null
+      let authStatus = 401
       try {
-        chatId = await storage.verify(req.headers.authorization)
+        const authorization = req.headers.authorization
+        if (!authorization?.trim() || /^Bearer\s*$/i.test(authorization)) {
+          throw new Error('Не был получен токен')
+        }
+        authStatus = 503
+        chatId = await storage.verify(authorization)
+        authStatus = 401
+        if (!chatId) {
+          throw new Error('Недействительный токен чата')
+        }
       } catch (error) {
         logDevError('chat.verify', error)
-        res.status(503).json({ error: 'Хранилище чатов недоступно' })
-        return
-      }
-      if (!chatId) {
-        res.status(401).json({ error: 'Недействительный токен чата' })
+        res.status(authStatus).json({
+          error: chatErrorMessage(error, 'Не удалось проверить токен чата'),
+        })
         return
       }
       if (
@@ -210,6 +219,20 @@ export const setupChat = (
             publicError = stream
               ? 'Провайдер не вернул потоковый ответ'
               : 'Провайдер не вернул JSON-ответ'
+            if (responseBody) {
+              try {
+                publicError = chatErrorMessage(
+                  JSON.parse(responseBody) as unknown,
+                  publicError,
+                )
+              } catch {
+                if (
+                  upstream.headers.get('content-type')?.includes('text/plain')
+                ) {
+                  publicError = responseBody
+                }
+              }
+            }
             throw new Error(publicError)
           }
           if (stream && !res.headersSent) {
@@ -285,9 +308,12 @@ export const setupChat = (
               throw new Error('Некорректный ответ модели')
             }
             if ('error' in result && result.error) {
-              throw new Error('Ошибка при генерации ответа', {
-                cause: result.error,
-              })
+              throw new Error(
+                chatErrorMessage(result.error, 'Ошибка при генерации ответа'),
+                {
+                  cause: result.error,
+                },
+              )
             }
             onMetadata({
               id:
@@ -446,6 +472,17 @@ export const setupChat = (
         answerSaved = true
         stage = stream ? 'finish_stream' : 'finish_json'
         if (stream) {
+          await write(
+            JSON.stringify({
+              id: answerId,
+              usage: {
+                prompt_tokens: usage.inputTokens,
+                prompt_tokens_details: { cached_tokens: usage.cachedTokens },
+                completion_tokens: usage.outputTokens,
+              },
+              choices: [],
+            }),
+          )
           await write('[DONE]')
           res.end()
         } else {
@@ -496,15 +533,16 @@ export const setupChat = (
             })
           }
         }
+        const errorMessage = chatErrorMessage(error, publicError)
         if (!res.destroyed) {
           if (res.headersSent) {
             res.end(
-              `data: ${JSON.stringify({ id: answerId, success: false, error: { message: 'Ответ прерван. Попробуйте ещё раз.' } })}\n\n`,
+              `data: ${JSON.stringify({ id: answerId, success: false, error: { message: errorMessage } })}\n\n`,
             )
           } else {
             res
               .status(failureStatus)
-              .json({ error: publicError, id: answerId, success: false })
+              .json({ error: errorMessage, id: answerId, success: false })
           }
         }
       } finally {

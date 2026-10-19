@@ -123,7 +123,11 @@ export const SiteShell = styled.div`
     text-underline-offset: 5px;
   }
   .contact-button {
-    display: none;
+    border: 0;
+    font-family: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    white-space: nowrap;
     background: #bd302b;
     color: #fff;
     padding: 11px 18px;
@@ -206,9 +210,7 @@ export const SiteShell = styled.div`
     .full-name {
       display: inline;
     }
-    .contact-button {
-      display: inline-flex;
-    }
+
     .header-row {
       gap: 24px;
     }

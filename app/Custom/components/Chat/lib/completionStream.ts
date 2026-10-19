@@ -1,3 +1,5 @@
+import { chatErrorMessage } from './errors'
+
 export async function* readCompletionStream(
   body: ReadableStream<Uint8Array>,
   onMetadata?: (metadata: { id?: string; created?: number }) => void,
@@ -34,7 +36,10 @@ export async function* readCompletionStream(
           : undefined,
     })
     if ('error' in value && value.error) {
-      throw new Error('Ошибка при генерации ответа', { cause: value.error })
+      throw new Error(
+        chatErrorMessage(value.error, 'Ошибка при генерации ответа'),
+        { cause: value.error },
+      )
     }
     if (!('choices' in value) || !Array.isArray(value.choices)) {
       return

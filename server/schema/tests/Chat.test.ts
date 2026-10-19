@@ -20,7 +20,7 @@ it('выдаёт гостевой токен через GraphQL с сохран�
   try {
     const result = await graphql({
       schema,
-      source: 'mutation CreateChatToken { createChatToken }',
+      source: 'mutation CreateChatToken { createChatToken(data: {}) }',
       contextValue: { currentUser: null, db },
     })
     expect(result.errors).toBeUndefined()
@@ -43,7 +43,7 @@ it('возвращает GraphQL-ошибку без внутренних пут
   try {
     const result = await graphql({
       schema,
-      source: 'mutation { createChatToken }',
+      source: 'mutation { createChatToken(data: {}) }',
     })
     expect(result.errors?.[0].message).toBe('Не удалось создать чат')
     expect(result.data).toBeNull()
@@ -252,14 +252,18 @@ it('возвращает сохранённые токены из БД и соо
 
 it('returns the dialogue index for administrators', async () => {
   const entries = [
-    { chatId: 'a'.repeat(48), createdAt: '2026-10-17T12:00:00.000Z' },
+    {
+      chatId: 'a'.repeat(48),
+      createdAt: '2026-10-17T12:00:00.000Z',
+      channel: 'chat' as const,
+    },
   ]
   const list = vi.spyOn(chatStorage, 'listDialogues').mockResolvedValue(entries)
   const read = vi.spyOn(chatStorage, 'read')
   try {
     const result = await graphql({
       schema,
-      source: '{ chatDialogues { chatId createdAt } }',
+      source: '{ chatDialogues { chatId createdAt channel } }',
       contextValue: { currentUser: { sudo: true } },
     })
     expect(result.errors).toBeUndefined()
@@ -269,5 +273,44 @@ it('returns the dialogue index for administrators', async () => {
   } finally {
     list.mockRestore()
     read.mockRestore()
+  }
+})
+
+it('creates feedback channels and exposes them to administrators', async () => {
+  const database = createDatabase()
+  const storage = new ChatStorage(database)
+  const issue = vi
+    .spyOn(chatStorage, 'issue')
+    .mockImplementation((channel) => storage.issue(channel))
+  const list = vi
+    .spyOn(chatStorage, 'listDialogues')
+    .mockImplementation(() => storage.listDialogues())
+  try {
+    const created = await graphql({
+      schema,
+      source: 'mutation { createChatToken(data: { channel: feedback }) }',
+      contextValue: { currentUser: null },
+    })
+    expect(created.errors).toBeUndefined()
+    const token = created.data?.createChatToken as string
+    expect(await storage.channel(token.split('.')[0])).toBe('feedback')
+    const result = await graphql({
+      schema,
+      source: '{ chatDialogues { chatId channel } }',
+      contextValue: { currentUser: { sudo: true } },
+    })
+    expect(result.errors).toBeUndefined()
+    expect(result.data?.chatDialogues).toEqual([
+      expect.objectContaining({ channel: 'feedback' }),
+    ])
+    const invalid = await graphql({
+      schema,
+      source: 'mutation { createChatToken(data: { channel: unknown }) }',
+    })
+    expect(invalid.errors).toBeDefined()
+  } finally {
+    issue.mockRestore()
+    list.mockRestore()
+    await database.destroy()
   }
 })

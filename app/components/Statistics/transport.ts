@@ -1,3 +1,6 @@
+import { CombinedGraphQLErrors, ServerError } from '@apollo/client/errors'
+import { initializeApollo } from 'app/gql/apolloClient'
+import { LogStatsDocument } from 'app/gql/generated'
 import type { PageOutcome } from './status'
 
 export interface PageViewEvent extends PageOutcome {
@@ -30,13 +33,6 @@ export type StatisticsSender = (
   packet: StatisticsPacket,
 ) => Promise<DeliveryResult>
 
-export const statisticsQuery: string = `mutation LogStats($data: Json!) {
-  logStats(data: $data) { id }
-}`
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  value !== null && typeof value === 'object' && !Array.isArray(value)
-
 export const sendStatistics: StatisticsSender = async (packet) => {
   const controller: AbortController = new AbortController()
   const timeout: ReturnType<typeof setTimeout> = setTimeout(
@@ -44,52 +40,48 @@ export const sendStatistics: StatisticsSender = async (packet) => {
     6500,
   )
   try {
-    const response: Response = await fetch('/api/', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: statisticsQuery,
-        variables: { data: packet },
-      }),
-      keepalive: true,
-      signal: controller.signal,
+    const result = await initializeApollo({ withWs: false }).mutate({
+      mutation: LogStatsDocument,
+      variables: { data: packet },
+      fetchPolicy: 'no-cache',
+      context: {
+        fetchOptions: {
+          keepalive: true,
+          signal: controller.signal,
+          credentials: 'same-origin',
+        },
+      },
     })
-    if (!response.ok) {
-      return response.status === 408 ||
-        response.status === 429 ||
-        response.status >= 500
-        ? 'retry'
-        : 'discard'
-    }
-    const body: unknown = await response.json()
-    if (!isRecord(body)) {
+    if (!result.data || !('logStats' in result.data)) {
       return 'retry'
     }
-    if (Array.isArray(body.errors) && body.errors.length) {
-      const retryable: boolean = body.errors.every(
-        (error: unknown): boolean =>
-          isRecord(error) &&
-          isRecord(error.extensions) &&
-          error.extensions.code === 'STATISTICS_UNAVAILABLE',
-      )
-      return retryable ? 'retry' : 'discard'
-    }
-    if (!isRecord(body.data) || !('logStats' in body.data)) {
-      return 'retry'
-    }
-    if (body.data.logStats === null) {
+    if (result.data.logStats === null) {
       return 'disabled'
     }
-    const records: unknown = body.data.logStats
+    const records = result.data.logStats
     return Array.isArray(records) &&
       records.length === 1 &&
-      isRecord(records[0]) &&
+      records[0] !== null &&
+      records[0] !== undefined &&
       typeof records[0].id === 'string' &&
       records[0].id.length > 0
       ? 'accepted'
       : 'retry'
-  } catch {
+  } catch (error) {
+    if (CombinedGraphQLErrors.is(error)) {
+      return error.errors.every(
+        (entry) => entry.extensions?.code === 'STATISTICS_UNAVAILABLE',
+      )
+        ? 'retry'
+        : 'discard'
+    }
+    if (ServerError.is(error)) {
+      return error.statusCode === 408 ||
+        error.statusCode === 429 ||
+        error.statusCode >= 500
+        ? 'retry'
+        : 'discard'
+    }
     return 'retry'
   } finally {
     clearTimeout(timeout)

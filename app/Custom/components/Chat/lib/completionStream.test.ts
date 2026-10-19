@@ -43,7 +43,7 @@ it('сохраняет исходную ошибку провайдера для
   await expect(
     collect(`data: ${JSON.stringify({ error: cause })}\n\n`),
   ).rejects.toMatchObject({
-    message: 'Ошибка при генерации ответа',
+    message: cause.message,
     cause,
   })
 })

@@ -18,7 +18,17 @@ import {
 import { useAppContext } from '../../hooks/useAppContext'
 import { SiteShell } from './styles'
 import { ChatProvider } from '../Chat/ChatWidget/context'
+import { FeedbackForm } from '../Feedback'
 import { ChatWidget } from '../Chat/ChatWidget'
+
+const ContactButton: React.FC = () => {
+  const { openFeedback: open } = useAppContext()
+  return (
+    <button className="contact-button" type="button" onClick={open}>
+      Написать мне
+    </button>
+  )
+}
 
 const sections = ['about', 'projects', 'worklogs', 'concepts'] as const
 
@@ -88,14 +98,7 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
             <nav className="desktop-nav" aria-label={t.navigation}>
               {links}
             </nav>
-            <a
-              className="contact-button"
-              href="https://t.me/Fi1osof"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Написать Николаю
-            </a>
+            <ContactButton />
             <button
               type="button"
               className="burger"
@@ -183,6 +186,7 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
           </p>
         </div>
       </footer>
+      <FeedbackForm />
       <ChatWidget />
     </SiteShell>
   )
