@@ -19,10 +19,16 @@ const message = (time: number = start): StoredMessage => ({
 
 async function setup() {
   const database = createDatabase()
-  databases.push(database)
+  const usersDatabase = createDatabase()
+  databases.push(database, usersDatabase)
   const storage = new ChatStorage(database)
   const chatId = (await storage.issue()).split('.')[0]
-  await database('User').insert([
+  await database('User').insert({
+    id: 'wrong-database-admin',
+    sudo: 1,
+    email: 'wrong@example.test',
+  })
+  await usersDatabase('User').insert([
     { id: 'first', sudo: 1, email: 'first@example.test' },
     { id: 'second', sudo: 1, email: 'second@example.test' },
     { id: 'without-email', sudo: 1, email: null },
@@ -32,7 +38,13 @@ async function setup() {
   const send = vi
     .fn<(input: EmailInput) => Promise<void>>()
     .mockResolvedValue(undefined)
-  return { storage, chatId, send, service: createChatMessages(storage, send) }
+  return {
+    storage,
+    usersDatabase,
+    chatId,
+    send,
+    service: createChatMessages(storage, usersDatabase, send),
+  }
 }
 
 afterEach(async () => {
@@ -64,13 +76,17 @@ it('notifies every admin with an email once for concurrent first messages', asyn
 })
 
 it('uses the last dialogue message and a strict inactivity threshold across service instances', async () => {
-  const { storage, chatId, send } = await setup()
+  const { storage, usersDatabase, chatId, send } = await setup()
   await storage.append(chatId, message(start))
   await storage.append(chatId, {
     ...message(start + 2 * hour),
     role: 'assistant',
   })
-  const service = createChatMessages(new ChatStorage(storage.database), send)
+  const service = createChatMessages(
+    new ChatStorage(storage.database),
+    usersDatabase,
+    send,
+  )
   // More than three hours since the user message, exactly three since the reply.
   await service.receive(chatId, message(start + 5 * hour), origin)
   expect(send).not.toHaveBeenCalled()

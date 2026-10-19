@@ -50,7 +50,7 @@ const configure = async (): Promise<string> => {
   databases.push(database)
   storage = new ChatStorage(database)
   token = await storage.issue()
-  setupChat(app, storage)
+  setupChat(app, database, storage)
   return listen(app)
 }
 it('передаёт историю и настройки, доставляет первый фрагмент до окончания ответа', async () => {
@@ -563,7 +563,7 @@ it.each([true, false])(
     databases.push(database)
     storage = new ChatStorage(database)
     token = await storage.issue()
-    setupChat(app, storage)
+    setupChat(app, database, storage)
     let apiCalls = 0
     app.post('/api', express.json(), (req, res) => {
       apiCalls++

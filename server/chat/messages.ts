@@ -1,9 +1,10 @@
+import type { Knex } from 'knex'
 import type { UserRecord } from '../schema/types/User/interfaces'
 import {
   sendEmail,
   type EmailInput,
 } from '../schema/types/ChatMessage/helpers/sendEmail'
-import { chatStorage, type ChatStorage, type StoredMessage } from './storage'
+import { type ChatStorage, type StoredMessage } from './storage'
 
 export interface ChatMessages {
   receive(chatId: string, message: StoredMessage, origin: string): Promise<void>
@@ -32,7 +33,8 @@ function notificationInterval(): number | null {
 }
 
 export function createChatMessages(
-  storage: ChatStorage = chatStorage,
+  storage: ChatStorage,
+  usersDatabase: Knex,
   send: (input: EmailInput) => Promise<void> = sendEmail,
 ): ChatMessages {
   return {
@@ -57,8 +59,7 @@ export function createChatMessages(
         return
       }
       try {
-        const admins = await storage
-          .database<UserRecord>('User')
+        const admins = await usersDatabase<UserRecord>('User')
           .select('email')
           .where({ sudo: true })
           .whereNotNull('email')

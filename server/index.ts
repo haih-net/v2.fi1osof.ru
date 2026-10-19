@@ -1,5 +1,6 @@
 import './env'
 import { db } from './database'
+import { dbOld } from './database_old'
 import express, { type ErrorRequestHandler } from 'express'
 import { logDevError } from './errorLogging'
 import { setupChat } from './chat'
@@ -66,7 +67,7 @@ async function startServer() {
   setupMedia(app)
 
   setupSitemap(app)
-  setupChat(app)
+  setupChat(app, dbOld)
 
   app.use('/images/resized/', imageResizerMiddleware)
   app.use('/assets/images/', imageResizerMiddleware)

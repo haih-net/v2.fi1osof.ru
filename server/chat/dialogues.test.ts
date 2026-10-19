@@ -106,11 +106,15 @@ it('upgrades schema version 1 without changing existing records and rejects unkn
   try {
     initializeSchema(connection)
     connection.exec(
-      `DROP TABLE ChatMessage; DROP TABLE ChatDialogue; DROP TABLE ChatSetting; PRAGMA user_version = 1; INSERT INTO User (id) VALUES ('existing');`,
+      `DROP TABLE EthTransaction;
+      DROP TABLE "Transaction";
+      DROP INDEX TelegramAccount_externalKey;
+      ALTER TABLE TelegramAccount DROP COLUMN externalKey;
+      DROP TABLE ChatMessage; DROP TABLE ChatDialogue; DROP TABLE ChatSetting; PRAGMA user_version = 1; INSERT INTO User (id) VALUES ('existing');`,
     )
     initializeSchema(connection)
     initializeSchema(connection)
-    expect(connection.pragma('user_version', { simple: true })).toBe(3)
+    expect(connection.pragma('user_version', { simple: true })).toBe(4)
     expect(connection.prepare('SELECT id FROM User').all()).toEqual([
       { id: 'existing' },
     ])

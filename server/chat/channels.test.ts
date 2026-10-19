@@ -11,7 +11,14 @@ afterEach(async () => {
 it('migrates existing dialogues to chat without changing messages', () => {
   const db = new Database(':memory:')
   try {
-    db.exec(`CREATE TABLE ChatDialogue (chatId TEXT PRIMARY KEY, createdAt INTEGER NOT NULL);
+    initializeSchema(db)
+    db.exec(`DROP TABLE EthTransaction;
+      DROP TABLE "Transaction";
+      DROP INDEX TelegramAccount_externalKey;
+      ALTER TABLE TelegramAccount DROP COLUMN externalKey;
+      DROP TABLE ChatMessage;
+      DROP TABLE ChatDialogue;
+      CREATE TABLE ChatDialogue (chatId TEXT PRIMARY KEY, createdAt INTEGER NOT NULL);
       CREATE TABLE ChatMessage (payload TEXT);
       INSERT INTO ChatDialogue VALUES ('existing', 1);
       INSERT INTO ChatMessage VALUES ('original');
@@ -24,7 +31,7 @@ it('migrates existing dialogues to chat without changing messages', () => {
     expect(db.prepare('SELECT payload FROM ChatMessage').get()).toEqual({
       payload: 'original',
     })
-    expect(db.pragma('user_version', { simple: true })).toBe(3)
+    expect(db.pragma('user_version', { simple: true })).toBe(4)
   } finally {
     db.close()
   }

@@ -1,3 +1,4 @@
+import type { Knex } from 'knex'
 import { chatErrorMessage } from '../../app/Custom/components/Chat/lib/errors'
 import { llmClient } from '../llm/client'
 import express, { type Express, type Request, type Response } from 'express'
@@ -22,9 +23,10 @@ import {
 
 export const setupChat = (
   app: Express,
+  usersDatabase: Knex,
   storage: ChatStorage = chatStorage,
 ): void => {
-  const chatMessages = createChatMessages(storage)
+  const chatMessages = createChatMessages(storage, usersDatabase)
   let active = 0
   const busy = new Set<string>()
   app.post(
