@@ -58,7 +58,7 @@ function setup(success: boolean, networkError = false) {
       <SignInForm onSuccessHandler={onSuccess} />
     </ApolloProvider>,
   )
-  fireEvent.change(screen.getByLabelText('Логин'), {
+  fireEvent.change(screen.getByLabelText('Логин или электронная почта'), {
     target: { value: ' owner ' },
   })
   fireEvent.change(screen.getByLabelText('Пароль'), {

@@ -104,4 +104,103 @@ export const HeaderStyled = styled.header`
       display: none;
     }
   }
+
+  .feedback-button,
+  .signin-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 10px 16px;
+    border: 1px solid ${theme.colors.border};
+    border-radius: 10px;
+    color: ${theme.colors.text.primary};
+    background: white;
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .feedback-button:hover,
+  .signin-link:hover {
+    background: #eef1e9;
+  }
+  .account-menu {
+    position: relative;
+    min-width: 0;
+  }
+  .account-menu summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    list-style: none;
+  }
+  .account-menu summary::-webkit-details-marker {
+    display: none;
+  }
+  .account-menu summary:hover,
+  .account-menu[open] summary {
+    background: #eef1e9;
+  }
+  .account-menu summary:focus-visible {
+    outline: 2px solid ${theme.colors.primary};
+    outline-offset: 3px;
+  }
+  .account-avatar {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #e4eadf;
+    flex-shrink: 0;
+  }
+  .account-name {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .account-dropdown {
+    padding: 10px;
+    margin-top: 8px;
+    border: 1px solid ${theme.colors.border};
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 12px 32px #1d30251a;
+    min-width: 220px;
+    @media (min-width: ${theme.breakpoints.sm}px) {
+      position: absolute;
+      right: 0;
+      top: 100%;
+    }
+  }
+  .account-dropdown p {
+    margin: 4px 12px 8px;
+    color: ${theme.colors.text.secondary};
+    font-size: 12px;
+  }
+  .account-dropdown a,
+  .account-dropdown button {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    color: ${theme.colors.text.primary};
+  }
+  .account-dropdown a:hover {
+    background: #eef1e9;
+  }
+  .account-dropdown button {
+    margin-top: 4px;
+    border-top: 1px solid ${theme.colors.border};
+  }
 `

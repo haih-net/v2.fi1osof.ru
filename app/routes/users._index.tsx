@@ -1,6 +1,19 @@
-import { createPageLoader } from '../Custom/pages/Site/loader.server'
-
-export { SitePage as default } from '../Custom/pages/Site'
-export { meta, headers } from './site'
-
-export const loader = createPageLoader('/users')
+export { headers } from './site'
+import type { MetaFunction } from 'react-router'
+import { UsersPage } from 'app/Custom/pages/Users'
+import { usersPageGetInitialProps } from 'app/Custom/pages/Users/usersPageGetInitialProps'
+import { createSeoMeta, unavailableSeoMeta } from '../components/seo/SeoHeaders'
+export const loader = usersPageGetInitialProps
+export const meta: MetaFunction<typeof loader> = ({
+  loaderData: data,
+  error,
+}) =>
+  error
+    ? unavailableSeoMeta()
+    : createSeoMeta({
+        title: 'Пользователи',
+        description: '',
+        noindex: true,
+        path: `/users${data && data.page > 1 ? `?page=${data.page}` : ''}`,
+      })
+export default UsersPage

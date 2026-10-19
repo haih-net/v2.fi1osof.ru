@@ -32,7 +32,14 @@ describe('shared application context', () => {
     expect(screen.getByText('loading')).toBeTruthy()
     view.rerender(
       <AppContextProvider
-        user={{ id: 'owner', sudo: false, status: UserStatusEnum.ACTIVE }}
+        user={{
+          id: 'owner',
+          sudo: false,
+          status: UserStatusEnum.ACTIVE,
+          createdAt: '2026-01-01T00:00:00.000Z',
+          updatedAt: '2026-01-01T00:00:00.000Z',
+          isAiAgent: false,
+        }}
         userLoading={false}
       >
         <Consumer />
@@ -59,6 +66,15 @@ describe('shared application context', () => {
                     fullname: 'Owner',
                     sudo: false,
                     status: 'active',
+                    createdAt: '2026-01-01T00:00:00.000Z',
+                    updatedAt: '2026-01-01T00:00:00.000Z',
+                    isAiAgent: false,
+                    image: null,
+                    content: null,
+                    intro: null,
+                    EthAccount: null,
+                    TelegramAccount: null,
+                    Balance: null,
                   },
                 },
               })

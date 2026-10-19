@@ -1,0 +1,7 @@
+mutation authViaTelegram($tgAuthData: TelegramAuthDataInput!) {
+  authViaTelegram(tgAuthData: $tgAuthData) {
+    success
+    message
+    token
+  }
+}

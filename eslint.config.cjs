@@ -12,6 +12,10 @@ module.exports = [
     ignores: [
       'docker/supabase/data',
       'server/database/data/**',
+      'docker/mailserver/mail-data/**',
+      'docker/mailserver/mail-state/**',
+      'docker/mailserver/mail-logs/**',
+      'docker/mailserver/config/**',
       'storage/**',
       'uploads/**',
       'project/**',

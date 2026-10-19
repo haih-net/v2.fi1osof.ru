@@ -4,10 +4,10 @@ export function initializeSchema(connection: Database): void {
   connection
     .transaction(() => {
       const version = connection.pragma('user_version', { simple: true })
-      if (version === 3) {
+      if (version === 4) {
         return
       }
-      if (version !== 0 && version !== 1 && version !== 2) {
+      if (version !== 0 && version !== 1 && version !== 2 && version !== 3) {
         throw new Error('Unsupported database schema version')
       }
       if (version === 0) {
@@ -90,7 +90,7 @@ export function initializeSchema(connection: Database): void {
       PRAGMA user_version = 1;
     `)
       }
-      if (version !== 2) {
+      if (version < 2) {
         connection.exec(`
         CREATE TABLE "ChatSetting" (
           id TEXT PRIMARY KEY NOT NULL,
@@ -115,9 +115,33 @@ export function initializeSchema(connection: Database): void {
         PRAGMA user_version = 2;
       `)
       }
-      connection.exec(`
+      if (version < 3) {
+        connection.exec(`
         ALTER TABLE "ChatDialogue" ADD COLUMN channel TEXT NOT NULL DEFAULT 'chat' CHECK (channel IN ('chat', 'feedback'));
         PRAGMA user_version = 3;
+      `)
+      }
+      connection.exec(`
+        CREATE TABLE "Transaction" (
+          id TEXT PRIMARY KEY NOT NULL,
+          createdAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
+          type TEXT NOT NULL CHECK (type IN ('TopUp', 'TransferIn', 'TransferOut')),
+          amount REAL NOT NULL, title TEXT,
+          userId TEXT NOT NULL REFERENCES "User"(id),
+          balanceId TEXT NOT NULL REFERENCES "Balance"(id),
+          parentId TEXT REFERENCES "Transaction"(id)
+        );
+        CREATE INDEX Transaction_user_created ON "Transaction"(userId, createdAt DESC, id);
+        CREATE INDEX Transaction_parent ON "Transaction"(parentId);
+        CREATE TABLE "EthTransaction" (
+          id TEXT PRIMARY KEY NOT NULL,
+          chainId INTEGER NOT NULL, txHash TEXT NOT NULL,
+          transactionId TEXT NOT NULL UNIQUE REFERENCES "Transaction"(id),
+          UNIQUE(chainId, txHash)
+        );
+        ALTER TABLE "TelegramAccount" ADD COLUMN externalKey TEXT;
+        CREATE UNIQUE INDEX TelegramAccount_externalKey ON "TelegramAccount"(externalKey);
+        PRAGMA user_version = 4;
       `)
     })
     .immediate()

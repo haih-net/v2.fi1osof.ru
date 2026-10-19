@@ -202,6 +202,30 @@ export class ChatStorage {
     })
   }
 
+  async appendUserMessage(
+    id: string,
+    message: StoredMessage,
+  ): Promise<{ channel: DialogueChannel | null; previous: Message | null }> {
+    if (message.role !== 'user') {
+      throw new Error('Expected an incoming user message')
+    }
+    return this.database.transaction(async (trx) => {
+      const storage = new ChatStorage(trx)
+      // Write first to acquire the SQLite writer lock before reading history.
+      await storage.append(id, message)
+      const previous = await trx<MessageRow>('ChatMessage')
+        .select('payload')
+        .where({ chatId: id })
+        .orderBy('sequence', 'desc')
+        .offset(1)
+        .first()
+      return {
+        channel: await storage.channel(id),
+        previous: previous ? (JSON.parse(previous.payload) as Message) : null,
+      }
+    })
+  }
+
   async read(id: string): Promise<Message[]> {
     this.validateId(id)
     const rows = await this.database<MessageRow>('ChatMessage')

@@ -62,6 +62,15 @@ export default defineConfig(({ mode }) => {
       ws: { path: '/__vite_hmr' },
     },
     define: {
+      'import.meta.env.NEXT_PUBLIC_SITE_SIGNUP_STRATEGY': JSON.stringify(
+        env.NEXT_PUBLIC_SITE_SIGNUP_STRATEGY || '',
+      ),
+      'process.env.NEXT_PUBLIC_CRYPTO_ENABLED': JSON.stringify(
+        env.NEXT_PUBLIC_CRYPTO_ENABLED || 'false',
+      ),
+      'process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME': JSON.stringify(
+        env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || '',
+      ),
       'import.meta.env.BETTERLYTICS_SITE_ID': JSON.stringify(
         env.BETTERLYTICS_SITE_ID || '',
       ),

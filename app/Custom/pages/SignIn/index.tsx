@@ -1,13 +1,13 @@
 import React from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { AuthProviders } from 'app/Custom/components/Auth/AuthProviders'
 import { SignInForm } from 'app/Custom/components/Auth/SignInForm'
 import { useAuthedRedirect } from 'app/Custom/components/Auth/hooks/useAuthedRedirect'
 import { useAppContext } from 'app/Custom/hooks/useAppContext'
-import { SignInPageStyled } from './styles'
+import { SignInPageStyled, SignInRegistrationStyled } from './styles'
 
 export const SignInPage: React.FC = () => {
-  useAuthedRedirect()
+  useAuthedRedirect('/panel/profile')
   const [params] = useSearchParams()
   const { user, userLoading } = useAppContext()
   return (
@@ -19,6 +19,12 @@ export const SignInPage: React.FC = () => {
         referrerToken={params.get('referrerToken')}
         disabled={userLoading || Boolean(user)}
       />
+      <SignInRegistrationStyled>
+        <p>Нет аккаунта?</p>
+        <Link to={`/signup${params.size ? `?${params}` : ''}`}>
+          Создать учётную запись
+        </Link>
+      </SignInRegistrationStyled>
     </SignInPageStyled>
   )
 }

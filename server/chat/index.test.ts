@@ -389,7 +389,7 @@ it('пишет исходную ошибку хранилища со стеко�
   vi.stubEnv('NODE_ENV', 'development')
   const base = await configure()
   const failure = new Error('EACCES: storage unavailable')
-  const read = vi.spyOn(storage, 'append').mockRejectedValue(failure)
+  const read = vi.spyOn(storage, 'appendUserMessage').mockRejectedValue(failure)
   const log = vi.spyOn(console, 'error').mockImplementation(() => undefined)
   try {
     const response = await fetch(`${base}/api/chat`, {
@@ -985,7 +985,10 @@ it.each(['', '   ', 'invalid-token'])(
       variableValues: { data: { token, message: 'Привет' } },
       contextValue: {
         currentUser: null,
-        req: { socket: { localPort: Number(new URL(base).port) } },
+        req: {
+          socket: { localPort: Number(new URL(base).port) },
+          get: () => base,
+        },
       },
     })
     expect(result.data).toBeNull()

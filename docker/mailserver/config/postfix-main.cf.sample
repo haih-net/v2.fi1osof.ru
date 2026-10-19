@@ -1,0 +1,11 @@
+# Allow docker host (gateway) to send mail without auth
+# Copy this file to postfix-main.cf and adjust networks as needed
+#
+# Common docker network ranges:
+# - 172.16.0.0/12 (default docker)
+# - 192.168.0.0/16 (docker-compose)
+# - 10.0.0.0/8 (custom)
+#
+# Check your network: docker network inspect <network_name> | grep Subnet
+
+mynetworks = 127.0.0.0/8 [::1]/128 172.16.0.0/12 192.168.0.0/16 10.0.0.0/8

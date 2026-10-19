@@ -4,20 +4,32 @@ query me {
   }
 }
 
-fragment meUser on User {
-  ...User_
+query user($where: UserWhereUniqueInput!) {
+  object: user(where: $where) {
+    ...User_
+  }
 }
 
-fragment UserNoNesting on User {
-  id
-  username
-  fullname
-  sudo
-  status
+query usersConnection($where: UserWhereInput, $skip: Int, $first: Int = 10) {
+  usersCount(where: $where)
+  users(where: $where, skip: $skip, take: $first) {
+    ...User_
+  }
 }
 
-fragment User_ on User {
-  ...UserNoNesting
+mutation updateCurrentUser($data: CurrentUserUpdateInput!) {
+  response: updateCurrentUser(data: $data) {
+    ...User_
+  }
+}
+
+mutation updateUser(
+  $data: UserUpdateDataInput!
+  $where: UserWhereUniqueInput!
+) {
+  updateUser(data: $data, where: $where) {
+    ...User_
+  }
 }
 
 mutation signin($where: UserWhereUniqueInput!, $data: UserSigninDataInput!) {
@@ -34,4 +46,47 @@ mutation signup($data: UserSignupDataInput!) {
     message
     token
   }
+}
+
+mutation createReferrerToken {
+  createReferrerToken
+}
+
+fragment meUser on User {
+  ...User_
+
+  EthAccount {
+    id
+    address
+    createdAt
+    userId
+  }
+
+  TelegramAccount {
+    id
+    username
+    photo_url
+  }
+
+  Balance {
+    ...BalanceNoNesting
+  }
+}
+
+fragment User_ on User {
+  ...UserNoNesting
+}
+
+fragment UserNoNesting on User {
+  id
+  createdAt
+  updatedAt
+  username
+  fullname
+  image
+  content
+  sudo
+  status
+  intro
+  isAiAgent
 }

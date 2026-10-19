@@ -1,11 +1,19 @@
-import { styled } from '@linaria/react'
-export const Button = styled.button`
-  padding: 8px 14px;
-  border: 1px solid currentColor;
-  border-radius: 6px;
-  cursor: pointer;
-  &:disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-`
+import type * as React from 'react'
+import { ButtonStyled } from './styles'
+export interface ButtonProps extends React.ComponentPropsWithRef<'button'> {
+  variant?: 'primary' | 'secondary' | 'danger' | 'warning' | 'success' | 'ghost'
+  size?: 'normal' | 'small'
+}
+export const Button: React.FC<ButtonProps> = ({
+  variant = 'primary',
+  size = 'normal',
+  type = 'button',
+  ...props
+}) => (
+  <ButtonStyled
+    {...props}
+    type={type}
+    data-variant={variant}
+    data-size={size}
+  />
+)

@@ -1,8 +1,3 @@
 import { styled } from '@linaria/react'
-
-export const SignUpFormStyled = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-`
+import { FormStyled } from '../../Form/styles'
+export const SignUpFormStyled = styled(FormStyled)``

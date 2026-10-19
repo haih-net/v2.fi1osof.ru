@@ -161,6 +161,34 @@ services:
     depends_on:
       - prometheus
       - loki
+  mailserver:
+    image: ghcr.io/docker-mailserver/docker-mailserver:latest
+    hostname: ${MAIL_HOSTNAME:-mail.localhost}
+    domainname: ${MAIL_DOMAIN:-localhost}
+    volumes:
+      - ./mailserver/mail-data:/var/mail
+      - ./mailserver/mail-state:/var/mail-state
+      - ./mailserver/mail-logs:/var/log/mail
+      - ./mailserver/config:/tmp/docker-mailserver
+    environment:
+      - ENABLE_SPAMASSASSIN=${MAIL_ENABLE_SPAMASSASSIN:-0}
+      - ENABLE_CLAMAV=${MAIL_ENABLE_CLAMAV:-0}
+      - ENABLE_FAIL2BAN=${MAIL_ENABLE_FAIL2BAN:-0}
+      - ENABLE_POSTGREY=${MAIL_ENABLE_POSTGREY:-0}
+      - ONE_DIR=1
+      - ENABLE_POP3=${MAIL_ENABLE_POP3:-0}
+      - ENABLE_IMAP=${MAIL_ENABLE_IMAP:-1}
+      - SMTP_ONLY=${MAIL_SMTP_ONLY:-0}
+      - SSL_TYPE=${MAIL_SSL_TYPE:-}
+      - PERMIT_DOCKER=${MAIL_PERMIT_DOCKER:-connected-networks}
+      - POSTFIX_INET_PROTOCOLS=ipv4
+      - DEFAULT_RELAY_HOST=${MAIL_RELAY_HOST:-}
+    cap_add:
+      - NET_ADMIN
+      - SYS_PTRACE
+
+  mailhog:
+    image: mailhog/mailhog
 volumes:
   varnish-cache: null
   prometheus-data: null

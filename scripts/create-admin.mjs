@@ -16,6 +16,7 @@ async function main() {
       email: { type: 'string' },
       database: { type: 'string' },
       'password-stdin': { type: 'boolean' },
+      'allow-existing-users': { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
     },
   })
@@ -24,7 +25,8 @@ async function main() {
 
 Provide the password via ADMIN_PASSWORD or --password-stdin.
 Creates an active administrator only when the User table is empty.
-Default database: server/database/data/database.sqlite in this project.`)
+Default database: server/database/data/database.sqlite in this project.
+Use --allow-existing-users to explicitly create an additional administrator. Existing accounts are never updated.`)
     return
   }
   const username = values.username?.trim()
@@ -58,7 +60,10 @@ Default database: server/database/data/database.sqlite in this project.`)
     initializeSchema(database)
     database
       .transaction(() => {
-        if (database.prepare('SELECT 1 FROM "User" LIMIT 1').get()) {
+        if (
+          !values['allow-existing-users'] &&
+          database.prepare('SELECT 1 FROM "User" LIMIT 1').get()
+        ) {
           throw new Error(
             'Cannot create administrator: the database already contains users',
           )

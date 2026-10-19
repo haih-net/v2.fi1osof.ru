@@ -12,3 +12,8 @@ package-lock.json
 coverage/
 playwright-report/
 test-results/
+
+docker/mailserver/mail-data/
+docker/mailserver/mail-state/
+docker/mailserver/mail-logs/
+docker/mailserver/config/

@@ -13,15 +13,22 @@ builder.queryField('me', (t) =>
 )
 builder.queryField('user', (t) =>
   t.field({
+    authScopes: { sudo: true },
     type: User,
     nullable: true,
     args: { where: t.arg({ type: UserWhereUniqueInput, required: true }) },
-    resolve: async (_root, { where }, ctx) =>
-      (await findUser(ctx.dbOld, where).first()) ?? null,
+    resolve: async (_root, { where }, ctx) => {
+      const query = findUser(ctx.dbOld, where)
+      if (!ctx.currentUser?.sudo) {
+        query.whereNot('status', 'blocked')
+      }
+      return (await query.first()) ?? null
+    },
   }),
 )
 builder.queryField('users', (t) =>
   t.field({
+    authScopes: { sudo: true },
     type: [User],
     args: {
       where: t.arg({ type: UserWhereInput }),
@@ -53,6 +60,7 @@ builder.queryField('users', (t) =>
 )
 builder.queryField('usersCount', (t) =>
   t.int({
+    authScopes: { sudo: true },
     args: { where: t.arg({ type: UserWhereInput }) },
     resolve: async (_root, { where }, ctx) => {
       const result = await usersQuery(ctx.dbOld, where, ctx.currentUser).count<

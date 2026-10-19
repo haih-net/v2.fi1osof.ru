@@ -5,14 +5,15 @@ import { PaginationStyled } from './styles'
 export const Pagination: React.FC<{
   currentPage: number
   totalPages: number
-}> = ({ currentPage, totalPages }) => {
+  pageParam?: string
+}> = ({ currentPage, totalPages, pageParam = 'page' }) => {
   const { pathname, search } = useLocation()
   const pageLink = (page: number): string => {
     const params = new URLSearchParams(search)
     if (page === 1) {
-      params.delete('page')
+      params.delete(pageParam)
     } else {
-      params.set('page', String(page))
+      params.set(pageParam, String(page))
     }
     return pathname + (params.size ? `?${params}` : '')
   }

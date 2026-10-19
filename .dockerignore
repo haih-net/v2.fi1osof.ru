@@ -16,3 +16,8 @@ docker/supabase/data
 # Runtime credentials must not enter build stages or image layers.
 **/.env
 **/.env.*
+!.env.example
+!docker/.env.example
+
+# Mailserver runtime state and accounts must not enter application images.
+docker/mailserver

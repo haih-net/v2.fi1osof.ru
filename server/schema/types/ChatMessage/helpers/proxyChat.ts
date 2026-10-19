@@ -33,6 +33,9 @@ export const proxyChat = async (
           'Content-Type': 'application/json',
           Accept: 'text/event-stream',
           Authorization: `Bearer ${data.token}`,
+          Origin:
+            req.get('origin') ||
+            `${req.protocol}://${req.get('host') || 'unknown'}`,
           ...(data.pageUrl ? { 'X-Chat-Page-Url': data.pageUrl } : {}),
         },
         body: JSON.stringify({ message: data.message, stream: true }),

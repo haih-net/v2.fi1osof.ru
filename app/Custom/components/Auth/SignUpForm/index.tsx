@@ -1,15 +1,42 @@
 import React, { useCallback, useId, useRef, useState } from 'react'
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useWatch,
+  type ControllerProps,
+} from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
 import { useSearchParams } from 'react-router'
 import { useApolloClient } from '@apollo/client/react'
 import { useSignupMutation, type SignupMutation } from 'app/gql/generated'
 import { Button } from '../../Button'
+import { AuthProviders } from '../AuthProviders'
 import { GET_PARAM_REFERRERTOKEN_NAME, type SignUpFormData } from './interfaces'
-import { validateSignUpForm } from './schema'
+import { invitationRequired, signUpSchema } from './schema'
 import { SignUpFormStyled } from './styles'
 
 export interface SignUpFormProps {
   onSuccessHandler?: (data: SignupMutation['response']) => void
   loading?: boolean
+}
+
+type SignUpField =
+  'fullname' | 'username' | 'email' | 'password' | 'referrerToken'
+
+const fields: Record<
+  SignUpField,
+  { label: string; type: string; autoComplete: string }
+> = {
+  fullname: { label: 'Полное имя', type: 'text', autoComplete: 'name' },
+  username: { label: 'Логин', type: 'text', autoComplete: 'username' },
+  email: { label: 'Электронная почта', type: 'email', autoComplete: 'email' },
+  password: { label: 'Пароль', type: 'password', autoComplete: 'new-password' },
+  referrerToken: {
+    label: 'Токен приглашения',
+    type: 'text',
+    autoComplete: 'off',
+  },
 }
 
 export const SignUpForm: React.FC<SignUpFormProps> = ({
@@ -21,31 +48,33 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
   const client = useApolloClient()
   const [signup] = useSignupMutation()
   const pending = useRef(false)
-  const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const disabled = loading || submitting
+  const form = useForm<SignUpFormData>({
+    defaultValues: {
+      fullname: '',
+      username: '',
+      email: '',
+      password: '',
+      referrerToken: params.get(GET_PARAM_REFERRERTOKEN_NAME) ?? undefined,
+      isAiAgent: false,
+    },
+    mode: 'all',
+    reValidateMode: 'onChange',
+    resolver: yupResolver(signUpSchema),
+  })
+  const referrerToken = useWatch({
+    control: form.control,
+    name: 'referrerToken',
+  })
+  const showInvitationOnly = invitationRequired && referrerToken === undefined
+  const disabled = loading || form.formState.isSubmitting
   const submit = useCallback(
-    async (event: React.SubmitEvent<HTMLFormElement>): Promise<void> => {
-      event.preventDefault()
+    async (data: SignUpFormData): Promise<void> => {
       if (loading || pending.current) {
         return
       }
-      const form = new FormData(event.currentTarget)
-      const data: SignUpFormData = {
-        fullname: String(form.get('fullname') ?? '').trim(),
-        username: String(form.get('username') ?? '').trim(),
-        email: String(form.get('email') ?? '').trim(),
-        password: String(form.get('password') ?? ''),
-        referrerToken: String(form.get('referrerToken') ?? '').trim() || null,
-        isAiAgent: false,
-      }
-      const validationError = validateSignUpForm(data)
-      setError(validationError)
-      if (validationError) {
-        return
-      }
       pending.current = true
-      setSubmitting(true)
+      setError(null)
       try {
         const result = await signup({ variables: { data } })
         const response = result.data?.response
@@ -63,56 +92,98 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({
         )
       } finally {
         pending.current = false
-        setSubmitting(false)
       }
     },
     [loading, signup, client, onSuccessHandler],
   )
 
+  const fieldRenderer = useCallback<
+    ControllerProps<SignUpFormData, SignUpField>['render']
+  >(
+    ({ field, fieldState: { error } }) => {
+      const { label, type, autoComplete } = fields[field.name]
+      const fieldId = `${id}-${field.name}`
+      return (
+        <>
+          <label htmlFor={fieldId}>{label}</label>
+          <input
+            {...field}
+            value={field.value ?? ''}
+            id={fieldId}
+            type={type}
+            autoComplete={autoComplete}
+            required={
+              field.name === 'password' ||
+              (field.name === 'referrerToken' && invitationRequired)
+            }
+            disabled={disabled}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? `${fieldId}-error` : undefined}
+          />
+          {error && (
+            <p id={`${fieldId}-error`} role="alert">
+              {error.message}
+            </p>
+          )}
+        </>
+      )
+    },
+    [disabled, id],
+  )
+
   return (
-    <SignUpFormStyled onSubmit={submit} aria-busy={disabled}>
-      <label htmlFor={`${id}-fullname`}>Полное имя</label>
-      <input
-        id={`${id}-fullname`}
-        name="fullname"
-        autoComplete="name"
-        disabled={disabled}
-      />
-      <label htmlFor={`${id}-email`}>Электронная почта</label>
-      <input
-        id={`${id}-email`}
-        name="email"
-        type="email"
-        autoComplete="email"
-        disabled={disabled}
-      />
-      <label htmlFor={`${id}-username`}>Логин</label>
-      <input
-        id={`${id}-username`}
-        name="username"
-        autoComplete="username"
-        disabled={disabled}
-      />
-      <label htmlFor={`${id}-password`}>Пароль</label>
-      <input
-        id={`${id}-password`}
-        name="password"
-        type="password"
-        autoComplete="new-password"
-        required
-        disabled={disabled}
-      />
-      <label htmlFor={`${id}-referrer`}>Токен приглашения</label>
-      <input
-        id={`${id}-referrer`}
-        name="referrerToken"
-        defaultValue={params.get(GET_PARAM_REFERRERTOKEN_NAME) ?? ''}
-        disabled={disabled}
-      />
-      {error && <p role="alert">{error}</p>}
-      <Button type="submit" disabled={disabled}>
-        {disabled ? 'Регистрация…' : 'Зарегистрироваться'}
-      </Button>
+    <SignUpFormStyled
+      onSubmit={form.handleSubmit(submit)}
+      noValidate
+      aria-busy={disabled}
+    >
+      <FormProvider {...form}>
+        {showInvitationOnly && (
+          <p>
+            Регистрация доступна только по приглашению. Введите токен
+            приглашения, чтобы заполнить данные учётной записи.
+          </p>
+        )}
+        <Controller
+          name="referrerToken"
+          control={form.control}
+          render={fieldRenderer}
+        />
+        {!showInvitationOnly && (
+          <>
+            <Controller
+              name="fullname"
+              control={form.control}
+              render={fieldRenderer}
+            />
+            <Controller
+              name="email"
+              control={form.control}
+              rules={{ deps: 'username' }}
+              render={fieldRenderer}
+            />
+            <Controller
+              name="username"
+              control={form.control}
+              render={fieldRenderer}
+            />
+            <Controller
+              name="password"
+              control={form.control}
+              render={fieldRenderer}
+            />
+            {error && <p role="alert">{error}</p>}
+            <Button type="submit" disabled={disabled}>
+              {disabled ? 'Регистрация…' : 'Зарегистрироваться'}
+            </Button>
+            <AuthProviders
+              onSuccessHandler={onSuccessHandler}
+              referrerToken={referrerToken?.trim() || null}
+              disabled={disabled}
+            />
+          </>
+        )}
+      </FormProvider>
     </SignUpFormStyled>
   )
 }

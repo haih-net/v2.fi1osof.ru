@@ -1,0 +1,51 @@
+query myTransactions($skip: Int, $take: Int) {
+  myTransactions(skip: $skip, take: $take) {
+    ...Transaction_
+  }
+}
+
+query myTransactionsCount {
+  myTransactionsCount
+}
+
+query myTransactionsWithCount($skip: Int, $take: Int) {
+  myTransactions(skip: $skip, take: $take) {
+    ...Transaction_
+  }
+  myTransactionsCount
+}
+
+mutation createTransfer($data: CreateTransferInput!) {
+  createTransfer(data: $data) {
+    ...Transaction_
+  }
+}
+
+fragment TransactionNoNesting on Transaction {
+  id
+  type
+  amount
+  title
+  createdAt
+  userId
+  balanceId
+}
+
+fragment Transaction_ on Transaction {
+  ...TransactionNoNesting
+  User {
+    ...UserNoNesting
+  }
+  Parent {
+    ...TransactionNoNesting
+    User {
+      ...UserNoNesting
+    }
+  }
+  Children {
+    ...TransactionNoNesting
+    User {
+      ...UserNoNesting
+    }
+  }
+}

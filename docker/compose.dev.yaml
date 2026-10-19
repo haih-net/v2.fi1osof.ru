@@ -27,6 +27,22 @@ services:
   grafana:
     ports:
       - 127.0.0.1:${MONITORING_GRAFANA_PORT:-13001}:3000
+  mailserver:
+    environment:
+      - DEFAULT_RELAY_HOST=${MAIL_RELAY_HOST:-[mailhog]:1025}
+      - SMTP_ONLY=${MAIL_SMTP_ONLY:-1}
+      - ENABLE_IMAP=${MAIL_ENABLE_IMAP:-0}
+    ports:
+      - 127.0.0.1:${MAIL_SMTP_PORT:-1026}:25
+      - 127.0.0.1:${MAIL_SMTPS_PORT:-1465}:465
+      - 127.0.0.1:${MAIL_SUBMISSION_PORT:-1587}:587
+      - 127.0.0.1:${MAIL_IMAP_PORT:-1143}:143
+      - 127.0.0.1:${MAIL_IMAPS_PORT:-1993}:993
+
+  mailhog:
+    ports:
+      - 127.0.0.1:${MAILHOG_HTTP_PORT:-8025}:8025
+      - 127.0.0.1:${MAILHOG_SMTP_PORT:-1025}:1025
 networks:
   default:
     name: ${MONITORING_NETWORK:-haih-monitoring-dev}

@@ -23,7 +23,11 @@ const execute = async (token: string | null | undefined = 'guest-token') => {
     },
     contextValue: {
       currentUser: null,
-      req: { socket: { localPort: 3456 }, res },
+      req: {
+        socket: { localPort: 3456 },
+        res,
+        get: () => 'https://example.test',
+      },
     },
   })
   expect(res.listenerCount('close')).toBe(0)
@@ -65,6 +69,7 @@ it('публичная мутация собирает поток и полны�
       body: JSON.stringify({ message: 'Вопрос', stream: true }),
       headers: expect.objectContaining({
         Authorization: 'Bearer guest-token',
+        Origin: 'https://example.test',
         'X-Chat-Page-Url': 'https://example.test/page',
       }),
     }),

@@ -24,12 +24,14 @@ export interface MetaMaskAuthProps {
   onSuccess?: () => void
   referrerToken?: string | null
   disabled?: boolean
+  mode?: 'signin' | 'link'
 }
 
 export const MetaMaskAuth: React.FC<MetaMaskAuthProps> = ({
   onSuccess,
   referrerToken = null,
   disabled = false,
+  mode = 'signin',
 }) => {
   const client = useApolloClient()
   const [loading, setLoading] = useState(false)
@@ -45,7 +47,11 @@ export const MetaMaskAuth: React.FC<MetaMaskAuthProps> = ({
     setError(null)
     const provider = window.ethereum
     if (!provider?.isMetaMask) {
-      setError('Установите MetaMask, чтобы войти с помощью кошелька.')
+      setError(
+        mode === 'link'
+          ? 'Установите MetaMask, чтобы привязать кошелёк.'
+          : 'Установите MetaMask, чтобы войти с помощью кошелька.',
+      )
       return
     }
     pending.current = true
@@ -59,7 +65,11 @@ export const MetaMaskAuth: React.FC<MetaMaskAuthProps> = ({
       const nonceResult = await getNonce({ variables: { address } })
       const { nonce, message } = nonceResult.data?.ethAccountNonce ?? {}
       if (!nonce || !message) {
-        throw new Error('Не удалось получить одноразовый код для входа.')
+        throw new Error(
+          mode === 'link'
+            ? 'Не удалось получить одноразовый код для привязки кошелька.'
+            : 'Не удалось получить одноразовый код для входа.',
+        )
       }
       const hexMessage =
         '0x' +
@@ -78,7 +88,12 @@ export const MetaMaskAuth: React.FC<MetaMaskAuthProps> = ({
       })
       const response = data?.response
       if (!response?.success || !response.token) {
-        throw new Error(response?.message || 'Не удалось войти.')
+        throw new Error(
+          response?.message ||
+            (mode === 'link'
+              ? 'Не удалось привязать кошелёк.'
+              : 'Не удалось войти.'),
+        )
       }
       localStorage.setItem('token', response.token)
       await client.resetStore()
@@ -115,23 +130,38 @@ export const MetaMaskAuth: React.FC<MetaMaskAuthProps> = ({
         setError(
           error instanceof Error
             ? error.message
-            : 'Не удалось войти. Попробуйте ещё раз.',
+            : mode === 'link'
+              ? 'Не удалось привязать кошелёк. Попробуйте ещё раз.'
+              : 'Не удалось войти. Попробуйте ещё раз.',
         )
       }
     } finally {
       pending.current = false
       setLoading(false)
     }
-  }, [authEthAccount, client, disabled, getNonce, onSuccess, referrerToken])
+  }, [
+    authEthAccount,
+    client,
+    disabled,
+    getNonce,
+    mode,
+    onSuccess,
+    referrerToken,
+  ])
 
   return (
     <MetaMaskAuthStyled aria-busy={loading}>
       <Button
         type="button"
+        variant="secondary"
         onClick={handleConnect}
         disabled={disabled || loading}
       >
-        {loading ? 'Подключение…' : 'Войти через MetaMask'}
+        {loading
+          ? 'Подключение…'
+          : mode === 'link'
+            ? 'Привязать MetaMask'
+            : 'Войти через MetaMask'}
       </Button>
       {error && <p role="alert">{error}</p>}
     </MetaMaskAuthStyled>

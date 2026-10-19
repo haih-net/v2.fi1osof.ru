@@ -6,6 +6,7 @@ import { collectToolCalls } from './toolCalls'
 import { prepareTool, toolDefinitions } from './tools/registry'
 import { parsePageUrl } from './pageContext'
 import { buildSystemMessage } from './systemMessage'
+import { createChatMessages } from './messages'
 import type { ProviderMessage, ToolCall } from './types'
 import { randomUUID } from 'node:crypto'
 import { once } from 'node:events'
@@ -23,6 +24,7 @@ export const setupChat = (
   app: Express,
   storage: ChatStorage = chatStorage,
 ): void => {
+  const chatMessages = createChatMessages(storage)
   let active = 0
   const busy = new Set<string>()
   app.post(
@@ -121,7 +123,12 @@ export const setupChat = (
       let providerStatus: number | undefined
       let providerRequestId: string | null = null
       try {
-        await storage.append(chatId, message)
+        await chatMessages.receive(
+          chatId,
+          message,
+          req.get('origin') ||
+            `${req.protocol}://${req.get('host') || 'unknown'}`,
+        )
         userSaved = true
         if (rejected) {
           failureStatus = rejected

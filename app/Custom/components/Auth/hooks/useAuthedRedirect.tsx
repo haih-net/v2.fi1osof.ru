@@ -2,13 +2,13 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router'
 import { useAppContext } from '../../../hooks/useAppContext'
 
-export function useAuthedRedirect(): void {
+export function useAuthedRedirect(redirectTo?: string): void {
   const navigate = useNavigate()
   const { user, userLoading } = useAppContext()
 
   useEffect(() => {
-    if (user && !userLoading) {
-      void navigate('/', { replace: true })
+    if (redirectTo && user && !userLoading) {
+      void navigate(redirectTo, { replace: true })
     }
-  }, [user, userLoading, navigate])
+  }, [user, userLoading, navigate, redirectTo])
 }

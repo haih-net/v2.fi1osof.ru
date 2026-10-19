@@ -44,6 +44,13 @@ The website you see is its own proof. Every architectural decision, every depend
 | **Proxy**     | Traefik 3                   | TLS termination, routing, load balancing  |
 | **Container** | Docker Compose              | Reproducible environments                 |
 
+## Static files in shared
+
+`shared/` is an untracked directory for static files (only `.gitkeep` is tracked).
+Do not place components, validation schemas, or other application source code there.
+Keep client code beside its owning component in `app/` and server code beside its
+owning entity in `server/`.
+
 ## Quick Start
 
 Use Node.js 22.22.3 (the Docker image is pinned to this version).
@@ -390,3 +397,31 @@ The proxy must preserve errors returned before streaming as well as errors carri
 README documentation must be written in English.
 
 Transport errors raised before the chat returns an HTTP response (such as invalid header characters or a connection failure) are logged in full on the server. The GraphQL caller receives a readable general request error instead of low-level fetch details. Keep the chat token in the Authorization header, not in the JSON request body. Errors returned by the chat itself retain their original messages.
+
+### User pages
+
+`/users` and `/users/:userId` use React Router loaders, Apollo operations from
+`app/gql/src`, and colocated Linaria styles. The `/signup` page supports password registration with the configured invitation
+policy and `USER_DEFAULT_STATUS` (default `active`). Profiles support editing, avatars,
+Markdown, administrator status changes and invitations. Invitations use
+`REFERRER_TOKEN_TTL` (default `1h`) and the existing `JWT_SECRET`.
+
+SQLite schema version 4 adds the transaction ledger, unique blockchain payment
+records, and a Telegram account identifier. Existing users and balances are
+preserved. The migration runs when the database opens.
+
+Optional integrations retain the original environment names:
+
+- `NEXT_PUBLIC_CRYPTO_ENABLED=true` exposes balances, transfers and top-ups.
+- `CRYPTO_CHAIN_ID`, `CRYPTO_RPC_URL`, `CRYPTO_USDT_CONTRACT_ADDRESS` and
+  `PAYMENT_RECIPIENT_ADDRESS` configure USDT payments (six token decimals).
+  The wallet switches to the chain returned by the server. Credits require two
+  confirmations, the configured token and recipient, and the linked sender.
+- `NEXT_PUBLIC_TELEGRAM_BOT_NAME` exposes the Telegram login widget;
+  `TELEGRAM_BOT_TOKEN` stays on the server and verifies its signed payload.
+  The bot's login domain must be configured in Telegram.
+
+Public flags are embedded during the Vite build; rebuild after changing them.
+Pending top-up details are retained in the browser so verification can be retried
+without sending another payment. These integrations require configured services;
+local tests do not establish successful live wallet or Telegram login behavior.

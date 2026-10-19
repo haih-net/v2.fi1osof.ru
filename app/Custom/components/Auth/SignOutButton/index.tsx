@@ -28,7 +28,12 @@ export const SignOutButton: React.FC<SignOutButtonProps> = ({
   }, [client])
   return (
     <>
-      <Button {...props} disabled={disabled || loading} onClick={handleSignOut}>
+      <Button
+        variant="secondary"
+        {...props}
+        disabled={disabled || loading}
+        onClick={handleSignOut}
+      >
         Выйти
       </Button>
       {error && <span role="alert">{error}</span>}

@@ -1,16 +1,24 @@
 import React, { useCallback, useState } from 'react'
-import { SnackbarContext } from '../../hooks/useSnackbar'
+import { SnackbarMessageStyled, SnackbarStackStyled } from './styles'
+import {
+  SnackbarContext,
+  type SnackbarContextValue,
+} from '../../hooks/useSnackbar'
 interface Message {
   id: string
   text: string
+  variant: 'success' | 'error' | 'info' | 'warning'
 }
 export const SnackbarProvider: React.FC<React.PropsWithChildren> = ({
   children,
 }) => {
   const [messages, setMessages] = useState<Message[]>([])
-  const addMessage = useCallback(
-    (text: string) =>
-      setMessages((values) => [...values, { id: crypto.randomUUID(), text }]),
+  const addMessage = useCallback<SnackbarContextValue['addMessage']>(
+    (text, options) =>
+      setMessages((values) => [
+        ...values,
+        { id: crypto.randomUUID(), text, variant: options?.variant ?? 'info' },
+      ]),
     [],
   )
   const dismiss = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
@@ -20,16 +28,29 @@ export const SnackbarProvider: React.FC<React.PropsWithChildren> = ({
   return (
     <SnackbarContext.Provider value={{ addMessage }}>
       {children}
-      <div role="status">
+      <SnackbarStackStyled aria-label="Уведомления">
         {messages.map((message) => (
-          <div key={message.id}>
-            {message.text}
-            <button value={message.id} onClick={dismiss}>
-              Dismiss
+          <SnackbarMessageStyled
+            key={message.id}
+            data-variant={message.variant}
+            role={
+              message.variant === 'error' || message.variant === 'warning'
+                ? 'alert'
+                : 'status'
+            }
+          >
+            <span>{message.text}</span>
+            <button
+              type="button"
+              aria-label="Закрыть уведомление"
+              value={message.id}
+              onClick={dismiss}
+            >
+              ×
             </button>
-          </div>
+          </SnackbarMessageStyled>
         ))}
-      </div>
+      </SnackbarStackStyled>
     </SnackbarContext.Provider>
   )
 }

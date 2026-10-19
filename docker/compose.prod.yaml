@@ -29,3 +29,5 @@ services:
     restart: unless-stopped
     ports:
       - 127.0.0.1:${MONITORING_GRAFANA_PORT:-13000}:3000
+  mailserver:
+    restart: unless-stopped

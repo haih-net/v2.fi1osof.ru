@@ -89,6 +89,9 @@ export function usersQuery(
   currentUser: UserRecord | null,
 ): UserQuery {
   const query = dbOld<UserRecord>('User')
+  if (!currentUser?.sudo) {
+    query.whereNot('status', 'blocked')
+  }
   if (where?.status) {
     query.where('status', where.status)
   } else if (!currentUser?.sudo) {

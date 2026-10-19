@@ -1,0 +1,8 @@
+# Mail data (generated, not committed)
+mail-data/
+mail-state/
+mail-logs/
+
+# Config directory (machine-specific)
+config/*
+!config/*.sample

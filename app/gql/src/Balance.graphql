@@ -1,0 +1,22 @@
+mutation requestTopUp {
+  requestTopUp {
+    message
+    recipientAddress
+    usdtContractAddress
+    chainId
+  }
+}
+
+mutation topUpBalance($data: TopUpBalanceInput!) {
+  topUpBalance(data: $data) {
+    ...BalanceNoNesting
+  }
+}
+
+fragment BalanceNoNesting on Balance {
+  id
+  amount
+  createdAt
+  updatedAt
+  userId
+}

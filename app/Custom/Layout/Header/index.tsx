@@ -3,12 +3,14 @@ import type * as React from 'react'
 import { Link, useLocation } from 'react-router'
 import { useOpenChatWithMessage } from '../../components/Chat/hooks/useOpenChatWithMessage'
 import { HeaderStyled } from './styles'
+import { SignOutButton } from '../../components/Auth/SignOutButton'
 import { theme } from '../../theme'
 import { useAppContext } from '../../hooks/useAppContext'
 
 export const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false)
   const toggle = useRef<HTMLButtonElement>(null)
+  const accountMenu = useRef<HTMLDetailsElement>(null)
   const header = useRef<HTMLElement>(null)
   const location = useLocation()
   const { user, userLoading, openFeedback } = useAppContext()
@@ -26,7 +28,12 @@ export const Header: React.FC = () => {
     [openChat],
   )
 
-  const closeMenu = useCallback(() => setIsOpen(false), [])
+  const closeMenu = useCallback(() => {
+    setIsOpen(false)
+    if (accountMenu.current) {
+      accountMenu.current.open = false
+    }
+  }, [])
   const toggleMenu = useCallback(() => setIsOpen((previous) => !previous), [])
   const handleBlur = useCallback((event: React.FocusEvent<HTMLElement>) => {
     if (
@@ -71,6 +78,30 @@ export const Header: React.FC = () => {
     }
   }, [isOpen])
 
+  useEffect(() => {
+    const closeAccount = (event: PointerEvent): void => {
+      if (
+        event.target instanceof Node &&
+        accountMenu.current &&
+        !accountMenu.current.contains(event.target)
+      ) {
+        accountMenu.current.open = false
+      }
+    }
+    const onEscape = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape' && accountMenu.current?.open) {
+        accountMenu.current.open = false
+        accountMenu.current.querySelector('summary')?.focus()
+      }
+    }
+    document.addEventListener('pointerdown', closeAccount)
+    document.addEventListener('keydown', onEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeAccount)
+      document.removeEventListener('keydown', onEscape)
+    }
+  }, [])
+
   return (
     <HeaderStyled ref={header}>
       <div className="header-inner">
@@ -107,22 +138,20 @@ export const Header: React.FC = () => {
           data-open={isOpen}
           onBlur={handleBlur}
         >
-          {!userLoading && user?.sudo === true && (
-            <Link
-              to="/admin-panel"
-              onClick={closeMenu}
-              aria-current={
-                location.pathname === '/admin-panel'
-                  ? 'page'
-                  : location.pathname.startsWith('/admin-panel/')
-                    ? 'location'
-                    : undefined
-              }
-            >
-              Админка
-            </Link>
-          )}
-          <button type="button" className="ai-button" onClick={handleFeedback}>
+          {/* <Link
+            to="/users"
+            onClick={closeMenu}
+            aria-current={
+              location.pathname.startsWith('/users') ? 'page' : undefined
+            }
+          >
+            Пользователи
+          </Link> */}
+          <button
+            type="button"
+            className="feedback-button"
+            onClick={handleFeedback}
+          >
             Написать
           </button>
           {location.pathname === '/ai' ? (
@@ -138,6 +167,45 @@ export const Header: React.FC = () => {
               Спросить ИИ <span aria-hidden="true">↗</span>
             </button>
           )}
+          {!userLoading &&
+            (user ? (
+              <details className="account-menu" ref={accountMenu}>
+                <summary
+                  aria-label={`Меню пользователя: ${user.fullname || user.username || 'Мой аккаунт'}`}
+                >
+                  <span className="account-avatar" aria-hidden="true">
+                    {(user.fullname || user.username || 'Я')
+                      .slice(0, 1)
+                      .toUpperCase()}
+                  </span>
+                  <span className="account-name">
+                    {user.fullname || user.username || 'Мой аккаунт'}
+                  </span>
+                  <span aria-hidden="true">⌄</span>
+                </summary>
+                <div className="account-dropdown">
+                  <p>{user.sudo ? 'Администратор' : 'Мой аккаунт'}</p>
+                  <Link to="/panel/profile" onClick={closeMenu}>
+                    Мой профиль
+                  </Link>
+                  {user.sudo && (
+                    <>
+                      <Link to="/users" onClick={closeMenu}>
+                        Пользователи
+                      </Link>
+                      <Link to="/admin-panel" onClick={closeMenu}>
+                        Админка
+                      </Link>
+                    </>
+                  )}
+                  <SignOutButton variant="ghost" />
+                </div>
+              </details>
+            ) : (
+              <Link className="signin-link" to="/signin" onClick={closeMenu}>
+                Войти
+              </Link>
+            ))}
         </nav>
       </div>
     </HeaderStyled>

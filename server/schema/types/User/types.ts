@@ -15,7 +15,7 @@ interface TelegramAccountRecord {
   username: string | null
   userId: string
 }
-interface BalanceRecord {
+export interface BalanceRecord {
   id: string
   createdAt: Date
   updatedAt: Date
@@ -42,7 +42,7 @@ const TelegramAccount = builder
       userId: t.exposeID('userId'),
     }),
   })
-const Balance = builder.objectRef<BalanceRecord>('Balance').implement({
+export const Balance = builder.objectRef<BalanceRecord>('Balance').implement({
   fields: (t) => ({
     id: t.exposeID('id'),
     createdAt: t.expose('createdAt', { type: 'DateTime' }),
