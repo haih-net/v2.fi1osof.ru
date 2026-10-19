@@ -1,13 +1,13 @@
 import React, { useCallback } from 'react'
-import { Link } from 'react-router'
+// import { Link } from 'react-router'
 import { ArrowUpRight, Send } from 'lucide-react'
 import { useChatContext } from '../../../components/Chat/ChatWidget/context'
 import { MainPageViewStyled } from './styles'
 import { useAppContext } from '../../../hooks/useAppContext'
 import portrait from './assets/portrait.webp'
-import technologies from './assets/technologies.webp'
-import projectBefore from './assets/project-before.webp'
-import projectAfter from './assets/project-after.webp'
+// import technologies from './assets/technologies.webp'
+// import projectBefore from './assets/project-before.webp'
+// import projectAfter from './assets/project-after.webp'
 
 export const MainPageView: React.FC = () => {
   const { openFeedback } = useAppContext()
@@ -82,7 +82,7 @@ export const MainPageView: React.FC = () => {
             собственные инструменты.
           </p>
         </div>
-        <h3 className="technology-title">
+        {/* <h3 className="technology-title">
           Работаю с разными поколениями веб-технологий
         </h3>
         <div className="technology-strip">
@@ -93,7 +93,7 @@ export const MainPageView: React.FC = () => {
             alt="TypeScript, React, Node.js, GraphQL, Docker, PostgreSQL, PHP, MODX, Next.js, Prisma, Three.js"
             loading="lazy"
           />
-        </div>
+        </div> */}
       </section>
 
       <section aria-labelledby="services-title">
@@ -198,7 +198,7 @@ export const MainPageView: React.FC = () => {
         </div>
       </section>
 
-      <section aria-labelledby="projects-title">
+      {/* <section aria-labelledby="projects-title">
         <h2 id="projects-title">Примеры проектов</h2>
         <h3>HappyBaby2000 — развитие существующего магазина</h3>
         <div className="two-columns project-images">
@@ -245,7 +245,7 @@ export const MainPageView: React.FC = () => {
             </figure>
           ))}
         </div>
-      </section>
+      </section> */}
 
       <section aria-labelledby="contact-title">
         <h2 id="contact-title">Полезно просто быть на связи</h2>
