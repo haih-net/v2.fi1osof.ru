@@ -67,6 +67,24 @@ function stringFilter(
   for (const key of ['contains', 'startsWith', 'endsWith'] as const) {
     const item = filter[key]
     if (item !== null && item !== undefined) {
+      if (query.client.config.client === 'better-sqlite3') {
+        const text = value(item)
+        if (key === 'contains') {
+          query.whereRaw(`instr(${field}, ?) > 0`, [column, text])
+        } else if (key === 'startsWith') {
+          query.whereRaw(`substr(${field}, 1, length(?)) = ?`, [
+            column,
+            text,
+            text,
+          ])
+        } else {
+          query.whereRaw(
+            `substr(${field}, length(${field}) - length(?) + 1) = ?`,
+            [column, column, text, text],
+          )
+        }
+        continue
+      }
       query.whereRaw(`?? ${insensitive ? 'ilike' : 'like'} ?`, [
         column,
         `${key !== 'startsWith' ? '%' : ''}${item}${key !== 'endsWith' ? '%' : ''}`,

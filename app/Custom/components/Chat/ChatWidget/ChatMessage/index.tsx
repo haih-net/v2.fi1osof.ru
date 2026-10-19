@@ -14,7 +14,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   text,
 }) => {
   return (
-    <MessageStyled key={id} data-user={isUser}>
+    <MessageStyled key={id} data-message-id={id} data-user={isUser}>
       {text ? <Markdown>{text}</Markdown> : null}
     </MessageStyled>
   )

@@ -22,6 +22,7 @@ export const ChatContentContainer = styled.div`
   height: 100%;
   overflow: auto;
 
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto auto;
   @media (min-width: 768px) {
     grid-template-rows: minmax(0, 1fr) auto 1fr;
@@ -138,13 +139,19 @@ export const ExpandButton = styled(HeaderButton)`
 export const CloseButton = styled(HeaderButton)``
 
 export const ChatMessages = styled.div`
+  box-sizing: border-box;
   flex: 1;
   overflow-y: auto;
+  overflow-anchor: none;
   padding: 24px;
+  padding-bottom: calc(24px + var(--chat-response-space, 0px));
+
+  > * {
+    flex-shrink: 0;
+  }
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 1200px;
   margin: 0 auto;
   width: 100%;
 
@@ -176,7 +183,6 @@ export const ChatForm = styled.form`
   display: flex;
   gap: 12px;
   align-items: center;
-  max-width: 1200px;
   margin: 0 auto;
   background: #ffffff;
   border-radius: 24px;
