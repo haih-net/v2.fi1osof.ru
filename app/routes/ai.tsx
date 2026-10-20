@@ -4,8 +4,9 @@ import { AiPage } from 'app/Custom/pages/Ai'
 
 export const meta: MetaFunction = () =>
   createSeoMeta({
-    title: 'ИИ-помощник',
-    description: 'Задайте помощнику вопросы ИИ-помощнику.',
+    title: 'ИИ-помощник Николая Ланца',
+    description:
+      'Пообщайтесь с ИИ-помощником Николая Ланца: узнайте о проектах и опыте разработчика, задайте вопрос или обсудите свою задачу.',
     path: '/ai',
   })
 export default AiPage

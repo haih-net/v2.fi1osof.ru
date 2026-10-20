@@ -34,7 +34,9 @@ export async function loadConcept({ params, context }: LoaderFunctionArgs) {
       initialError,
       seo: {
         title: concept.name,
-        description: concept.description ?? '',
+        description:
+          concept.description?.trim() ||
+          `«${concept.name}» — материал в базе знаний Николая Ланца. Заметки, идеи и практический опыт.`,
         path: concept.uri,
       },
     }

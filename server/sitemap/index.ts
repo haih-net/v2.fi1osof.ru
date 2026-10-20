@@ -1,3 +1,4 @@
+import { site } from '../../app/components/seo/site'
 import type { Express, Request, Response } from 'express'
 import { dbOld } from '../database_old'
 import type { ConceptRecord } from '../schema/types/KBConcept/interfaces'
@@ -7,7 +8,7 @@ import type { WorkLogRecord } from '../schema/types/TaskWorkLog/interfaces'
 
 interface SitemapItem {
   uri: string
-  updatedAt: Date | string
+  updatedAt?: Date | string
 }
 
 export enum SitemapSection {
@@ -46,7 +47,7 @@ function generateUrls(items: SitemapItem[], origin: string): string {
 ${Array.from(urls, ([url, item]) => {
   return `  <url>
     <loc>${escapeXml(url)}</loc>
-    <lastmod>${new Date(item.updatedAt).toISOString()}</lastmod>
+${item.updatedAt ? `    <lastmod>${new Date(item.updatedAt).toISOString()}</lastmod>` : ''}
     <priority>0.9</priority>
   </url>`
 }).join('\n')}
@@ -73,14 +74,8 @@ ${[
 }
 
 function getMainPages(): SitemapItem[] {
-  const now = new Date()
-  const dayOfWeek = now.getDay()
-  const monday = new Date(now)
-  monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1))
-  const updatedAt = monday.toISOString().split('T')[0]
-
   return ['/', '/concepts', '/projects', '/tasks', '/worklogs', '/about'].map(
-    (uri) => ({ uri, updatedAt }),
+    (uri) => ({ uri }),
   )
 }
 
@@ -130,7 +125,7 @@ async function getWorkLogs(): Promise<SitemapItem[]> {
 }
 
 async function generateSitemap(req: Request, res: Response): Promise<void> {
-  const origin = `${req.protocol}://${req.get('host')}`
+  const origin = site.origin
   let xml: string
 
   switch (req.path) {
@@ -161,8 +156,8 @@ async function generateSitemap(req: Request, res: Response): Promise<void> {
 }
 
 export function setupSitemap(app: Express): void {
-  app.get('/robots.txt', (req, res) => {
-    const origin = `${req.protocol}://${req.get('host')}`
+  app.get('/robots.txt', (_req, res) => {
+    const origin = site.origin
     res
       .type('text/plain')
       .send(

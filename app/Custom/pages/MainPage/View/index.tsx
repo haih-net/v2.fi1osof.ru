@@ -66,7 +66,7 @@ export const MainPageView: React.FC = () => {
       </section>
 
       <section aria-labelledby="experience-title">
-        <h2 id="experience-title">19+ лет активного программирования</h2>
+        <h2 id="experience-title">Опыт разработки с 2007 года</h2>
         <div className="two-columns">
           <p>
             Я продолжаю быть программистом, потому что это моя суть. С опытом
@@ -97,7 +97,7 @@ export const MainPageView: React.FC = () => {
       </section>
 
       <section aria-labelledby="services-title">
-        <h2 id="services-title">С чем я могу быть полезен</h2>
+        <h2 id="services-title">Разработка, ИИ-интеграции и ИТ-консалтинг</h2>
         <div className="service-row">
           <h3>
             ИТ / ИИ-консультант
@@ -120,7 +120,7 @@ export const MainPageView: React.FC = () => {
           </button>
         </div>
         <div className="service-row">
-          <h3>ИИ-интегратор</h3>
+          <h3>Внедрение ИИ-агентов и чат-ботов</h3>
           <div>
             <p>
               Встраиваю ИИ в существующие сайты и рабочие процессы: диалоги с
@@ -138,7 +138,7 @@ export const MainPageView: React.FC = () => {
           </button>
         </div>
         <div className="service-row">
-          <h3>Полное сопровождение бизнеса в интернете</h3>
+          <h3>Разработка и поддержка сайтов для бизнеса</h3>
           <div>
             <p>
               Разбираюсь в состоянии сайтов и связанных систем, восстанавливаю
@@ -159,7 +159,7 @@ export const MainPageView: React.FC = () => {
       </section>
 
       <section id="ai-chat" aria-labelledby="chat-title">
-        <h2 id="chat-title">Мои ИИ-чаты — попробуйте в разговоре</h2>
+        <h2 id="chat-title">ИИ-помощник на сайте — попробуйте в разговоре</h2>
         <div className="two-columns chat-columns">
           <div>
             <p>
@@ -248,7 +248,7 @@ export const MainPageView: React.FC = () => {
       </section> */}
 
       <section aria-labelledby="contact-title">
-        <h2 id="contact-title">Полезно просто быть на связи</h2>
+        <h2 id="contact-title">Обсудить разработку или внедрение ИИ</h2>
         <div className="two-columns">
           <div>
             <p>

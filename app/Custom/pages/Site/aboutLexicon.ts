@@ -1,7 +1,7 @@
 export const aboutLexicon = {
   ru: {
     seo: {
-      title: 'Николай Ланец (Fi1osof) — Fullstack AI Researcher',
+      title: 'Николай Ланец (Fi1osof) — опыт разработки и исследования ИИ',
       description:
         'Fullstack-разработчик с 2007 года, основатель MODX-Клуба. Исследую практическое применение ИИ и развиваю собственного ИИ-агента с памятью и обучением через общение.',
       breadcrumb: {

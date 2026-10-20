@@ -273,6 +273,39 @@ export async function loadPage(
     title: labels[locale][section] || 'Fi1osof',
     description: '',
   }
+  if (locale === 'ru') {
+    const sections: Record<string, { title: string; description: string }> = {
+      '/projects': {
+        title: 'Проекты Николая Ланца',
+        description:
+          'Личные и коммерческие проекты Николая Ланца: веб-разработка, ИИ-агенты и поддержка сайтов. Описание проектов, задачи и ход работы.',
+      },
+      '/tasks': {
+        title: 'Задачи по разработке и развитию проектов',
+        description:
+          'Публичные задачи Николая Ланца: разработка, исправления и развитие проектов. Текущий статус, описание работ и связанные записи журнала.',
+      },
+      '/worklogs': {
+        title: 'Журнал разработки Николая Ланца',
+        description:
+          'Рабочие записи Николая Ланца: выполненные задачи, ход разработки и исследования. Практический опыт работы над сайтами и ИИ-проектами.',
+      },
+      '/timers': {
+        title: 'Учёт времени работы над проектами',
+        description:
+          'Текущие и завершённые рабочие сессии Николая Ланца: учёт времени, задачи и история работы над проектами.',
+      },
+      '/users': {
+        title: 'Участники проектов',
+        description:
+          'Участники проектов на сайте Николая Ланца: профили, информация о разработчиках и их работе.',
+      },
+    }
+    const sectionMeta = sections[path]
+    if (sectionMeta) {
+      Object.assign(result, sectionMeta)
+    }
+  }
   if (path === '/about') {
     result.title = aboutLexicon[locale].seo.title
     result.description = aboutLexicon[locale].seo.description
@@ -291,6 +324,9 @@ export async function loadPage(
   let data: QueryData | undefined
   let detail = false
   if (path === '/projects') {
+    if (page > 1) {
+      throw new Response('Not found', { status: 404 })
+    }
     const response = (
       await query<ProjectsQuery, ProjectsQueryVariables>(ProjectsDocument, {
         take: 200,
@@ -428,6 +464,17 @@ export async function loadPage(
     if (result.item) {
       result.title = result.item.title || labels[locale][section] || 'Fi1osof'
       result.description = result.item.description || ''
+      if (section === 'worklogs') {
+        const recordedAt = result.item.createdAt
+          ? new Intl.DateTimeFormat(locale, {
+              dateStyle: 'medium',
+              timeStyle: 'medium',
+              timeZone: 'Europe/Moscow',
+            }).format(new Date(result.item.createdAt))
+          : result.item.id
+        result.title = `${result.item.Task?.title || labels[locale].worklogs} — ${recordedAt}`
+        result.description = `${labels[locale].worklogs}: ${result.title}. ${labels[locale].name}.`
+      }
     }
   }
   const active = await query<TimersQuery, TimersQueryVariables>(

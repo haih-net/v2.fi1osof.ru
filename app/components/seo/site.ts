@@ -1,8 +1,10 @@
 export const site = {
   origin: 'https://fi1osof.ru',
-  name: '',
+  // name: 'Fi1osof — Николай Ланец',
+  name: 'Николай Fi1osof Ланец — футурист, программист, AI/IT консультант',
   language: 'ru',
-  description: '',
+  description:
+    'Николай Ланец ака Fi1osof — футурист, программист с 2007 года, ИТ- и ИИ-консультант. Разработка и поддержка сайтов, внедрение ИИ-агентов, технический консалтинг и менторство.',
 }
 
 // Preserve the identity published at https://fi1osof.ru/about.

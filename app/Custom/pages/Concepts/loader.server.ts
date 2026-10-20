@@ -14,10 +14,11 @@ export function createListLoader(kind: ConceptListKind) {
     context,
   }: LoaderFunctionArgs) {
     const pageParam = new URL(request.url).searchParams.get('page')
-    const parsedPage = pageParam === null ? 1 : Number.parseInt(pageParam, 10)
-    const page = parsedPage > 0 ? parsedPage : 1
+    const page = pageParam === null ? 1 : Number(pageParam)
     const variables = getListVariables(kind, page)
     if (
+      !Number.isSafeInteger(page) ||
+      page < 1 ||
       !Number.isSafeInteger(variables.skip) ||
       (variables.skip ?? 0) > 2_147_483_647
     ) {

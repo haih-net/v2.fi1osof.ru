@@ -22,6 +22,7 @@ export const ConceptsPage: React.FC = () => {
   const { data, loading, error } = useConceptsConnectionQuery({ variables })
   return (
     <CustomLayoutSectionStyled>
+      <h1 tabIndex={-1}>База знаний Николая Ланца</h1>
       {error || (!data && initialError) ? (
         <p role="alert">
           Не удалось загрузить публикации. Попробуйте обновить страницу.

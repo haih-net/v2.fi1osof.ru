@@ -6,6 +6,8 @@ import { author, canonicalUrl, site } from '../site'
 export interface SeoHeadersProps {
   title: string
   description: string
+  page?: number
+  language?: string
   path?: string
   noindex?: boolean
   image?: { src: string; alt: string; width: number; height: number }
@@ -31,8 +33,8 @@ export interface SeoHandle {
 }
 
 const notFound: SeoHeadersProps = {
-  title: 'Page not found — HAIH',
-  description: 'The requested page could not be found.',
+  title: 'Страница недоступна — Fi1osof',
+  description: 'Не удалось открыть запрошенную страницу.',
   noindex: true,
 }
 
@@ -49,6 +51,8 @@ export function createSeoMeta({
   title,
   description,
   path,
+  page = 1,
+  language = site.language,
   noindex = false,
   image,
   breadcrumbs = [],
@@ -56,8 +60,11 @@ export function createSeoMeta({
   blog,
   article,
 }: SeoHeadersProps): MetaDescriptor[] {
+  title = /fi1osof/i.test(title) ? title : `${title} — Fi1osof`
   const canonical =
-    path === undefined || noindex ? undefined : canonicalUrl(path)
+    path === undefined || noindex
+      ? undefined
+      : `${canonicalUrl(path)}${page > 1 ? `?page=${page}` : ''}`
   image = noindex ? undefined : image
   const imageUrl = image ? new URL(image.src, site.origin).href : undefined
   const websiteId = `${site.origin}/#website`
@@ -70,7 +77,7 @@ export function createSeoMeta({
           name: site.name,
           description: site.description,
           url: `${site.origin}/`,
-          inLanguage: site.language,
+          inLanguage: language,
         },
         {
           '@type': collection || blog ? 'CollectionPage' : 'WebPage',
@@ -78,7 +85,7 @@ export function createSeoMeta({
           url: canonical,
           name: title,
           description,
-          inLanguage: site.language,
+          inLanguage: language,
           isPartOf: { '@id': websiteId },
           ...(breadcrumbs.length
             ? { breadcrumb: { '@id': `${canonical}#breadcrumbs` } }
@@ -118,7 +125,7 @@ export function createSeoMeta({
       name: 'HAIH Blog',
       description:
         'Observations, questions and conclusions from building HAIH, recorded against specific project revisions.',
-      inLanguage: site.language,
+      inLanguage: language,
       isPartOf: { '@id': websiteId },
       ...(blog
         ? {
@@ -138,7 +145,7 @@ export function createSeoMeta({
         headline: post.title,
         description: post.description,
         datePublished: post.date,
-        inLanguage: site.language,
+        inLanguage: language,
         isPartOf: { '@id': blogId },
       })),
     )
@@ -187,7 +194,7 @@ export function createSeoMeta({
       url: canonical,
       headline: article.headline,
       description,
-      inLanguage: site.language,
+      inLanguage: language,
       mainEntityOfPage: { '@id': `${canonical}#webpage` },
       isPartOf: { '@id': blogId },
       author: {
@@ -232,6 +239,11 @@ export function createSeoMeta({
         : 'index, follow, max-image-preview:large',
     },
     { property: 'og:site_name', content: site.name },
+    {
+      property: 'og:locale',
+      content:
+        language === 'ru' ? 'ru_RU' : language === 'vi' ? 'vi_VN' : 'en_US',
+    },
     { property: 'og:type', content: article ? 'article' : 'website' },
     { property: 'og:title', content: title },
     { property: 'og:description', content: description },

@@ -263,7 +263,9 @@ export const SitePage: React.FC = () => {
         <Signin locale={locale} />
       ) : section === 'about' ? (
         <>
-          <h1 tabIndex={-1}>{t.about}</h1>
+          <h1 tabIndex={-1}>
+            {t.about}: {t.name}
+          </h1>
           <div className="about">
             <img src={portrait} alt={about.image.alt} />
             <div>

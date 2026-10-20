@@ -27,8 +27,12 @@ export const ConceptItemStyled = styled.article`
     align-self: flex-start;
     height: auto;
   }
+
+  a {
+    text-decoration: none;
+  }
 `
-export const ConceptTitleStyled = styled.h3`
+export const ConceptTitleStyled = styled.h2`
   text-overflow: ellipsis;
   max-width: 100%;
   overflow: hidden;
