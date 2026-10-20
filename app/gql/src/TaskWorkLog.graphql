@@ -1,0 +1,43 @@
+query taskWorkLogsWithCount($skip: Int, $take: Int) {
+  taskWorkLogs(skip: $skip, take: $take) {
+    ...TaskWorkLog_
+  }
+  taskWorkLogCount
+}
+
+query taskWorkLog($where: SiteObjectWhereUniqueInput!) {
+  response: taskWorkLog(where: $where) {
+    ...TaskWorkLog_
+  }
+}
+
+mutation createTaskWorkLog($data: TaskWorkLogCreateInput!) {
+  response: createTaskWorkLog(data: $data) {
+    ...TaskWorkLog_
+  }
+}
+
+mutation updateTaskWorkLog(
+  $where: SiteObjectWhereUniqueInput!
+  $data: TaskWorkLogUpdateInput!
+) {
+  response: updateTaskWorkLog(where: $where, data: $data) {
+    ...TaskWorkLog_
+  }
+}
+
+fragment TaskWorkLogNoNesting on TaskWorkLog {
+  id
+  content
+  createdAt
+}
+
+fragment TaskWorkLog_ on TaskWorkLog {
+  ...TaskWorkLogNoNesting
+  CreatedBy {
+    ...UserNoNesting
+  }
+  Task {
+    ...Task_
+  }
+}

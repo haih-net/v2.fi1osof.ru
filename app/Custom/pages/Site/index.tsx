@@ -1,3 +1,5 @@
+import { ProjectEditForm } from '../Projects/Project/View/Form'
+import { ProjectActions, CreateProjectLink } from '../Projects/editing'
 import {
   TaskActions,
   WorkLogActions,
@@ -7,8 +9,8 @@ import {
 import { TimerControl } from '../../components/TimerControl'
 import * as React from 'react'
 import { Link, useLoaderData, useLocation, useNavigate } from 'react-router'
-import { gql, type TypedDocumentNode } from '@apollo/client'
-import { useApolloClient, useMutation } from '@apollo/client/react'
+import { useSigninMutation } from '../../../gql/generated'
+import { useApolloClient } from '@apollo/client/react'
 import { Markdown } from '../../components/Markdown'
 import {
   labels,
@@ -33,26 +35,12 @@ function date(value: string | undefined, locale: Locale): string {
 function imagePath(value: string): string {
   return /^(https?:|\/)/.test(value) ? value : `/images/resized/middle/${value}`
 }
-const signinDocument: TypedDocumentNode<
-  {
-    signin: { success: boolean; message: string | null; token: string | null }
-  },
-  { username: string; password: string }
-> = gql`
-  mutation SiteSignin($username: String!, $password: String!) {
-    signin(where: { username: $username }, data: { password: $password }) {
-      success
-      message
-      token
-    }
-  }
-`
 const Signin: React.FC<{ locale: Locale }> = ({ locale }) => {
   const [error, setError] = React.useState('')
   const client = useApolloClient()
   const navigate = useNavigate()
   const t = labels[locale]
-  const [signin, { loading }] = useMutation(signinDocument)
+  const [signin, { loading }] = useSigninMutation()
   const submit = React.useCallback(
     async (event: React.SubmitEvent<HTMLFormElement>): Promise<void> => {
       event.preventDefault()
@@ -61,11 +49,11 @@ const Signin: React.FC<{ locale: Locale }> = ({ locale }) => {
       try {
         const r = await signin({
           variables: {
-            username: String(form.get('username') || ''),
-            password: String(form.get('password') || ''),
+            where: { username: String(form.get('username') || '') },
+            data: { password: String(form.get('password') || '') },
           },
         })
-        const auth = r.data?.signin
+        const auth = r.data?.response
         if (!auth?.success || !auth.token) {
           setError(auth?.message || 'Sign in failed')
           return
@@ -255,7 +243,16 @@ export const SitePage: React.FC = () => {
           {detail && <> / {page.title}</>}
         </p>
       )}
-      {page.path === '/tasks/create' ? (
+      {page.path === '/projects/create' ? (
+        <>
+          <h1>Create project</h1>
+          <ProjectEditForm
+            project={undefined}
+            cancelHandler={undefined}
+            locale={locale}
+          />
+        </>
+      ) : page.path === '/tasks/create' ? (
         <>
           <h1>Создать задачу</h1>
           <TaskForm
@@ -298,6 +295,9 @@ export const SitePage: React.FC = () => {
           <article className="article">
             <h1 tabIndex={-1}>{page.title}</h1>
             {section !== 'concept' && <Metadata item={item} locale={locale} />}
+            {section === 'projects' && (
+              <ProjectActions key={item.id} project={item} locale={locale} />
+            )}
             {section === 'tasks' && (
               <TaskActions key={item.id} task={item} full />
             )}
@@ -360,7 +360,10 @@ export const SitePage: React.FC = () => {
             />
           )}
           {section === 'projects' && (
-            <p className="lead">{projects.hero.description}</p>
+            <>
+              <CreateProjectLink locale={locale} />
+              <p className="lead">{projects.hero.description}</p>
+            </>
           )}
           {section === 'tasks' && (
             <nav className="filters" aria-label={t.tasks}>

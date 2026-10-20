@@ -12,6 +12,12 @@ test('создание и редактирование задачи и ворк�
     fullname: 'Проверка',
     sudo: false,
     status: 'active',
+    createdAt: '2026-10-14T10:00:00Z',
+    updatedAt: '2026-10-14T10:00:00Z',
+    isAiAgent: false,
+    intro: null,
+    content: null,
+    image: null,
   }
   const task = {
     id: 'workflow-task',
@@ -19,6 +25,8 @@ test('создание и редактирование задачи и ворк�
     description: '',
     content: '',
     status: 'New',
+    createdAt: '2026-10-14T10:00:00Z',
+    updatedAt: '2026-10-14T10:00:00Z',
     Project: null,
     CreatedBy: user,
     Assignee: user,
@@ -37,10 +45,10 @@ test('создание и редактирование задачи и ворк�
       case 'me':
         data = { me: user }
         break
-      case 'SiteActiveTimer':
+      case 'timers':
         data = { timers: timer && !timer.stoppedAt ? [timer] : [] }
         break
-      case 'SiteCreateTask':
+      case 'createTask':
         if (failSave) {
           failSave = false
           await route.fulfill({
@@ -49,52 +57,52 @@ test('создание и редактирование задачи и ворк�
           return
         }
         Object.assign(task, variables.data)
-        data = { response: { id: task.id } }
+        data = { response: task }
         break
-      case 'SiteUpdateTask':
+      case 'updateTask':
         Object.assign(task, variables.data)
-        data = { response: { id: task.id } }
+        data = { response: task }
         break
-      case 'SitetasksDetail':
-        data = { item: task }
+      case 'task':
+        data = { response: task }
         break
-      case 'SiteCreateWorkLog':
+      case 'createTaskWorkLog':
         log = {
           id: 'workflow-log',
           content: variables.data?.content,
           createdAt: '2026-10-14T10:00:00Z',
           CreatedBy: user,
-          Task: { id: task.id, title: task.title },
+          Task: { ...task, WorkLogs: undefined },
         }
         task.WorkLogs = [log]
-        data = { response: { id: log.id } }
+        data = { response: log }
         break
-      case 'SiteUpdateWorkLog':
+      case 'updateTaskWorkLog':
         if (!log) {
           throw new Error('Ворклог ещё не создан')
         }
         Object.assign(log, variables.data)
-        data = { response: { id: log.id } }
+        data = { response: log }
         break
-      case 'SiteworklogsDetail':
-        data = { item: log }
+      case 'taskWorkLog':
+        data = { response: log }
         break
-      case 'SiteStartTimer':
+      case 'createTimer':
         timer = {
           id: 'workflow-timer',
           createdById: user.id,
           startedAt: new Date().toISOString(),
           stoppedAt: null,
-          Task: { id: task.id, title: task.title },
+          Task: { ...task, WorkLogs: undefined },
         }
-        data = { response: { id: timer.id } }
+        data = { response: timer }
         break
-      case 'SiteStopTimer':
+      case 'updateTimer':
         if (!timer) {
           throw new Error('Таймер ещё не создан')
         }
         Object.assign(timer, variables.data)
-        data = { response: { id: timer.id } }
+        data = { response: timer }
         break
       default:
         await route.continue()

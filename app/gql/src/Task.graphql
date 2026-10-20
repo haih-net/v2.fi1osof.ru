@@ -1,0 +1,53 @@
+query tasksWithCount($where: SiteTaskWhereInput, $skip: Int, $take: Int) {
+  tasks(where: $where, skip: $skip, take: $take) {
+    ...Task_
+  }
+  tasksCount(where: $where)
+}
+
+query task($where: SiteObjectWhereUniqueInput!) {
+  response: task(where: $where) {
+    ...Task_
+    WorkLogs {
+      ...TaskWorkLog_
+    }
+  }
+}
+
+mutation createTask($data: TaskCreateInput!) {
+  response: createTask(data: $data) {
+    ...Task_
+  }
+}
+
+mutation updateTask(
+  $where: SiteObjectWhereUniqueInput!
+  $data: TaskUpdateInput!
+) {
+  response: updateTask(where: $where, data: $data) {
+    ...Task_
+  }
+}
+
+fragment TaskNoNesting on Task {
+  id
+  title
+  description
+  content
+  status
+  createdAt
+  updatedAt
+}
+
+fragment Task_ on Task {
+  ...TaskNoNesting
+  Project {
+    ...ProjectNoNesting
+  }
+  CreatedBy {
+    ...UserNoNesting
+  }
+  Assignee {
+    ...UserNoNesting
+  }
+}

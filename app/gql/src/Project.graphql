@@ -1,0 +1,55 @@
+query projects($skip: Int, $take: Int) {
+  projects(skip: $skip, take: $take) {
+    ...Project_
+  }
+}
+
+query project($where: SiteObjectWhereUniqueInput!) {
+  project(where: $where) {
+    ...Project_
+  }
+}
+
+query projectPageData($projectId: String!) {
+  project(where: { id: $projectId }) {
+    ...Project_
+  }
+  tasks(where: { projectId: $projectId }, take: 200) {
+    ...Task_
+  }
+}
+
+mutation createProject($data: ProjectCreateInput!) {
+  response: createProject(data: $data) {
+    ...Project_
+  }
+}
+
+mutation updateProject(
+  $where: SiteObjectWhereUniqueInput!
+  $data: ProjectUpdateInput!
+) {
+  response: updateProject(where: $where, data: $data) {
+    ...Project_
+  }
+}
+
+fragment ProjectNoNesting on Project {
+  id
+  createdAt
+  updatedAt
+  name
+  description
+  intro
+  image
+  content
+  status
+  commercial
+}
+
+fragment Project_ on Project {
+  ...ProjectNoNesting
+  CreatedBy {
+    ...UserNoNesting
+  }
+}

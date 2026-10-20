@@ -19,7 +19,7 @@ export const meta: MetaFunction = ({ loaderData: value, error, location }) => {
   if (error || !page) {
     return [{ title: '404 — Fi1osof' }, { name: 'robots', content: 'noindex' }]
   }
-  if (page.path === '/tasks/create') {
+  if (page.path === '/tasks/create' || page.path === '/projects/create') {
     return [
       { title: page.title },
       { name: 'robots', content: 'noindex, nofollow' },

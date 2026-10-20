@@ -1,3 +1,4 @@
+import { useTimersQuery } from '../../../gql/generated'
 import React, { useMemo } from 'react'
 import { TimerControl } from '../TimerControl'
 import {
@@ -7,9 +8,8 @@ import {
   useMatches,
   useNavigate,
 } from 'react-router'
-import { useApolloClient, useQuery } from '@apollo/client/react'
+import { useApolloClient } from '@apollo/client/react'
 import {
-  activeTimerQuery,
   labels,
   localized,
   locationParts,
@@ -42,7 +42,8 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [open, setOpen] = React.useState(false)
   const { user } = useAppContext()
   const client = useApolloClient()
-  const timerQuery = useQuery(activeTimerQuery, {
+  const timerQuery = useTimersQuery({
+    variables: { activeOnly: true, take: 1 },
     pollInterval: 5000,
     ssr: false,
     fetchPolicy: 'network-only',

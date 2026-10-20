@@ -1,6 +1,22 @@
-import { UserStatusEnum } from '../../../gql/generated'
+import type {
+  CreateTaskMutation,
+  CreateTaskMutationVariables,
+  CreateTaskWorkLogMutation,
+  CreateTaskWorkLogMutationVariables,
+  UpdateTaskMutation,
+  UpdateTaskMutationVariables,
+  UpdateTaskWorkLogMutation,
+  UpdateTaskWorkLogMutationVariables,
+} from '../../../gql/generated'
+import {
+  UserStatusEnum,
+  TaskStatusEnum,
+  CreateTaskDocument,
+  UpdateTaskDocument,
+  CreateTaskWorkLogDocument,
+  UpdateTaskWorkLogDocument,
+} from '../../../gql/generated'
 import * as React from 'react'
-import { gql } from '@apollo/client'
 import { Link, useNavigate } from 'react-router'
 import { useAppContext } from '../../hooks/useAppContext'
 import { useSiteMutation } from '../../hooks/useSiteMutation'
@@ -14,42 +30,7 @@ const MarkdownEditor = React.lazy(async () => {
   const module = await import('../../components/Markdown/Editor')
   return { default: module.MarkdownEditor }
 })
-const createTask = gql`
-  mutation SiteCreateTask($data: TaskCreateInput!) {
-    response: createTask(data: $data) {
-      id
-    }
-  }
-`
-const updateTask = gql`
-  mutation SiteUpdateTask(
-    $where: SiteObjectWhereUniqueInput!
-    $data: TaskUpdateInput!
-  ) {
-    response: updateTask(where: $where, data: $data) {
-      id
-    }
-  }
-`
-const createLog = gql`
-  mutation SiteCreateWorkLog($data: TaskWorkLogCreateInput!) {
-    response: createTaskWorkLog(data: $data) {
-      id
-    }
-  }
-`
-const updateLog = gql`
-  mutation SiteUpdateWorkLog(
-    $where: SiteObjectWhereUniqueInput!
-    $data: TaskWorkLogUpdateInput!
-  ) {
-    response: updateTaskWorkLog(where: $where, data: $data) {
-      id
-    }
-  }
-`
-
-const EditorField: React.FC<{
+export const EditorField: React.FC<{
   label: string
   value: string
   onChange: (value: string) => void
@@ -89,10 +70,16 @@ export const TaskForm: React.FC<{
       if (!title.trim() || mutation.loading) {
         return
       }
-      const id = await mutation.run(task ? updateTask : createTask, {
-        where: task ? { id: task.id } : undefined,
-        data: { title, projectId: project, description, content },
-      })
+      const data = { title, projectId: project, description, content }
+      const id = task
+        ? await mutation.run<UpdateTaskMutation, UpdateTaskMutationVariables>(
+            UpdateTaskDocument,
+            { where: { id: task.id }, data },
+          )
+        : await mutation.run<CreateTaskMutation, CreateTaskMutationVariables>(
+            CreateTaskDocument,
+            { data },
+          )
       if (id) {
         onCancel?.()
         await navigate(`/tasks/${id}`)
@@ -127,7 +114,6 @@ export const TaskForm: React.FC<{
           onChange={setDescription}
         />
         <EditorField label="Контент" value={content} onChange={setContent} />
-        {mutation.error && <p role="alert">{mutation.error}</p>}
         <div className="actions">
           {onCancel && (
             <button type="button" onClick={onCancel}>
@@ -160,12 +146,18 @@ export const WorkLogForm: React.FC<{
       if (!content.trim() || mutation.loading) {
         return
       }
-      const id = await mutation.run(
-        workLog ? updateLog : createLog,
-        workLog
-          ? { where: { id: workLog.id }, data: { content } }
-          : { data: { taskId, content } },
-      )
+      const id = workLog
+        ? await mutation.run<
+            UpdateTaskWorkLogMutation,
+            UpdateTaskWorkLogMutationVariables
+          >(UpdateTaskWorkLogDocument, {
+            where: { id: workLog.id },
+            data: { content },
+          })
+        : await mutation.run<
+            CreateTaskWorkLogMutation,
+            CreateTaskWorkLogMutationVariables
+          >(CreateTaskWorkLogDocument, { data: { taskId, content } })
       if (id) {
         onCancel()
       }
@@ -176,7 +168,6 @@ export const WorkLogForm: React.FC<{
     <EditorFormStyled onSubmit={submit}>
       <fieldset disabled={mutation.loading}>
         <EditorField label="Контент" value={content} onChange={setContent} />
-        {mutation.error && <p role="alert">{mutation.error}</p>}
         <div className="actions">
           <button type="button" onClick={onCancel}>
             Отмена
@@ -209,11 +200,20 @@ export const TaskActions: React.FC<{ task: Entry; full?: boolean }> = ({
   )
   const changeStatus = React.useCallback(
     async (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const status = Object.values(TaskStatusEnum).find(
+        (value) => value === event.target.value,
+      )
+      if (!status) {
+        return
+      }
       if (
-        await mutation.run(updateTask, {
-          where: { id: task.id },
-          data: { status: event.target.value },
-        })
+        await mutation.run<UpdateTaskMutation, UpdateTaskMutationVariables>(
+          UpdateTaskDocument,
+          {
+            where: { id: task.id },
+            data: { status },
+          },
+        )
       ) {
         setStatusEditing(false)
       }
@@ -248,7 +248,6 @@ export const TaskActions: React.FC<{ task: Entry; full?: boolean }> = ({
           <option value="REJECTED">Отклонена</option>
         </select>
       )}
-      {mutation.error && <p role="alert">{mutation.error}</p>}
     </div>
   )
 }

@@ -1,4 +1,49 @@
-import { gql, type ApolloClient, type TypedDocumentNode } from '@apollo/client'
+import type { DocumentNode } from 'graphql'
+import {
+  ProjectsDocument,
+  type ProjectsQuery,
+  type ProjectsQueryVariables,
+  ProjectPageDataDocument,
+  type ProjectPageDataQuery,
+  type ProjectPageDataQueryVariables,
+  TasksWithCountDocument,
+  type TasksWithCountQuery,
+  type TasksWithCountQueryVariables,
+  TaskDocument,
+  type TaskQuery,
+  type TaskQueryVariables,
+  TaskWorkLogsWithCountDocument,
+  type TaskWorkLogsWithCountQuery,
+  type TaskWorkLogsWithCountQueryVariables,
+  TaskWorkLogDocument,
+  type TaskWorkLogQuery,
+  type TaskWorkLogQueryVariables,
+  ConceptsConnectionDocument,
+  type ConceptsConnectionQuery,
+  type ConceptsConnectionQueryVariables,
+  ConceptDocument,
+  type ConceptQuery,
+  type ConceptQueryVariables,
+  TimersDocument,
+  type TimersQuery,
+  type TimersQueryVariables,
+  UsersConnectionDocument,
+  type UsersConnectionQuery,
+  type UsersConnectionQueryVariables,
+  UserDocument,
+  type UserQuery,
+  type UserQueryVariables,
+  type ProjectNoNestingFragment,
+  type TaskFragment,
+  type TaskWorkLogFragment,
+  type UserFragment,
+  type KbConceptFragment,
+} from '../../../gql/generated'
+import type {
+  ApolloClient,
+  OperationVariables,
+  TypedDocumentNode,
+} from '@apollo/client'
 import { redirect } from 'react-router'
 import { aboutLexicon } from './aboutLexicon'
 
@@ -43,10 +88,10 @@ export interface PageData {
   activeTimer?: Entry | null
 }
 interface QueryData {
-  items?: Entry[]
-  item?: Entry
-  count?: number
-  timers?: Entry[]
+  items?: Entry[] | null
+  item?: Entry | null
+  count?: number | null
+  timers?: Entry[] | null
 }
 export function locationParts(pathname: string): {
   locale: Locale
@@ -176,25 +221,21 @@ export const labels: Record<Locale, Record<string, string>> = {
     password: 'Mật khẩu',
   },
 }
-const person = 'CreatedBy { id fullname username }'
-const content = `id title:name description intro content image createdAt updatedAt ${person}`
-const task = `id title description content status createdAt updatedAt Project {id title:name} ${person} Assignee {id fullname username}`
-const worklog = `id content createdAt ${person} Task {id title Project {id title:name}}`
-const timer = 'id createdById startedAt stoppedAt Task {id title}'
-export const activeTimerQuery: TypedDocumentNode<{ timers: Entry[] }> = gql`
-  query SiteActiveTimer {
-    timers(activeOnly: true, take: 1) {
-      id
-      createdById
-      startedAt
-      stoppedAt
-      Task {
-        id
-        title
-      }
-    }
-  }
-`
+function projectEntry(project: ProjectNoNestingFragment): Entry {
+  return { ...project, title: project.name }
+}
+function taskEntry(task: TaskFragment): Entry {
+  return { ...task, Project: task.Project ? projectEntry(task.Project) : null }
+}
+function workLogEntry(workLog: TaskWorkLogFragment): Entry {
+  return { ...workLog, Task: workLog.Task ? taskEntry(workLog.Task) : null }
+}
+function userEntry(user: UserFragment): Entry {
+  return { ...user, title: user.fullname, description: user.intro }
+}
+function conceptEntry(concept: KbConceptFragment): Entry {
+  return { ...concept, title: concept.name }
+}
 
 export async function loadPage(
   client: ApolloClient,
@@ -236,69 +277,151 @@ export async function loadPage(
     result.title = aboutLexicon[locale].seo.title
     result.description = aboutLexicon[locale].seo.description
   }
-  let query = ''
-  const variables: Record<string, unknown> = {
-    skip: (page - 1) * pageSize,
-    take: pageSize,
-    where: { id },
-    projectId: id,
-  }
+  const query = async <TData, TVariables extends OperationVariables>(
+    document: DocumentNode,
+    variables: NoInfer<TVariables>,
+  ) =>
+    client.query({
+      query: document as TypedDocumentNode<TData, TVariables>,
+      variables,
+      fetchPolicy,
+      context: { headers: { 'x-locale': locale } },
+    })
+  const pagination = { skip: (page - 1) * pageSize, take: pageSize }
+  let data: QueryData | undefined
+  let detail = false
   if (path === '/projects') {
-    query = `{items:projects(take:200){${content} commercial status}}`
+    const response = (
+      await query<ProjectsQuery, ProjectsQueryVariables>(ProjectsDocument, {
+        take: 200,
+      })
+    ).data
+    data = { items: response?.projects?.map(projectEntry) }
+  } else if (path === '/projects/create') {
+    result.title = 'Create project'
   } else if (section === 'projects' && id && path.split('/').length === 3) {
-    query = `($where:SiteObjectWhereUniqueInput!,$projectId:String!){item:project(where:$where){${content} commercial status} items:tasks(where:{projectId:$projectId},take:200){${task}}}`
+    detail = true
+    const response = (
+      await query<ProjectPageDataQuery, ProjectPageDataQueryVariables>(
+        ProjectPageDataDocument,
+        { projectId: id },
+      )
+    ).data
+    data = {
+      item: response?.project ? projectEntry(response.project) : null,
+      items: response?.tasks?.map(taskEntry),
+    }
   } else if (path === '/tasks') {
     const status = url.searchParams.get('status')
     if (status && !['NEW', 'PROGRESS', 'DONE', 'REJECTED'].includes(status)) {
       throw new Response('Not found', { status: 404 })
     }
-    variables.where = {
-      status: status || undefined,
-      incompletedOnly: !status,
-      projectId: url.searchParams.get('projectId') || undefined,
+    const response = (
+      await query<TasksWithCountQuery, TasksWithCountQueryVariables>(
+        TasksWithCountDocument,
+        {
+          ...pagination,
+          where: {
+            status: status || undefined,
+            incompletedOnly: !status,
+            projectId: url.searchParams.get('projectId') || undefined,
+          },
+        },
+      )
+    ).data
+    data = {
+      items: response?.tasks?.map(taskEntry),
+      count: response?.tasksCount,
     }
-    query = `($where:SiteTaskWhereInput,$skip:Int,$take:Int){items:tasks(where:$where,skip:$skip,take:$take){${task}} count:tasksCount(where:$where)}`
   } else if (path === '/tasks/create') {
     result.title = 'Создать задачу'
   } else if (section === 'tasks' && id && path.split('/').length === 3) {
-    query = `($where:SiteObjectWhereUniqueInput!){item:task(where:$where){${task} WorkLogs {${worklog}}}}`
+    detail = true
+    const response = (
+      await query<TaskQuery, TaskQueryVariables>(TaskDocument, {
+        where: { id },
+      })
+    ).data?.response
+    data = {
+      item: response
+        ? {
+            ...taskEntry(response),
+            WorkLogs: response.WorkLogs?.map(workLogEntry),
+          }
+        : null,
+    }
   } else if (path === '/worklogs') {
-    query = `($skip:Int,$take:Int){items:taskWorkLogs(skip:$skip,take:$take){${worklog}} count:taskWorkLogCount}`
+    const response = (
+      await query<
+        TaskWorkLogsWithCountQuery,
+        TaskWorkLogsWithCountQueryVariables
+      >(TaskWorkLogsWithCountDocument, pagination)
+    ).data
+    data = {
+      items: response?.taskWorkLogs?.map(workLogEntry),
+      count: response?.taskWorkLogCount,
+    }
   } else if (section === 'worklogs' && id && path.split('/').length === 3) {
-    query = `($where:SiteObjectWhereUniqueInput!){item:taskWorkLog(where:$where){${worklog}}}`
+    detail = true
+    const response = (
+      await query<TaskWorkLogQuery, TaskWorkLogQueryVariables>(
+        TaskWorkLogDocument,
+        { where: { id } },
+      )
+    ).data?.response
+    data = { item: response ? workLogEntry(response) : null }
   } else if (path === '/concepts') {
-    query = `($skip:Int,$take:Int){items:concepts(skip:$skip,take:$take){${content} uri} count:kBConceptsCount}`
+    const response = (
+      await query<ConceptsConnectionQuery, ConceptsConnectionQueryVariables>(
+        ConceptsConnectionDocument,
+        { ...pagination, detailedInfo: true },
+      )
+    ).data
+    data = {
+      items: response?.concepts.map(conceptEntry),
+      count: response?.kBConceptsCount,
+    }
   } else if (path === '/timers') {
-    query = `($skip:Int,$take:Int){items:timers(skip:$skip,take:$take){${timer}}}`
+    const response = (
+      await query<TimersQuery, TimersQueryVariables>(TimersDocument, pagination)
+    ).data
+    data = { items: response?.timers }
   } else if (path === '/users') {
-    query =
-      '($skip:Int,$take:Int){items:users(skip:$skip,take:$take){id title:fullname description:intro image content username} count:usersCount}'
+    const response = (
+      await query<UsersConnectionQuery, UsersConnectionQueryVariables>(
+        UsersConnectionDocument,
+        { skip: pagination.skip, first: pagination.take },
+      )
+    ).data
+    data = {
+      items: response?.users?.map(userEntry),
+      count: response?.usersCount,
+    }
   } else if (section === 'users' && id && path.split('/').length === 3) {
-    query =
-      '($where:UserWhereUniqueInput!){item:user(where:$where){id title:fullname description:intro image content createdAt}}'
+    detail = true
+    const response = (
+      await query<UserQuery, UserQueryVariables>(UserDocument, {
+        where: { id },
+      })
+    ).data?.object
+    data = { item: response ? userEntry(response) : null }
   } else if (path !== '/about' && path !== '/signin') {
     result.section = 'concept'
-    variables.where = { uri: path }
-    query = `($where:SiteObjectWhereUniqueInput!){item:concept(where:$where){${content} uri}}`
+    detail = true
+    const response = (
+      await query<ConceptQuery, ConceptQueryVariables>(ConceptDocument, {
+        where: { uri: path },
+      })
+    ).data?.concept
+    data = { item: response ? conceptEntry(response) : null }
   }
-  if (query) {
-    const document: TypedDocumentNode<QueryData, Record<string, unknown>> = gql(
-      `query Site${section.replace(/[^a-zA-Z]/g, '') || 'Home'}${id ? 'Detail' : ''} ${query}`,
-    )
-    const response = await client.query({
-      query: document,
-      variables,
-      fetchPolicy,
-      context: { headers: { 'x-locale': locale } },
-    })
-    const data = response.data
-    const detail = query.includes('item:')
-    if (detail && !data?.item) {
-      throw new Response('Not found', { status: 404 })
-    }
-    result.items = data?.items || []
-    result.item = data?.item
-    result.count = data?.count ?? result.items.length
+  if (detail && !data?.item) {
+    throw new Response('Not found', { status: 404 })
+  }
+  if (data) {
+    result.items = data.items || []
+    result.item = data.item
+    result.count = data.count ?? result.items.length
     if (!detail && page > 1 && !result.items.length) {
       throw new Response('Not found', { status: 404 })
     }
@@ -307,11 +430,10 @@ export async function loadPage(
       result.description = result.item.description || ''
     }
   }
-  const active = await client.query({
-    query: activeTimerQuery,
-    fetchPolicy,
-    context: { headers: { 'x-locale': locale } },
-  })
+  const active = await query<TimersQuery, TimersQueryVariables>(
+    TimersDocument,
+    { activeOnly: true, take: 1 },
+  )
   result.activeTimer = active.data?.timers?.[0] || null
   return result
 }

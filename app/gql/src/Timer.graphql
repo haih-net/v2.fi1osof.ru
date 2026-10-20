@@ -1,0 +1,34 @@
+query timers($skip: Int, $take: Int, $activeOnly: Boolean) {
+  timers(skip: $skip, take: $take, activeOnly: $activeOnly) {
+    ...Timer_
+  }
+}
+
+mutation createTimer($data: TimerCreateInput!) {
+  response: createTimer(data: $data) {
+    ...Timer_
+  }
+}
+
+mutation updateTimer(
+  $where: SiteObjectWhereUniqueInput!
+  $data: TimerUpdateDataInput!
+) {
+  response: updateTimer(where: $where, data: $data) {
+    ...Timer_
+  }
+}
+
+fragment TimerNoNesting on Timer {
+  id
+  createdById
+  startedAt
+  stoppedAt
+}
+
+fragment Timer_ on Timer {
+  ...TimerNoNesting
+  Task {
+    ...TaskNoNesting
+  }
+}

@@ -1,31 +1,28 @@
 import { useState } from 'react'
 import { useApolloClient } from '@apollo/client/react'
-import type { TypedDocumentNode } from '@apollo/client'
+import type { TypedDocumentNode, OperationVariables } from '@apollo/client'
 import { useRevalidator } from 'react-router'
+import { useSnackbar } from './useSnackbar'
 
-export type SiteMutation = TypedDocumentNode<
-  { response: { id: string } },
-  Record<string, unknown>
->
+interface MutationResponse {
+  response?: { id: string } | null
+}
 
 export function useSiteMutation(): {
   loading: boolean
-  error: string
-  run: (
-    mutation: SiteMutation,
-    variables: Record<string, unknown>,
+  run: <TData extends MutationResponse, TVariables extends OperationVariables>(
+    mutation: TypedDocumentNode<TData, TVariables>,
+    variables: NoInfer<TVariables>,
   ) => Promise<string | null>
 } {
   const client = useApolloClient()
   const revalidator = useRevalidator()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const { addMessage } = useSnackbar() || {}
   return {
     loading,
-    error,
     run: async (mutation, variables) => {
       setLoading(true)
-      setError('')
       try {
         const result = await client.mutate({ mutation, variables })
         if (!result.data?.response) {
@@ -37,8 +34,9 @@ export function useSiteMutation(): {
         ])
         return result.data.response.id
       } catch (cause) {
-        setError(
+        addMessage?.(
           cause instanceof Error ? cause.message : 'Ошибка выполнения запроса',
+          { variant: 'error' },
         )
         return null
       } finally {

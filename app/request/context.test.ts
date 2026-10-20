@@ -1,7 +1,8 @@
+import { UserDocument, UserStatusEnum } from '../gql/generated'
 import type { FC } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createElement } from 'react'
-import { ApolloClient, ApolloLink, InMemoryCache, gql } from '@apollo/client'
+import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client'
 import {
   createRequestHandler,
   redirect,
@@ -22,11 +23,6 @@ import { loadRoot } from './rootLoader.server'
 vi.mock('../gql/apolloClient/createApolloClient', () => ({ default: vi.fn() }))
 
 const clients: ApolloClient[] = []
-const query = gql`
-  query Value($key: String!) {
-    value(key: $key)
-  }
-`
 const Empty: FC = () => null
 
 beforeEach(() => {
@@ -116,7 +112,21 @@ function handler(
 }
 
 function writeValue(client: ApolloClient, key: string): void {
-  client.writeQuery({ query, variables: { key }, data: { value: key } })
+  client.writeQuery({
+    query: UserDocument,
+    variables: { where: { id: key } },
+    data: {
+      object: {
+        __typename: 'User',
+        id: key,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        sudo: false,
+        status: UserStatusEnum.ACTIVE,
+        isAiAgent: false,
+      },
+    },
+  })
 }
 
 describe('request Apollo context', () => {
@@ -171,8 +181,8 @@ describe('request Apollo context', () => {
     })
     const payload = await response.json()
     expect(payload.root.initialApolloState.ROOT_QUERY).toMatchObject({
-      'value({"key":"parent"})': 'parent',
-      'value({"key":"child"})': 'child',
+      'user({"where":{"id":"parent"}})': { __ref: 'User:parent' },
+      'user({"where":{"id":"child"}})': { __ref: 'User:child' },
     })
     expect(payload.parent).not.toHaveProperty('initialApolloState')
     expect(payload.child).not.toHaveProperty('initialApolloState')
@@ -195,8 +205,8 @@ describe('request Apollo context', () => {
     expect(response.status).toBe(200)
     const body = await response.text()
     expect(body).toContain('initialApolloState')
-    expect(body).toContain('value({\\"key\\":\\"parent\\"})')
-    expect(body).toContain('value({\\"key\\":\\"child\\"})')
+    expect(body).toContain('User:parent')
+    expect(body).toContain('User:child')
     expect(createApolloClient).toHaveBeenCalledTimes(1)
     expect(clients[0].stop).toHaveBeenCalledTimes(1)
   })
