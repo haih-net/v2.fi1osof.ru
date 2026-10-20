@@ -13,6 +13,14 @@ export const MessageStyled = styled.div`
   color: #1f2937;
   border-bottom-left-radius: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  ${MarkdownStyled} img {
+    max-width: min(100%, 420px);
+    max-height: 420px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
   &[data-user='true'] {
     align-self: flex-end;
     background: #3b82f6;

@@ -104,7 +104,10 @@ export const ChatContent: React.FC = () => {
   const hasMessages = messages.length > 0
 
   return (
-    <ChatContentContainer data-has-messages={hasMessages}>
+    <ChatContentContainer
+      data-testid="chat-content"
+      data-has-messages={hasMessages}
+    >
       {hasMessages ? (
         <ChatMessages
           ref={messagesContainerRef}
@@ -136,7 +139,7 @@ export const ChatContent: React.FC = () => {
         </WelcomeMessage>
       )}
 
-      <ChatInputContainer>
+      <ChatInputContainer data-testid="chat-footer">
         <ChatInputForm />
       </ChatInputContainer>
     </ChatContentContainer>

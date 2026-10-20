@@ -471,9 +471,15 @@ it('одновременное восстановление не перезап�
   ])
 })
 
-it.each([true, false])(
-  'выполняет инструменты, сохраняет историю и usage в режиме stream=%s',
-  async (stream) => {
+it.each([
+  [true, undefined],
+  [false, undefined],
+  [true, 'false'],
+  [false, 'false'],
+] as const)(
+  'выполняет инструменты, сохраняет историю и usage: stream=%s, explanations=%s',
+  async (stream, explanations) => {
+    vi.stubEnv('CHAT_TOOL_EXPLANATIONS_ENABLED', explanations)
     const provider = express()
     provider.use(express.json())
     let requests = 0
@@ -583,7 +589,12 @@ it.each([true, false])(
       body: JSON.stringify({ message: 'Найди товар Example product', stream }),
     })
     const output = await response.text()
-    expect(output.indexOf('Проверю')).toBeLessThan(output.indexOf('Ничего'))
+    if (explanations === 'false') {
+      expect(output).not.toContain('Проверю')
+    } else {
+      expect(output).toContain('Проверю')
+      expect(output.indexOf('Проверю')).toBeLessThan(output.indexOf('Ничего'))
+    }
     expect(response.headers.get('content-type')).toContain(
       stream ? 'text/event-stream' : 'application/json',
     )
@@ -604,11 +615,19 @@ it.each([true, false])(
       expect(JSON.parse(output)).toEqual({
         id: 'final-answer',
         success: true,
-        content: '\n\nПроверю доступные данные.\n\nНичего не найдено.',
+        content:
+          explanations === 'false'
+            ? 'Ничего не найдено.'
+            : '\n\nПроверю доступные данные.\n\nНичего не найдено.',
         usage: { inputTokens: 300, cachedTokens: 120, outputTokens: 30 },
       })
     }
     expect(apiCalls).toBe(1)
+    expect(
+      (await storage.read(token.split('.')[0])).find(
+        ({ role }) => role === 'tool_call',
+      )?.content,
+    ).toContain('Проверю доступные данные.')
     const expectedUsage = {
       inputTokens: 300,
       cachedTokens: 120,
@@ -838,10 +857,7 @@ it('сохраняет URL текущей страницы вместе с со�
   const pageUrl =
     'http://localhost:3111/products/example?tab=details#description'
   provider.post('/chat/completions', (req, res) => {
-    expect(req.body.messages).toContainEqual({
-      role: 'user',
-      content: 'Help me find a product',
-    })
+    expect(req.body.messages.at(-1).content).toContain(pageUrl)
     res.setHeader('Content-Type', 'text/event-stream')
     res.end(
       'data: {"choices":[{"delta":{"content":"Answer"}}]}\n\ndata: [DONE]\n\n',

@@ -67,6 +67,13 @@ npm start
 # → http://127.0.0.1:3000
 ```
 
+Build assets use the `assets` directory by default. Set `BUILD_ASSETS_DIR` in `.env`
+or when running the build to override it, for example:
+
+```bash
+BUILD_ASSETS_DIR=site-assets npm run build
+```
+
 ## Docker
 
 ```bash

@@ -28,7 +28,7 @@ export const SnackbarProvider: React.FC<React.PropsWithChildren> = ({
   return (
     <SnackbarContext.Provider value={{ addMessage }}>
       {children}
-      <SnackbarStackStyled aria-label="Уведомления">
+      <SnackbarStackStyled role="group" aria-label="Уведомления">
         {messages.map((message) => (
           <SnackbarMessageStyled
             key={message.id}

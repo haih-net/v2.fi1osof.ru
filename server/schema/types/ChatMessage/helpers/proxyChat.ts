@@ -25,24 +25,36 @@ export const proxyChat = async (
   const timeout = setTimeout(disconnect, 125000)
   req.res?.on('close', disconnect)
   try {
-    const response = await fetch(
-      `http://127.0.0.1:${req.socket.localPort}/api/chat`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
-          Authorization: `Bearer ${data.token}`,
-          Origin:
-            req.get('origin') ||
-            `${req.protocol}://${req.get('host') || 'unknown'}`,
-          ...(data.pageUrl ? { 'X-Chat-Page-Url': data.pageUrl } : {}),
-        },
-        body: JSON.stringify({ message: data.message, stream: true }),
-        signal: controller.signal,
-        redirect: 'error',
+    const url = `http://127.0.0.1:${req.socket.localPort}/api/chat`
+    const body = JSON.stringify({ message: data.message, stream: true })
+    const forwardedHeaders: Record<string, string> = {}
+    for (const [name, value] of Object.entries(req.headers ?? {})) {
+      if (value !== undefined) {
+        forwardedHeaders[name] = Array.isArray(value) ? value.join(', ') : value
+      }
+    }
+    // The new body has a known length; fetch manages its transfer framing.
+    delete forwardedHeaders['transfer-encoding']
+    const pageUrl = req.get('X-Chat-Page-Url') || data.pageUrl
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        ...forwardedHeaders,
+        host: new URL(url).host,
+        'content-length': String(Buffer.byteLength(body)),
+        'content-encoding': 'identity',
+        'content-type': 'application/json',
+        accept: 'text/event-stream',
+        authorization: `Bearer ${data.token}`,
+        origin:
+          req.get('origin') ||
+          `${req.protocol}://${req.get('host') || 'unknown'}`,
+        ...(pageUrl ? { 'x-chat-page-url': pageUrl } : {}),
       },
-    ).catch((error: unknown): never => {
+      body,
+      signal: controller.signal,
+      redirect: 'error',
+    }).catch((error: unknown): never => {
       console.error('[chat.proxy_request]', error)
       throw new Error(
         'Не удалось отправить запрос в чат. Проверьте токен и параметры запроса',

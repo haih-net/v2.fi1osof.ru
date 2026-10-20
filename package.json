@@ -27,6 +27,7 @@
     "test:monitoring:failure": "node tests/monitoring/failure-check.mjs",
     "test:monitoring:notifications": "node tests/monitoring/notifications-check.mjs",
     "test:search:live": "tsx --test tests/live/webSearch.test.ts",
+    "test:agents": "vitest run -c vitest.agents.config.cjs",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:integration": "npm run build && vitest run -c vitest.integration.config.cjs",

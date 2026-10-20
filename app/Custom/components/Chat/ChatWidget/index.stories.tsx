@@ -1,3 +1,6 @@
+import squareImage from './assets/chat-square.webp'
+import wideImage from './assets/chat-wide.webp'
+import type { ChatMessage as ChatMessageData } from './interfaces'
 import React, { useEffect, useRef, useState } from 'react'
 import { ChatContext, useChatContext } from './context'
 import type { Meta, StoryObj } from '@storybook/react-vite'
@@ -31,15 +34,29 @@ const withFrame: NonNullable<Story['decorators']> = [
   ),
 ]
 
+const messagesWithImages: ChatMessageData[] = mockChatMessagesLong.map(
+  (message) =>
+    message.isUser
+      ? message
+      : {
+          ...message,
+          text: `${message.text}
+
+![Ceramic teapot beside a plant](${squareImage})
+
+![Mountain lake panorama](${wideImage})`,
+        },
+)
+
 const mockLongResponse: string = Array<string>(8)
   .fill(mockChatMessagesLong[1].text)
   .join('\n\n')
 
-const StreamingConversation: React.FC<React.PropsWithChildren> = ({
-  children,
-}) => {
+const StreamingConversation: React.FC<
+  React.PropsWithChildren<{ initialMessages?: ChatMessageData[] }>
+> = ({ children, initialMessages = mockChatMessagesLong }) => {
   const chat = useChatContext()
-  const [messages, setMessages] = useState(mockChatMessagesLong)
+  const [messages, setMessages] = useState(initialMessages)
   const [isLoading, setIsLoading] = useState(false)
   const [showTypingIndicator, setShowTypingIndicator] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -203,13 +220,13 @@ export const ChatWindowDefault: Story = {
 
 export const ChatWindowWithMessages: Story = {
   render: () => (
-    <StreamingConversation>
+    <StreamingConversation initialMessages={messagesWithImages}>
       <Component />
     </StreamingConversation>
   ),
   parameters: chatState({
     isOpen: true,
-    messages: mockChatMessagesLong,
+    messages: messagesWithImages,
   }),
 }
 

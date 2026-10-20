@@ -35,6 +35,7 @@ function serveShared(): Plugin {
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
+    build: { assetsDir: env.BUILD_ASSETS_DIR || 'assets' },
     resolve: {
       alias: {
         app: resolve(import.meta.dirname, 'app'),

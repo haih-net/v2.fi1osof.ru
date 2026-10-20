@@ -25,8 +25,16 @@ const execute = async (token: string | null | undefined = 'guest-token') => {
       currentUser: null,
       req: {
         socket: { localPort: 3456 },
+        headers: {
+          host: 'example.test',
+          'content-length': '999',
+          'content-type': 'application/graphql',
+          authorization: 'Bearer original',
+          'x-custom-header': 'preserved',
+        },
         res,
-        get: () => 'https://example.test',
+        get: (name: string) =>
+          name === 'origin' ? 'https://example.test' : undefined,
       },
     },
   })
@@ -68,9 +76,17 @@ it('публичная мутация собирает поток и полны�
     expect.objectContaining({
       body: JSON.stringify({ message: 'Вопрос', stream: true }),
       headers: expect.objectContaining({
-        Authorization: 'Bearer guest-token',
-        Origin: 'https://example.test',
-        'X-Chat-Page-Url': 'https://example.test/page',
+        authorization: 'Bearer guest-token',
+        origin: 'https://example.test',
+        'x-chat-page-url': 'https://example.test/page',
+        host: '127.0.0.1:3456',
+        'content-type': 'application/json',
+        'content-length': String(
+          Buffer.byteLength(
+            JSON.stringify({ message: 'Вопрос', stream: true }),
+          ),
+        ),
+        'x-custom-header': 'preserved',
       }),
     }),
   )
@@ -105,7 +121,7 @@ it.each(['', '   ', 'invalid-token'])(
     vi.stubGlobal('fetch', fetchMock)
     const result = await execute(token)
     expect(fetchMock).toHaveBeenCalledOnce()
-    expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe(
+    expect(fetchMock.mock.calls[0][1].headers.authorization).toBe(
       `Bearer ${token}`,
     )
     expect(result.errors?.[0].message).toBe(message)

@@ -14,7 +14,9 @@ export const ChatContentContainer = styled.div`
   min-height: 0;
   overflow: auto;
   width: 100%;
-  max-width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  box-sizing: border-box;
 
   /* 
     This is so the scroll is inside the container, not the entire view
@@ -174,6 +176,10 @@ export const ChatMessages = styled.div`
 `
 
 export const ChatInputContainer = styled.div`
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 16px 24px 24px;
   background: transparent;
   grid-row: 2;

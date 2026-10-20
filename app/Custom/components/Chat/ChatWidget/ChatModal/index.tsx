@@ -31,6 +31,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({
 
   const modalContent = (
     <ChatWindow
+      data-testid="chat-window"
       data-expanded={isExpanded}
       onClick={stopPropagation}
       onMouseDown={stopPropagation}
@@ -38,7 +39,7 @@ export const ChatModal: React.FC<ChatModalProps> = ({
       onTouchMove={stopPropagation}
       // ref={containerRef}
     >
-      <ChatHeader>
+      <ChatHeader data-testid="chat-header">
         <ChatTitle>ИИ-помощник</ChatTitle>
         <HeaderButtons>
           <ExpandButton aria-label="Изменить размер чата" onClick={onExpand}>

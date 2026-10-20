@@ -5,7 +5,7 @@ import { MainPage } from 'app/Custom/pages/MainPage'
 
 export const handle = {
   seo: {
-    title: '',
+    title: 'haih.site',
     description: '',
     path: '/',
     image: undefined,
