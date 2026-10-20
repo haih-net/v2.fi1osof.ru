@@ -6,7 +6,8 @@ import path from 'path'
 import { parseBackgroundColor } from './helpers/parseBackgroundColor'
 import { resizeImg } from './helpers/resizeImg'
 
-const uploadsDir = path.resolve(process.cwd(), 'uploads')
+const uploadsDir =
+  process.env.UPLOADS_DIR || path.resolve(process.cwd(), 'uploads')
 
 const searchPaths = ['', 'images']
 
