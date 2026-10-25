@@ -120,7 +120,7 @@ it('выдаёт диалог только судо или владельцу п
       { currentUser: { sudo: true }, req: { headers: {} } },
       {
         currentUser: null,
-        req: { headers: { authorization: `Bearer ${token}` } },
+        req: { headers: { 'dialog-token': token } },
       },
     ]) {
       const result = await graphql({

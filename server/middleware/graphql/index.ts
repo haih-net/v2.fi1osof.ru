@@ -20,6 +20,7 @@ export async function setupGraphqlMiddleware(
 ): Promise<() => Promise<void>> {
   const apolloServer = new ApolloServer<Context>({
     schema,
+    stopOnTerminationSignals: false,
     introspection: true,
     includeStacktraceInErrorResponses: process.env.NODE_ENV === 'development',
     plugins: [

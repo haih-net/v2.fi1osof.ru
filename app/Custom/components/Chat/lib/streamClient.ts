@@ -21,20 +21,46 @@ export async function sendMessageStream(
 ): Promise<void> {
   try {
     const pageUrl = window.location.href
-    const token = await getChatToken(abortSignal)
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: stream ? 'text/event-stream' : 'application/json',
-        Authorization: `Bearer ${token}`,
-        'X-Chat-Page-Url': pageUrl,
-      },
-      body: JSON.stringify({ message, stream }),
-      signal: abortSignal,
-    })
-    if (response.status === 401) {
+    const send = async (): Promise<Response> => {
+      abortSignal?.throwIfAborted()
+      const token = await getChatToken(abortSignal)
+      const userToken = localStorage.getItem('token')
+      return fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: stream ? 'text/event-stream' : 'application/json',
+          'dialog-token': token,
+          ...(userToken ? { Authorization: `Bearer ${userToken}` } : {}),
+          'X-Chat-Page-Url': pageUrl,
+        },
+        body: JSON.stringify({ message, stream }),
+        signal: abortSignal,
+      })
+    }
+    let response = await send()
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      if (response.status !== 401) {
+        break
+      }
+      const error: unknown = await response
+        .clone()
+        .json()
+        .catch(() => null)
+      if (
+        !error ||
+        typeof error !== 'object' ||
+        !('code' in error) ||
+        error.code !== 'INVALID_DIALOG_TOKEN'
+      ) {
+        break
+      }
       localStorage.removeItem(CHAT_TOKEN_STORAGE_KEY)
+      if (attempt === 1) {
+        break
+      }
+      await response.body?.cancel()
+      response = await send()
     }
     if (!response.ok) {
       throw new Error(await readChatError(response))

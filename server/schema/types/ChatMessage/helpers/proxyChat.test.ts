@@ -1,3 +1,4 @@
+import { errorReporter } from '../../../../errorLogging'
 import { createRequire } from 'node:module'
 import { EventEmitter } from 'node:events'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -76,7 +77,8 @@ it('публичная мутация собирает поток и полны�
     expect.objectContaining({
       body: JSON.stringify({ message: 'Вопрос', stream: true }),
       headers: expect.objectContaining({
-        authorization: 'Bearer guest-token',
+        authorization: 'Bearer original',
+        'dialog-token': 'guest-token',
         origin: 'https://example.test',
         'x-chat-page-url': 'https://example.test/page',
         host: '127.0.0.1:3456',
@@ -121,9 +123,7 @@ it.each(['', '   ', 'invalid-token'])(
     vi.stubGlobal('fetch', fetchMock)
     const result = await execute(token)
     expect(fetchMock).toHaveBeenCalledOnce()
-    expect(fetchMock.mock.calls[0][1].headers.authorization).toBe(
-      `Bearer ${token}`,
-    )
+    expect(fetchMock.mock.calls[0][1].headers['dialog-token']).toBe(token)
     expect(result.errors?.[0].message).toBe(message)
     expect(result.data).toBeNull()
   },
@@ -174,7 +174,9 @@ it('сохраняет сообщение ошибки внутри потока
 it.each(['п4п34п', '🔑', 'token\r\nInjected: value', 'token\0value'])(
   'возвращает понятную ошибку при невозможности передать токен %j в HTTP-заголовке',
   async (token) => {
-    const log = vi.spyOn(console, 'error')
+    const log = vi
+      .spyOn(errorReporter, 'error')
+      .mockImplementationOnce(() => undefined)
     try {
       // Настоящий fetch проверяет заголовки до сетевого запроса.
       const result = await execute(token)
@@ -182,7 +184,7 @@ it.each(['п4п34п', '🔑', 'token\r\nInjected: value', 'token\0value'])(
         'Не удалось отправить запрос в чат. Проверьте токен и параметры запроса',
       )
       expect(result.data).toBeNull()
-      expect(log).toHaveBeenCalledWith(
+      expect(log).toHaveBeenCalledExactlyOnceWith(
         '[chat.proxy_request]',
         expect.any(TypeError),
       )
@@ -196,14 +198,16 @@ it('логирует исходный сетевой сбой, не подмен
   const failure = new TypeError('fetch failed', {
     cause: new Error('ECONNREFUSED'),
   })
-  const log = vi.spyOn(console, 'error')
+  const log = vi
+    .spyOn(errorReporter, 'error')
+    .mockImplementationOnce(() => undefined)
   vi.stubGlobal('fetch', vi.fn().mockRejectedValue(failure))
   try {
     const result = await execute()
     expect(result.errors?.[0].message).toBe(
       'Не удалось отправить запрос в чат. Проверьте токен и параметры запроса',
     )
-    expect(log).toHaveBeenCalledWith('[chat.proxy_request]', failure)
+    expect(log).toHaveBeenCalledExactlyOnceWith('[chat.proxy_request]', failure)
   } finally {
     log.mockRestore()
   }

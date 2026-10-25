@@ -4,6 +4,10 @@
 module.exports = async (configEnv) => {
   const { createTestConfig } = await import('./vitest.shared.mjs')
   return createTestConfig(configEnv, {
+    silent: false,
+    setupFiles: ['tests/setup.ts'],
+    // Preserve stylesheet URLs instead of replacing them with empty CSS mocks.
+    css: { include: [/\.css\?url(?:&|$)/] },
     include: [
       'tests/unit/**/*.test.{ts,tsx,mjs}',
       'app/**/*.test.{ts,tsx}',

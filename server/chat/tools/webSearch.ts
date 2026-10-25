@@ -1,4 +1,3 @@
-import { llmClient } from '../../llm/client'
 import type { ChatTool } from '../types'
 
 interface SearchResponse {
@@ -86,23 +85,21 @@ export const webSearchTool: ChatTool = {
     const query = args.query.trim()
     return {
       reasoning: args.reasoning,
-      execute: async ({ signal }) => {
-        const key = process.env.CHAT_API_KEY
+      execute: async ({ signal, client, config }) => {
+        const key = config.apiKey
         if (!key) {
           throw new Error(
             `Web search is not configured: CHAT_API_KEY is missing`,
           )
         }
-        const model =
-          process.env.CHAT_WEB_SEARCH_MODEL || process.env.CHAT_MODEL
-        const toolType =
-          process.env.CHAT_WEB_SEARCH_TOOL || 'openrouter:web_search'
+        const model = config.searchModel || config.model
+        const toolType = config.searchTool
         if (!model) {
           throw new Error(
             'Web search requires CHAT_MODEL or CHAT_WEB_SEARCH_MODEL',
           )
         }
-        const response = await llmClient.complete(
+        const response = await client.complete(
           {
             model,
             stream: false,

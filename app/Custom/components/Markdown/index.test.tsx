@@ -1,25 +1,9 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 
 import { validateSelfClosingTags } from './helpers/validateSelfClosingTags'
-
-vi.mock('next/link', () => ({
-  default: ({
-    children,
-    href,
-  }: {
-    children: React.ReactNode
-    href: string
-  }) => <a href={href}>{children}</a>,
-}))
-
-vi.mock('next/image', () => ({
-  default: ({ src, alt }: { src: string; alt: string }) => (
-    <img src={src} alt={alt} />
-  ),
-}))
 
 import { Markdown } from './'
 
@@ -36,6 +20,9 @@ describe('Markdown component mechanics', () => {
 
       const katexSpan = container.querySelector('.katex')
       expect(katexSpan).toBeTruthy()
+      expect(
+        document.querySelector('link[rel="stylesheet"]')?.getAttribute('href'),
+      ).toMatch(/katex.*\.css/)
     })
 
     it('renders block math with $$ delimiters', () => {

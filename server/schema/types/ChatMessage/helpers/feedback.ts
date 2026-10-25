@@ -1,3 +1,4 @@
+import { errorReporter } from '../../../../errorLogging'
 import { chatStorage, type ChatStorage } from '../../../../chat/storage'
 import type { Request } from 'express'
 import { GraphQLError } from 'graphql'
@@ -50,7 +51,7 @@ export function createFeedback(
         chatId = await storage.verify(`Bearer ${input.token}`)
         channel = chatId ? await storage.channel(chatId) : null
       } catch (error) {
-        console.error('Feedback dialogue verification failed', error)
+        errorReporter.error('Feedback dialogue verification failed', error)
         return fail(
           'Не удалось проверить диалог: хранилище сообщений недоступно. Сообщение ещё не сохранено. Попробуйте отправить позже.',
         )
@@ -108,7 +109,7 @@ export function createFeedback(
             `Контакты:\n${contacts}\n\nСообщение:\n${message}`,
           )
         } catch (error) {
-          console.error('Feedback storage failed', error)
+          errorReporter.error('Feedback storage failed', error)
           return fail(
             'Не удалось сохранить сообщение в диалоге. Текст остался в форме — попробуйте отправить ещё раз.',
           )
@@ -126,7 +127,7 @@ export function createFeedback(
               ),
             )
             .catch((error) => {
-              console.error('Feedback delivery failed', error)
+              errorReporter.error('Feedback delivery failed', error)
             })
         }
         return current.receipt

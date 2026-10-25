@@ -1,3 +1,4 @@
+import type { AgentStorage } from '../agent/context'
 import { graphqlRequestTool } from './graphqlRequest'
 import { webSearchTool } from './webSearch'
 import { getSystemInfoTool } from './getSystemInfo'
@@ -11,27 +12,37 @@ const tools: readonly ChatTool[] = [
   webSearchTool,
   getSystemInfoTool,
 ]
-export const toolDefinitions: ToolDefinition[] = tools.map(
-  ({ definition }) => definition,
-)
+export class ToolRegistry<S extends AgentStorage = AgentStorage> {
+  readonly definitions: ToolDefinition[]
+
+  constructor(private readonly entries: readonly ChatTool<S>[] = tools) {
+    this.definitions = entries.map(({ definition }) => definition)
+  }
+
+  prepare(call: ToolCall): PreparedTool<S> {
+    const tool = this.entries.find(
+      ({ definition }) => definition.function.name === call.function.name,
+    )
+    if (!tool) {
+      throw new Error(`Unknown tool: ${call.function.name}`)
+    }
+    const args: unknown = JSON.parse(call.function.arguments)
+    if (
+      !args ||
+      typeof args !== 'object' ||
+      Array.isArray(args) ||
+      !('reasoning' in args) ||
+      typeof args.reasoning !== 'string' ||
+      !args.reasoning.trim()
+    ) {
+      throw new Error(
+        `A non-empty reasoning is required before every tool call`,
+      )
+    }
+    return tool.prepare({ ...args, reasoning: args.reasoning })
+  }
+}
 
 export function prepareTool(call: ToolCall): PreparedTool {
-  const tool = tools.find(
-    ({ definition }) => definition.function.name === call.function.name,
-  )
-  if (!tool) {
-    throw new Error(`Unknown tool: ${call.function.name}`)
-  }
-  const args: unknown = JSON.parse(call.function.arguments)
-  if (
-    !args ||
-    typeof args !== 'object' ||
-    Array.isArray(args) ||
-    !('reasoning' in args) ||
-    typeof args.reasoning !== 'string' ||
-    !args.reasoning.trim()
-  ) {
-    throw new Error(`A non-empty reasoning is required before every tool call`)
-  }
-  return tool.prepare({ ...args, reasoning: args.reasoning })
+  return new ToolRegistry().prepare(call)
 }

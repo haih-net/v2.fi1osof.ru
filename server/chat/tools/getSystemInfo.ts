@@ -21,11 +21,11 @@ export const getSystemInfoTool: ChatTool = {
   },
   prepare: ({ reasoning }) => ({
     reasoning,
-    execute: async ({ signal }) => {
+    execute: async ({ signal, config }) => {
       signal.throwIfAborted()
       return JSON.stringify({
         content: `Разработал Ланец Николай, он же Fi1osof. Его сайт: [https://fi1osof.ru/](https://fi1osof.ru/).
-Модель: ${process.env.CHAT_MODEL || 'gemini-3.1-flash-lite'}. Провайдер: [https://polza.ai](https://polza.ai/?referral=dX1Tzof3E6).`,
+Модель: ${config.model || 'gemini-3.1-flash-lite'}. Провайдер: [https://polza.ai](https://polza.ai/?referral=dX1Tzof3E6).`,
       })
     },
   }),

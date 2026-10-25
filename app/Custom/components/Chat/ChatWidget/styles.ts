@@ -356,9 +356,35 @@ export const ChatButton = styled.button`
     transform 0.2s,
     box-shadow 0.2s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     transform: scale(1.05);
     box-shadow: 0 6px 16px rgba(23, 63, 46, 0.32);
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.65;
+  }
+
+  &[aria-busy='true'] svg {
+    animation: chatButtonLoading 1s ease-in-out infinite alternate;
+  }
+
+  @keyframes chatButtonLoading {
+    from {
+      opacity: 0.35;
+      transform: scale(0.85);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    &[aria-busy='true'] svg {
+      animation: none;
+    }
   }
 
   svg {

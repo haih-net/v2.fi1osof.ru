@@ -32,18 +32,29 @@ function setupShutdown(server: ReturnType<typeof createServer>) {
     }
     stopping = true
     logEvent('info', 'shutdown', { signal })
-    metricsServer?.close()
+    setTimeout(() => {
+      logEvent('error', 'shutdown_timeout', { signal })
+      process.exit(1)
+    }, 5000).unref()
 
-    if (stopGraphql) {
-      await stopGraphql()
+    try {
+      metricsServer?.close()
+
+      if (stopGraphql) {
+        await stopGraphql()
+      }
+
+      if (vite) {
+        await vite.close()
+      }
+
+      await db.destroy()
+      server.close(() => process.exit(0))
+    } catch (error) {
+      logEvent('error', 'shutdown_error', { signal })
+      logDevError('shutdown.error', error)
+      process.exit(1)
     }
-
-    if (vite) {
-      await vite.close()
-    }
-
-    server.close(() => process.exit(0))
-    setTimeout(() => process.exit(0), 5000).unref()
   }
 
   process.on('SIGINT', () => shutdown('SIGINT'))
@@ -67,7 +78,7 @@ async function startServer() {
   setupMedia(app)
 
   setupSitemap(app)
-  setupChat(app, dbOld)
+  setupChat({ app, usersDatabase: dbOld, storage: undefined })
 
   app.use('/images/resized/', imageResizerMiddleware)
   app.use('/assets/images/', imageResizerMiddleware)

@@ -77,11 +77,15 @@ describe.each(['guest', 'authenticated', 'sudo'] as const)(
     async function execute(
       source: string,
       variables: Record<string, unknown> = {},
-      bearer = authToken,
+      bearer: string | null | undefined = authToken,
+      dialogToken?: string,
     ) {
       const contextValue = await createContext(
         {
-          headers: bearer ? { authorization: `Bearer ${bearer}` } : {},
+          headers: {
+            ...(bearer ? { authorization: `Bearer ${bearer}` } : {}),
+            ...(dialogToken ? { 'dialog-token': dialogToken } : {}),
+          },
         } as Request,
         db,
       )
@@ -206,17 +210,19 @@ describe.each(['guest', 'authenticated', 'sudo'] as const)(
       }
     })
 
-    it('accepts a dialogue bearer token and rejects an explicit foreign token overriding it', async () => {
+    it('accepts a dialog-token header and rejects an explicit foreign token overriding it', async () => {
       for (const source of [history, single]) {
         const result = await execute(
           source,
           { id: chatId, message: 'user' },
+          null,
           token,
         )
         expect(result.errors).toBeUndefined()
         const denied = await execute(
           source,
           { id: chatId, message: 'user', token: otherToken },
+          null,
           token,
         )
         expect(denied.errors?.[0].message).toBe('Доступ запрещён')

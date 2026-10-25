@@ -1,3 +1,5 @@
+import { createToolContext as createAgentContext } from '../../server/chat/testing/context'
+import { MemoryStorage } from '../../server/chat/testing/MemoryStorage'
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { webSearchTool } from '../../server/chat/tools/webSearch'
@@ -63,10 +65,14 @@ for (const provider of providers) {
               max_uses: 1,
               allowed_domains: ['nodejs.org'],
             })
-            .execute({
-              endpoint: 'http://unused.invalid/api',
-              signal: AbortSignal.timeout(110000),
-            }),
+            .execute(
+              createAgentContext({
+                storage: new MemoryStorage(),
+                chatId: 'live-search',
+                endpoint: 'http://unused.invalid/api',
+                signal: AbortSignal.timeout(110000),
+              }),
+            ),
         )
         assert.ok(
           !result.error,

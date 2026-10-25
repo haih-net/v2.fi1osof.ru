@@ -10,8 +10,10 @@ export async function hasChatToken(
   { chatId, token }: ChatAccessArgs,
   ctx: Context,
 ): Promise<boolean> {
+  const header = ctx.req?.headers?.['dialog-token']
+  const dialogToken = token ?? (typeof header === 'string' ? header : undefined)
   const verifiedId = await chatStorage.verify(
-    token ? `Bearer ${token}` : ctx.req?.headers?.authorization,
+    dialogToken ? `Bearer ${dialogToken}` : undefined,
   )
   return verifiedId !== null && verifiedId === chatId
 }

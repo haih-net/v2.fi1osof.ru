@@ -46,7 +46,7 @@ beforeAll(async () => {
     })
     next()
   })
-  setupChat(app, dbOld)
+  setupChat({ app, usersDatabase: dbOld, storage: undefined })
   app.post('/api', express.json(), async (req, res) => {
     const result = await graphql({
       schema: testSchema,

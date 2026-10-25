@@ -1,3 +1,5 @@
+import { createToolContext as createAgentContext } from '../testing/context'
+import { MemoryStorage } from '../testing/MemoryStorage'
 import { beforeEach, afterEach, expect, it, vi } from 'vitest'
 import { prepareTool } from './registry'
 
@@ -14,10 +16,14 @@ const prepare = (extra: Record<string, unknown> = {}) =>
       }),
     },
   })
-const context = {
-  endpoint: 'http://unused.invalid/api',
-  signal: new AbortController().signal,
-}
+const signal = new AbortController().signal
+const context = () =>
+  createAgentContext({
+    storage: new MemoryStorage(),
+    chatId: 'search',
+    endpoint: 'http://unused.invalid/api',
+    signal,
+  })
 beforeEach(() => {
   vi.stubEnv('CHAT_API_BASE_URL', 'https://provider.example/v1')
   vi.stubEnv('CHAT_MODEL', 'chat-model')
@@ -54,7 +60,7 @@ it('uses the shared provider and configured search model and preserves citations
   )
   const output = JSON.parse(
     await prepare({ max_uses: 2, allowed_domains: ['example.org'] }).execute(
-      context,
+      context(),
     ),
   )
   expect(output).toMatchObject({
@@ -66,7 +72,7 @@ it('uses the shared provider and configured search model and preserves citations
   expect(fetchSpy).toHaveBeenCalledWith(
     'https://provider.example/v1/chat/completions',
     expect.objectContaining({
-      signal: context.signal,
+      signal,
       headers: {
         Authorization: 'Bearer test-key',
         'Content-Type': 'application/json',
@@ -110,7 +116,7 @@ it.each([402, 429, 500])(
         { status, headers: { 'x-request-id': 'failed-search' } },
       ),
     )
-    expect(JSON.parse(await prepare().execute(context))).toMatchObject({
+    expect(JSON.parse(await prepare().execute(context()))).toMatchObject({
       error: { message: 'Provider failure' },
       status,
       requestId: 'failed-search',
@@ -123,7 +129,7 @@ it('does not treat an empty answer as success', async () => {
   vi.spyOn(globalThis, 'fetch').mockResolvedValue(
     Response.json({ choices: [{ message: { content: '' } }] }),
   )
-  expect(JSON.parse(await prepare().execute(context)).error).toBeTruthy()
+  expect(JSON.parse(await prepare().execute(context())).error).toBeTruthy()
 })
 
 it('uses the chat model when no separate search model is configured', async () => {
@@ -134,7 +140,7 @@ it('uses the chat model when no separate search model is configured', async () =
     .mockResolvedValue(
       Response.json({ choices: [{ message: { content: 'Answer' } }] }),
     )
-  await prepare().execute(context)
+  await prepare().execute(context())
   expect(JSON.parse(spy.mock.calls[0][1]?.body as string).model).toBe(
     'chat-model',
   )
@@ -145,7 +151,7 @@ it('rejects a missing model before sending credentials', async () => {
   vi.stubEnv('CHAT_WEB_SEARCH_MODEL', '')
   vi.stubEnv('CHAT_MODEL', '')
   const spy = vi.spyOn(globalThis, 'fetch')
-  await expect(prepare().execute(context)).rejects.toThrow('CHAT_MODEL')
+  await expect(prepare().execute(context())).rejects.toThrow('CHAT_MODEL')
   expect(spy).not.toHaveBeenCalled()
 })
 
@@ -169,7 +175,7 @@ it.each([
         Response.json({ choices: [{ message: { content: 'Answer' } }] }),
       )
     await prepare({ max_uses: 1, allowed_domains: ['example.org'] }).execute(
-      context,
+      context(),
     )
     const body = JSON.parse(spy.mock.calls[0][1]?.body as string)
     expect(body.tools).toEqual([

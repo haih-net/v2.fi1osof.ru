@@ -14,6 +14,7 @@ import {
 } from '@apollo/client'
 
 import { typePolicies } from './typePolicies'
+import { apolloErrorReporter } from './errorReporting'
 import { createApolloClientProps } from './interfaces'
 import type { IncomingHttpHeaders } from 'http'
 
@@ -157,14 +158,14 @@ function createApolloClient({ withWs, appContext }: createApolloClientProps) {
   const errorLink = new ErrorLink(({ error }) => {
     if (CombinedGraphQLErrors.is(error)) {
       error.errors.forEach(({ message, locations, path }) =>
-        console.error(
+        apolloErrorReporter.error(
           `[GraphQL error]: Message: ${message}, Location: ${locations}, Path: ${path}`,
         ),
       )
     } else if (ServerError.is(error)) {
-      console.error(`[Server error]: ${error.message}`)
+      apolloErrorReporter.error(`[Server error]: ${error.message}`)
     } else if (error) {
-      console.error(`[Network error]: ${error.message}`)
+      apolloErrorReporter.error(`[Network error]: ${error.message}`)
     }
   })
 

@@ -1,3 +1,4 @@
+import { errorReporter } from '../../../../errorLogging'
 import { readChatError } from '../../../../../app/Custom/components/Chat/lib/errors'
 import type { Request } from 'express'
 import type { TokenUsage } from '../../../../chat/storage'
@@ -45,7 +46,7 @@ export const proxyChat = async (
         'content-encoding': 'identity',
         'content-type': 'application/json',
         accept: 'text/event-stream',
-        authorization: `Bearer ${data.token}`,
+        'dialog-token': data.token,
         origin:
           req.get('origin') ||
           `${req.protocol}://${req.get('host') || 'unknown'}`,
@@ -55,7 +56,7 @@ export const proxyChat = async (
       signal: controller.signal,
       redirect: 'error',
     }).catch((error: unknown): never => {
-      console.error('[chat.proxy_request]', error)
+      errorReporter.error('[chat.proxy_request]', error)
       throw new Error(
         'Не удалось отправить запрос в чат. Проверьте токен и параметры запроса',
         { cause: error },

@@ -1,3 +1,4 @@
+import { apolloErrorReporter } from 'app/gql/apolloClient/createApolloClient/errorReporting'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { createStatisticsQueue, MAX_QUEUED_VISITS } from './queue'
 import {
@@ -110,16 +111,51 @@ test.each([
   [{ data: { logStats: [{ id: 'saved' }] } }, 'accepted'],
   [{ data: { logStats: null } }, 'disabled'],
   [{ data: { logStats: [] } }, 'retry'],
-  [{ errors: [{ extensions: { code: 'STATISTICS_UNAVAILABLE' } }] }, 'retry'],
-  [{ errors: [{ extensions: { code: 'BAD_USER_INPUT' } }] }, 'discard'],
   [
-    { errors: [{ extensions: { code: 'STATISTICS_CONFIGURATION_ERROR' } }] },
+    {
+      errors: [
+        {
+          message: 'STATISTICS_UNAVAILABLE',
+          extensions: { code: 'STATISTICS_UNAVAILABLE' },
+        },
+      ],
+    },
+    'retry',
+  ],
+  [
+    {
+      errors: [
+        { message: 'BAD_USER_INPUT', extensions: { code: 'BAD_USER_INPUT' } },
+      ],
+    },
+    'discard',
+  ],
+  [
+    {
+      errors: [
+        {
+          message: 'STATISTICS_CONFIGURATION_ERROR',
+          extensions: { code: 'STATISTICS_CONFIGURATION_ERROR' },
+        },
+      ],
+    },
     'discard',
   ],
 ])('interprets the GraphQL delivery response', async (body, expected) => {
+  const log = vi.spyOn(apolloErrorReporter, 'error')
+  if ('errors' in body) {
+    log.mockImplementationOnce(() => undefined)
+  }
   const fetchMock = vi.fn().mockResolvedValue(Response.json(body))
   vi.stubGlobal('fetch', fetchMock)
   expect(await sendStatistics(packet)).toBe(expected)
+  if ('errors' in body) {
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      `[GraphQL error]: Message: ${body.errors[0].message}, Location: undefined, Path: undefined`,
+    )
+  } else {
+    expect(log).not.toHaveBeenCalled()
+  }
   const options: RequestInit = fetchMock.mock.calls[0][1] as RequestInit
   expect(new Headers(options.headers).get('content-type')).toBe(
     'application/json',
@@ -129,6 +165,9 @@ test.each([
 })
 
 test('aborts a stalled browser request and clears its deadline', async () => {
+  const log = vi
+    .spyOn(apolloErrorReporter, 'error')
+    .mockImplementationOnce(() => undefined)
   vi.stubGlobal(
     'fetch',
     vi.fn(
@@ -143,5 +182,6 @@ test('aborts a stalled browser request and clears its deadline', async () => {
   const result: Promise<DeliveryResult> = sendStatistics(packet)
   await vi.advanceTimersByTimeAsync(6500)
   expect(await result).toBe('retry')
+  expect(log).toHaveBeenCalledExactlyOnceWith('[Network error]: aborted')
   expect(vi.getTimerCount()).toBe(0)
 })

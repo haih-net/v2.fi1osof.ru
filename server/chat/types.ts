@@ -1,3 +1,5 @@
+import type { AgentContext, AgentStorage } from './agent/context'
+
 export interface ToolCall {
   id: string
   type: 'function'
@@ -11,15 +13,9 @@ export interface ProviderMessage {
   tool_call_id?: string
 }
 
-export interface ToolContext {
-  endpoint: string
-  pageUrl?: string
-  signal: AbortSignal
-}
-
-export interface PreparedTool {
+export interface PreparedTool<S extends AgentStorage = AgentStorage> {
   reasoning: string
-  execute: (context: ToolContext) => Promise<string>
+  execute(context: AgentContext<S>): Promise<string>
 }
 
 export interface ToolDefinition {
@@ -36,9 +32,9 @@ export interface ToolDefinition {
   }
 }
 
-export interface ChatTool {
+export interface ChatTool<S extends AgentStorage = AgentStorage> {
   definition: ToolDefinition
   prepare: (
     args: Record<string, unknown> & { reasoning: string },
-  ) => PreparedTool
+  ) => PreparedTool<S>
 }

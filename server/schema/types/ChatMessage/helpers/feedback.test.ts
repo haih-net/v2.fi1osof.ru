@@ -1,3 +1,4 @@
+import { errorReporter } from '../../../../errorLogging'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Request } from 'express'
 import { createFeedback } from './feedback'
@@ -63,7 +64,11 @@ describe('feedback dialogues', () => {
   })
   it('accepts the message despite SMTP failure and does not duplicate it on retry', async () => {
     const { storage, send, service } = setup()
-    send.mockRejectedValueOnce(new Error('SMTP unavailable'))
+    const failure = new Error('SMTP unavailable')
+    const log = vi
+      .spyOn(errorReporter, 'error')
+      .mockImplementationOnce(() => undefined)
+    send.mockRejectedValueOnce(failure)
     const token = await storage.issue('feedback')
     const input = { token, contacts: '@visitor', message: 'Help' }
     await expect(service.submit(input, request)).resolves.toContain(
@@ -72,12 +77,20 @@ describe('feedback dialogues', () => {
     expect(await storage.read(token.split('.')[0])).toHaveLength(1)
     await service.submit(input, request)
     expect(await storage.read(token.split('.')[0])).toHaveLength(1)
+    expect(send).toHaveBeenCalledTimes(1)
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      'Feedback delivery failed',
+      failure,
+    )
   })
 })
 
 it('accepts feedback without mail configuration and without Origin', async () => {
   vi.stubEnv('MAIL_FROM', '')
   vi.stubEnv('MAIL_TO', '')
+  const log = vi
+    .spyOn(errorReporter, 'error')
+    .mockImplementationOnce(() => undefined)
   try {
     const { storage } = setup()
     const service = createFeedback(undefined, Date.now, storage)
@@ -91,6 +104,13 @@ it('accepts feedback without mail configuration and without Origin', async () =>
       service.submit({ token, contacts: '@visitor', message: 'Hello' }, req),
     ).resolves.toContain('Сообщение принято')
     expect(await storage.read(token.split('.')[0])).toHaveLength(1)
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      'Feedback delivery failed',
+      expect.objectContaining({
+        message:
+          'Почтовое уведомление не отправлено: не задан MAIL_FROM. Сообщение сохранено в диалоге.',
+      }),
+    )
   } finally {
     vi.unstubAllEnvs()
   }
@@ -123,9 +143,13 @@ it('does not wait for SMTP to accept the message', async () => {
 it('reports a storage failure and does not attempt mail delivery', async () => {
   const { service, storage, send } = setup()
   const token = await storage.issue('feedback')
+  const failure = new Error('disk full')
+  const log = vi
+    .spyOn(errorReporter, 'error')
+    .mockImplementationOnce(() => undefined)
   const append = vi
     .spyOn(storage, 'appendFeedback')
-    .mockRejectedValueOnce(new Error('disk full'))
+    .mockRejectedValueOnce(failure)
   try {
     await expect(
       service.submit(
@@ -135,6 +159,10 @@ it('reports a storage failure and does not attempt mail delivery', async () => {
     ).rejects.toThrow('Не удалось сохранить сообщение в диалоге')
     expect(send).not.toHaveBeenCalled()
     expect(await storage.read(token.split('.')[0])).toEqual([])
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      'Feedback storage failed',
+      failure,
+    )
   } finally {
     append.mockRestore()
   }
