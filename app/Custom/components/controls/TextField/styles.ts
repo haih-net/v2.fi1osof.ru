@@ -13,10 +13,6 @@ export const TextFieldStyled = styled.input`
   &:hover:not(:disabled) {
     border-color: #a8a29e;
   }
-  &:focus {
-    outline: 2px solid #9e4e2b;
-    outline-offset: 2px;
-  }
   &:disabled {
     background: #f5f4f0;
   }

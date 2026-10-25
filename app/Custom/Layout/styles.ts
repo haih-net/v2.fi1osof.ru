@@ -71,6 +71,7 @@ export const CustomLayoutStyled = styled.div`
 `
 
 export const HtmlStyled = styled.html`
+  font-family: system-ui, sans-serif;
   color: ${theme.colors.foreground};
   background: ${theme.backgrounds.page};
   line-height: 1.5;
@@ -115,7 +116,9 @@ export const HtmlStyled = styled.html`
   :where(&) a:hover {
     text-decoration: underline;
   }
-  :focus-visible {
+  :focus,
+  :focus-visible,
+  :active {
     outline: none;
   }
   @media (prefers-reduced-motion: reduce) {

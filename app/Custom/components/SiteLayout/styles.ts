@@ -45,10 +45,6 @@ export const SiteShell = styled.div`
   select {
     cursor: pointer;
   }
-  :focus-visible {
-    outline: 2px solid #bd302b;
-    outline-offset: 4px;
-  }
   ${ChatButton} {
     background: #bd302b;
     box-shadow: 0 4px 12px #00000020;

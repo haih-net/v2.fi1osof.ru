@@ -13,10 +13,6 @@ export const CheckboxInput = styled.input`
   margin: 0;
   cursor: pointer;
   accent-color: #9e4e2b;
-  &:focus-visible {
-    outline: 2px solid #9e4e2b;
-    outline-offset: 2px;
-  }
 `
 export const CheckboxLabel = styled.span`
   font-size: 14px;

@@ -207,7 +207,6 @@ export const ChatTextarea = styled.textarea`
   color: #1f2937;
   font-size: 1rem;
   font-family: inherit;
-  outline: none;
   resize: none;
   min-height: 24px;
   max-height: 200px;

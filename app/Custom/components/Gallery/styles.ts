@@ -40,11 +40,6 @@ export const ConceptGalleryStyled = styled.section`
     font: inherit;
     cursor: pointer;
   }
-  button:focus-visible,
-  .gallery-viewport:focus-visible {
-    outline: 3px solid #1676ce;
-    outline-offset: 3px;
-  }
   .gallery-stage {
     position: relative;
   }

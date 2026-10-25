@@ -48,8 +48,4 @@ export const SnackbarMessageStyled = styled.div`
     color: inherit;
     cursor: pointer;
   }
-  button:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 3px;
-  }
 `

@@ -146,10 +146,6 @@ export const HeaderStyled = styled.header`
   .account-menu[open] summary {
     background: #eef1e9;
   }
-  .account-menu summary:focus-visible {
-    outline: 2px solid ${theme.colors.primary};
-    outline-offset: 3px;
-  }
   .account-avatar {
     width: 32px;
     height: 32px;

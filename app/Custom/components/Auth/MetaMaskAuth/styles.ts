@@ -11,10 +11,6 @@ export const MetaMaskAuthStyled = styled.div`
     background: ${theme.backgrounds.paper};
     color: ${theme.colors.primary};
   }
-  button:focus-visible {
-    outline: 2px solid ${theme.colors.primary};
-    outline-offset: 3px;
-  }
   [role='alert'] {
     color: #a52424;
     overflow-wrap: anywhere;

@@ -32,10 +32,6 @@ export const AdminPageStyled = styled.section`
   .section-card:hover {
     border-color: ${theme.colors.primary};
   }
-  .section-card:focus-visible {
-    outline: 2px solid ${theme.colors.primary};
-    outline-offset: 4px;
-  }
   .section-card strong {
     display: block;
     font-size: 20px;

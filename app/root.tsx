@@ -1,7 +1,7 @@
 import { App as CustomApp } from './Custom/components/pages/_App'
 import { Statistics } from './components/Statistics'
 import { errorPageStatusCode } from './components/Statistics/status'
-import { HtmlStyled } from './components/Layout/styles'
+import { HtmlStyled } from './Custom/Layout/styles'
 import { SeoHeaders } from './components/seo/SeoHeaders'
 
 export const meta = () => [

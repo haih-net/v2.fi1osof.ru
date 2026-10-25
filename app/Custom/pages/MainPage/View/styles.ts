@@ -8,9 +8,6 @@ export const MainPageViewStyled = styled.div`
     font-size: clamp(28px, 3vw, 38px);
     margin: 0 0 20px;
   }
-  h1[tabindex='-1']:focus {
-    outline: none;
-  }
   h2 {
     font-size: clamp(26px, 2.7vw, 34px);
     margin: 0 0 24px;

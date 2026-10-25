@@ -63,10 +63,6 @@ export const ButtonStyled = styled.button`
     padding: 6px 12px;
     font-size: 13px;
   }
-  &:focus-visible {
-    outline: 3px solid #8eae9b;
-    outline-offset: 3px;
-  }
   &:disabled {
     opacity: 0.55;
     cursor: not-allowed;
