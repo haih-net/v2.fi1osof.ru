@@ -13,7 +13,7 @@ builder.mutationType({
       type: [SiteStatistic],
       nullable: true,
       args: { data: t.arg({ type: 'Json', required: true }) },
-      resolve: (_root, { data }, ctx) => logStatistics(data, ctx.req),
+      resolve: (_root, { data }, ctx) => logStatistics(data, ctx.req, ctx.db),
     }),
   }),
 })

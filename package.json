@@ -7,7 +7,7 @@
     "node": ">=22 <=24"
   },
   "scripts": {
-    "dev": "cross-env NODE_ENV=development tsx watch server/index.ts",
+    "dev": "cross-env NODE_ENV=development tsx scripts/dev.ts",
     "build": "react-router build && esbuild server/index.ts --bundle --platform=node --format=esm --packages=external --outfile=build/node/index.js",
     "clean": "node -e \"fs.rmSync('build',{recursive:true,force:true});fs.rmSync('.react-router',{recursive:true,force:true})\"",
     "router:gen": "react-router typegen",
@@ -34,8 +34,8 @@
     "test:integration": "npm run build && vitest run -c vitest.integration.config.cjs",
     "test:integration:watch": "vitest -c vitest.integration.config.cjs",
     "test:integration:stack": "vitest run -c vitest.stack.config.cjs",
-    "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui",
+    "e2e": "playwright test --project=chromium --project=mobile-chromium",
+    "e2e:ui": "playwright test --ui --project=chromium --project=mobile-chromium",
     "e2e:webkit": "playwright test --project=webkit",
     "e2e:report": "playwright show-report"
   },
@@ -43,6 +43,7 @@
     "@apollo/client": "^4.2.0",
     "@apollo/server": "^5.5.1",
     "@as-integrations/express5": "^1.1.2",
+    "@fontsource/nunito": "^5.3.0",
     "@hookform/resolvers": "5.4.0",
     "@linaria/core": "^8.2.0",
     "@linaria/react": "^8.2.0",

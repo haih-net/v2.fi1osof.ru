@@ -18,7 +18,7 @@ vi.mock('app/gql/apolloClient', () => ({ useApollo: vi.fn() }))
 afterEach(cleanup)
 
 const Consumer: React.FC = () => {
-  const { user, userLoading } = useAppContext()
+  const { user, userLoading = true } = useAppContext() ?? {}
   return <output>{userLoading ? 'loading' : (user?.id ?? 'anonymous')}</output>
 }
 

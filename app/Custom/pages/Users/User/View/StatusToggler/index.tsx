@@ -13,7 +13,7 @@ type StatusTogglerProps = {
 }
 
 export const StatusToggler: React.FC<StatusTogglerProps> = ({ user }) => {
-  const { user: currentUser } = useAppContext()
+  const { user: currentUser } = useAppContext() ?? {}
 
   const { id, status } = user
 

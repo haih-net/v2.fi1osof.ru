@@ -62,11 +62,13 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-test('disabled integration makes no upstream request', async () => {
+test('disabled integration acknowledges local delivery without an upstream request', async () => {
   vi.stubEnv('AGENTS_CENTER_TOKEN', '')
   const fetchMock = vi.fn()
   vi.stubGlobal('fetch', fetchMock)
-  expect(await logStatistics(packet, req)).toBeNull()
+  expect(await logStatistics(packet, req)).toEqual([
+    { id: packet.events[0].eventKey },
+  ])
   expect(fetchMock).not.toHaveBeenCalled()
 })
 

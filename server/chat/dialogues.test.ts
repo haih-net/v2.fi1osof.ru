@@ -106,7 +106,9 @@ it('upgrades schema version 1 without changing existing records and rejects unkn
   try {
     initializeSchema(connection)
     connection.exec(
-      `DROP TABLE EthTransaction;
+      `DROP TABLE PageErrorEvent;
+      DROP TABLE PageError;
+      DROP TABLE EthTransaction;
       DROP TABLE "Transaction";
       DROP INDEX TelegramAccount_externalKey;
       ALTER TABLE TelegramAccount DROP COLUMN externalKey;
@@ -114,7 +116,7 @@ it('upgrades schema version 1 without changing existing records and rejects unkn
     )
     initializeSchema(connection)
     initializeSchema(connection)
-    expect(connection.pragma('user_version', { simple: true })).toBe(4)
+    expect(connection.pragma('user_version', { simple: true })).toBe(6)
     expect(connection.prepare('SELECT id FROM User').all()).toEqual([
       { id: 'existing' },
     ])

@@ -10,7 +10,7 @@ import portrait from './assets/portrait.webp'
 // import projectAfter from './assets/project-after.webp'
 
 export const MainPageView: React.FC = () => {
-  const { openFeedback } = useAppContext()
+  const { openFeedback } = useAppContext() ?? {}
   const chat = useChatContext()
   const { setIsOpen } = chat
   const openChat = useCallback((): void => setIsOpen(true), [setIsOpen])
@@ -47,6 +47,7 @@ export const MainPageView: React.FC = () => {
               className="primary-action"
               type="button"
               onClick={openFeedback}
+              disabled={!openFeedback}
             >
               Обсудить вашу задачу
             </button>
@@ -115,7 +116,12 @@ export const MainPageView: React.FC = () => {
               дальше действовать осознанно.
             </p>
           </div>
-          <button className="text-action" type="button" onClick={openFeedback}>
+          <button
+            className="text-action"
+            type="button"
+            onClick={openFeedback}
+            disabled={!openFeedback}
+          >
             Обсудить вопрос <span aria-hidden="true">→</span>
           </button>
         </div>
@@ -133,7 +139,12 @@ export const MainPageView: React.FC = () => {
               память или интеграция с вашей системой.
             </p>
           </div>
-          <button className="text-action" type="button" onClick={openFeedback}>
+          <button
+            className="text-action"
+            type="button"
+            onClick={openFeedback}
+            disabled={!openFeedback}
+          >
             Рассказать о процессе <span aria-hidden="true">→</span>
           </button>
         </div>
@@ -152,7 +163,12 @@ export const MainPageView: React.FC = () => {
               процессы.
             </p>
           </div>
-          <button className="text-action" type="button" onClick={openFeedback}>
+          <button
+            className="text-action"
+            type="button"
+            onClick={openFeedback}
+            disabled={!openFeedback}
+          >
             Показать ваш проект <span aria-hidden="true">→</span>
           </button>
         </div>

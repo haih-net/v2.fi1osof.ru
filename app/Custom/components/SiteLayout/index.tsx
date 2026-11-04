@@ -22,9 +22,14 @@ import { FeedbackForm } from '../Feedback'
 import { ChatWidget } from '../Chat/ChatWidget'
 
 const ContactButton: React.FC = () => {
-  const { openFeedback: open } = useAppContext()
+  const { openFeedback: open } = useAppContext() ?? {}
   return (
-    <button className="contact-button" type="button" onClick={open}>
+    <button
+      className="contact-button"
+      type="button"
+      onClick={open}
+      disabled={!open}
+    >
       Написать мне
     </button>
   )
@@ -40,7 +45,7 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
   const t = labels[locale]
   const page = matches.at(-1)?.loaderData as PageData | undefined
   const [open, setOpen] = React.useState(false)
-  const { user } = useAppContext()
+  const { user } = useAppContext() ?? {}
   const client = useApolloClient()
   const timerQuery = useTimersQuery({
     variables: { activeOnly: true, take: 1 },

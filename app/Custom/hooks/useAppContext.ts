@@ -1,12 +1,8 @@
 import { useContext } from 'react'
 import { Context, type AppContextValue } from '../components/AppContext'
 
-export function useAppContext(): AppContextValue {
-  const context = useContext(Context)
-
-  if (!context) {
-    throw new Error('Please, provide AppContextProvider')
-  }
-
-  return context
+// Cold dev SSR can temporarily lose context during WyW/Vite module reloads.
+// Consumers must handle null; this workaround does not fix module invalidation.
+export function useAppContext(): AppContextValue | null {
+  return useContext(Context)
 }

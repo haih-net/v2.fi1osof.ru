@@ -4,6 +4,7 @@ import './types/Project'
 import './types/Task'
 import './types/TaskWorkLog'
 import './types/Timer'
+import './types/PageError'
 
 import './types/User'
 import './types/EthAccount'

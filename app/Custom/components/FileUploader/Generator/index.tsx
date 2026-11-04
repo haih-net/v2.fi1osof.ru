@@ -42,7 +42,7 @@ export const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   disabled,
   generating,
 }) => {
-  const { user: currentUser } = useAppContext()
+  const { user: currentUser } = useAppContext() ?? {}
 
   const { addMessage } = useSnackbar() || {}
 

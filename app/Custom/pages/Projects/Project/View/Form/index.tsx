@@ -65,7 +65,7 @@ export const ProjectEditForm: React.FC<ProjectEditFormProps> = ({
   cancelHandler,
   locale,
 }) => {
-  const { user: currentUser } = useAppContext()
+  const { user: currentUser } = useAppContext() ?? {}
   const { addMessage } = useSnackbar() || {}
   const navigate = useNavigate()
   const client = useApolloClient()

@@ -10,7 +10,7 @@ export const ProjectActions: React.FC<{ project: Entry; locale: Locale }> = ({
   project,
   locale,
 }) => {
-  const { user } = useAppContext()
+  const { user } = useAppContext() ?? {}
   const [editing, setEditing] = React.useState(false)
   const canEdit = Boolean(
     user && (user.sudo || project.CreatedBy?.id === user.id),
@@ -59,7 +59,7 @@ export const ProjectActions: React.FC<{ project: Entry; locale: Locale }> = ({
 }
 
 export const CreateProjectLink: React.FC<{ locale: Locale }> = ({ locale }) => {
-  const { user } = useAppContext()
+  const { user } = useAppContext() ?? {}
   return user?.sudo ? (
     <p>
       <Link to={localized('/projects/create', locale)}>

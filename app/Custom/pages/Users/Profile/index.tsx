@@ -5,7 +5,7 @@ import { CustomLayoutSectionStyled } from 'app/Custom/Layout/styles'
 import { UserPageView } from '../User/View'
 
 export const ProfilePage: React.FC = () => {
-  const { user, userLoading } = useAppContext()
+  const { user, userLoading = true } = useAppContext() ?? {}
   return (
     <CustomLayoutSectionStyled>
       {userLoading ? (

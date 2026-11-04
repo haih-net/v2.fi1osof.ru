@@ -16,6 +16,12 @@ vi.mock('./skills/registry', async (importOriginal) => ({
   skillSummaries: '',
 }))
 
+// Retry timing is covered by tests/agents/retry.test.ts.
+vi.mock('node:timers/promises', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:timers/promises')>()),
+  setTimeout: vi.fn().mockResolvedValue(undefined),
+}))
+
 const servers: Server[] = []
 const databases: Knex[] = []
 let storage: ChatStorage
@@ -358,6 +364,10 @@ it.each(['development', 'production'])(
       log
         .mockImplementationOnce(() => undefined)
         .mockImplementationOnce(() => undefined)
+        .mockImplementationOnce(() => undefined)
+        .mockImplementationOnce(() => undefined)
+        .mockImplementationOnce(() => undefined)
+        .mockImplementationOnce(() => undefined)
     }
     try {
       const response = await fetch(`${base}/api/chat`, {
@@ -382,7 +392,7 @@ it.each(['development', 'production'])(
         responseBody: '{"error":{"message":"Insufficient credits"}}',
       })
       if (mode === 'development') {
-        expect(log).toHaveBeenCalledTimes(2)
+        expect(log).toHaveBeenCalledTimes(6)
         expect(log).toHaveBeenCalledWith(
           '[chat.provider_response]',
           expect.objectContaining({
@@ -927,7 +937,12 @@ it.each([true, false])(
     vi.stubEnv('CHAT_API_BASE_URL', await listen(provider))
     const base = await configure()
     await (await postMessage(base)).text()
-    const expectedUsage = { inputTokens: 123, cachedTokens: 0, outputTokens: 7 }
+    const attempts = completed ? 1 : 3
+    const expectedUsage = {
+      inputTokens: 123 * attempts,
+      cachedTokens: 0,
+      outputTokens: 7 * attempts,
+    }
     const saved = await storage.read(token.split('.')[0])
     expect(saved[1]).toMatchObject({ success: completed, usage: expectedUsage })
     expect((await storage.listMessages())[1].usage).toEqual(expectedUsage)

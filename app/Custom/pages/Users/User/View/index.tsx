@@ -22,7 +22,7 @@ import { getResizedImagePath } from 'app/Custom/helpers/getResizedImagePath'
 export const UserPageView: React.FC<{
   user: UserFragment | MeUserFragment
 }> = ({ user }) => {
-  const { user: currentUser } = useAppContext()
+  const { user: currentUser } = useAppContext() ?? {}
   const [isEditing, setIsEditing] = useState(false)
   const isCurrentUser = currentUser?.id === user.id
   const handleEditClick = useCallback(() => setIsEditing(true), [])

@@ -70,6 +70,14 @@ const fetchWithUploadProgress: FetchWithProgress = (input, init) => {
   })
 }
 
+const readAuthToken = (): string | null => {
+  try {
+    return globalThis.localStorage?.getItem('token') || null
+  } catch {
+    return null
+  }
+}
+
 let wsLink: GraphQLWsLink | undefined
 
 function getEndpoint(): string {
@@ -111,11 +119,9 @@ export function getWsClient(withWs: boolean) {
     connectionParams: async () => {
       const params: { Authorization?: string } = {}
 
-      if (typeof localStorage !== 'undefined') {
-        const token = localStorage.getItem('token')
-        if (token) {
-          params.Authorization = `Bearer ${token}`
-        }
+      const token = readAuthToken()
+      if (token) {
+        params.Authorization = `Bearer ${token}`
       }
 
       return params
@@ -202,10 +208,7 @@ function createApolloClient({ withWs, appContext }: createApolloClientProps) {
         }
       }
 
-      const token =
-        (typeof globalThis !== 'undefined' && 'localStorage' in globalThis
-          ? globalThis.localStorage?.getItem('token')
-          : null) || null
+      const token = readAuthToken()
 
       if (token) {
         headers = {
@@ -248,6 +251,10 @@ function createApolloClient({ withWs, appContext }: createApolloClientProps) {
     ssrMode: typeof window === 'undefined',
     link: ApolloLink.from([authMiddleware, link]),
     cache: new InMemoryCache({
+      /**
+       * Not need on server-side due memory leak
+       */
+      resultCaching: typeof window !== 'undefined',
       /**
        * Here you can specify logic for individual object fields,
        * for example, merging data when performing lazy loading.

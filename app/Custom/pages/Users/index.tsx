@@ -8,7 +8,7 @@ import { getUsersQueryVariables } from './helpers'
 import type { usersPageGetInitialProps } from './usersPageGetInitialProps'
 export const UsersPage: React.FC = () => {
   const { page } = useLoaderData<typeof usersPageGetInitialProps>()
-  const { user, userLoading } = useAppContext()
+  const { user, userLoading = true } = useAppContext() ?? {}
   const { data, loading, error } = useUsersConnectionQuery({
     ssr: false,
     skip: userLoading || user?.sudo !== true,

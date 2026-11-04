@@ -32,7 +32,7 @@ const feedbackReducer = (
 ): FeedbackState => ({ ...state, ...update })
 
 export const FeedbackForm: React.FC = () => {
-  const { isFeedbackOpen: open, closeFeedback } = useAppContext()
+  const { isFeedbackOpen: open, closeFeedback } = useAppContext() ?? {}
   const [createFeedbackToken] = useCreateFeedbackTokenMutation()
   const [submitFeedback] = useSubmitFeedbackMutation()
   const [
@@ -43,7 +43,7 @@ export const FeedbackForm: React.FC = () => {
   const submitting = useRef(false)
   const close = useCallback((): void => {
     if (!submitting.current) {
-      closeFeedback()
+      closeFeedback?.()
     }
   }, [closeFeedback])
   useEffect(() => {

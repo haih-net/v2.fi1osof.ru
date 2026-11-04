@@ -271,11 +271,11 @@ a manual check with the real MetaMask extension.
 | `npm run test:integration`       | Builds the site, then checks generated SEO/SSR output, monitoring configuration generation, statistics delivery and GraphQL metrics with isolated local listeners. |
 | `npm run test:integration:watch` | Watches integration tests; run `npm run build` first and rebuild after changing page/build inputs.                                                                 |
 | `npm run test:integration:stack` | HTTP/cache and monitoring checks against an already running production preview stack.                                                                              |
-| `npm run e2e`                    | Playwright: Chromium, WebKit and mobile Chromium; builds and starts the production Node server automatically.                                                      |
+| `npm run e2e`                    | Playwright: desktop and mobile Chromium; builds and starts the production Node server automatically.                                                               |
 | `npm run e2e:webkit`             | Only the WebKit browser project.                                                                                                                                   |
 | `npm run e2e:report`             | Opens the last Playwright HTML report.                                                                                                                             |
 
-Install browser binaries once with `npx playwright install chromium webkit` (Linux hosts may also need `npx playwright install-deps chromium webkit`). Playwright owns port 4317 and fails if it is already occupied. To test an existing server or the real proxy/cache path, supply `PLAYWRIGHT_BASE_URL`; in that mode it does not build or start a server:
+Install Chromium once with `npx playwright install chromium` (Linux hosts may also need `npx playwright install-deps chromium`). WebKit is optional: install it with `npx playwright install webkit` and its Linux dependencies with `npx playwright install-deps webkit`, then run `npm run e2e:webkit`. Playwright owns port 4317 and fails if it is already occupied. To test an existing server or the real proxy/cache path, supply `PLAYWRIGHT_BASE_URL`; in that mode it does not build or start a server:
 
 ```bash
 PLAYWRIGHT_BASE_URL=http://haih.localhost npm run e2e

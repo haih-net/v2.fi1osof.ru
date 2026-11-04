@@ -5,7 +5,7 @@ import { AdminChatMessagesStyled } from './styles'
 import { MessageList } from './MessageList'
 
 export const AdminChatMessagesPage: React.FC = () => {
-  const { user, userLoading } = useAppContext()
+  const { user, userLoading = true } = useAppContext() ?? {}
   return (
     <AdminChatMessagesStyled>
       {user?.sudo === true && !userLoading && (

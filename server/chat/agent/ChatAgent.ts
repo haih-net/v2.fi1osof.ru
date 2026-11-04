@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { setTimeout as delay } from 'node:timers/promises'
 import { chatErrorMessage } from '../../../app/Custom/components/Chat/lib/errors'
 import { logDevError } from '../../errorLogging'
 import type { StoredMessage, TokenUsage } from '../storage'
@@ -137,55 +138,85 @@ export class ChatAgent {
         })),
       ]
       for (let round = 0; round < 9; round += 1) {
-        stage = 'provider_request'
-        providerStatus = undefined
-        providerRequestId = null
-        responseBody = undefined
-        const upstream = await context.client.complete(
-          {
-            model,
-            stream,
-            ...(stream ? { stream_options: { include_usage: true } } : {}),
-            messages: conversation,
-            tools: context.tools.definitions,
-            tool_choice: round === 8 ? 'none' : 'auto',
-          },
-          context.signal,
-        )
-        providerStatus = upstream.status
-        providerRequestId =
-          upstream.headers.get('x-request-id') ??
-          upstream.headers.get('request-id')
-        const providerError = await readProviderError(upstream, stream, {
-          chatId,
-          messageId: message.id,
-          model,
-          providerUrl,
-          providerRequestId,
-        })
-        if (providerError) {
-          responseBody = providerError.body
-          failureStatus = providerError.status
-          publicError = providerError.message
-          throw new Error(publicError)
-        }
-        await options.onEvent?.({ type: 'ready' }, context.signal)
-        stage = stream ? 'provider_stream' : 'provider_json'
-        const { content: roundContent, calls } = await readRound({
-          upstream,
-          stream,
-          usage,
-          onId: (id) => {
-            answerId = id
-          },
-          onResponseBody: (body) => {
-            responseBody = body
-          },
-          onContent: async (content) => {
-            answer += content
-            await write(content)
-          },
-        })
+        const { content: roundContent, calls } = await (async () => {
+          for (let attempt = 0; ; attempt += 1) {
+            let retryAllowed = !answer
+            const previousAnswerId = answerId
+            try {
+              context.signal.throwIfAborted()
+              failureStatus = 502
+              publicError = 'Не удалось связаться с моделью'
+              stage = 'provider_request'
+              providerStatus = undefined
+              providerRequestId = null
+              responseBody = undefined
+              const upstream = await context.client.complete(
+                {
+                  model,
+                  stream,
+                  ...(stream
+                    ? { stream_options: { include_usage: true } }
+                    : {}),
+                  messages: conversation,
+                  tools: context.tools.definitions,
+                  tool_choice: round === 8 ? 'none' : 'auto',
+                },
+                context.signal,
+              )
+              providerStatus = upstream.status
+              providerRequestId =
+                upstream.headers.get('x-request-id') ??
+                upstream.headers.get('request-id')
+              const providerError = await readProviderError(upstream, stream, {
+                chatId,
+                messageId: message.id,
+                model,
+                providerUrl,
+                providerRequestId,
+              })
+              if (providerError) {
+                responseBody = providerError.body
+                failureStatus = providerError.status
+                publicError = providerError.message
+                throw new Error(publicError)
+              }
+              retryAllowed = false
+              await options.onEvent?.({ type: 'ready' }, context.signal)
+              retryAllowed = !answer
+              stage = stream ? 'provider_stream' : 'provider_json'
+              return await readRound({
+                upstream,
+                stream,
+                usage,
+                onId: (id) => {
+                  answerId = id
+                },
+                onResponseBody: (body) => {
+                  responseBody = body
+                },
+                onContent: async (content) => {
+                  retryAllowed = false
+                  answer += content
+                  await write(content)
+                },
+              })
+            } catch (error) {
+              if (context.signal.aborted || !retryAllowed || attempt === 2) {
+                throw error
+              }
+              logDevError('chat.provider_retry', error, {
+                chatId,
+                messageId: message.id,
+                stage,
+                providerStatus,
+                providerRequestId,
+                attempt: attempt + 1,
+              })
+              answerId = previousAnswerId
+              await delay(1000, undefined, { signal: context.signal })
+            }
+          }
+        })()
         if (context.signal.aborted) {
           throw new Error('Запрос отменён')
         }

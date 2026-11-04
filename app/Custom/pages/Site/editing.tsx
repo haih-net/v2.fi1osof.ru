@@ -55,7 +55,7 @@ export const TaskForm: React.FC<{
   projectId?: string | null
   onCancel?: () => void
 }> = ({ task, projectId, onCancel }) => {
-  const { user } = useAppContext()
+  const { user } = useAppContext() ?? {}
   const navigate = useNavigate()
   const mutation = useSiteMutation()
   const [title, setTitle] = React.useState(task?.title || '')
@@ -137,7 +137,7 @@ export const WorkLogForm: React.FC<{
   workLog?: Entry
   onCancel: () => void
 }> = ({ taskId, workLog, onCancel }) => {
-  const { user } = useAppContext()
+  const { user } = useAppContext() ?? {}
   const mutation = useSiteMutation()
   const [content, setContent] = React.useState(workLog?.content || '')
   const submit = React.useCallback(
@@ -188,7 +188,7 @@ export const TaskActions: React.FC<{ task: Entry; full?: boolean }> = ({
   task,
   full,
 }) => {
-  const { user } = useAppContext()
+  const { user } = useAppContext() ?? {}
   const [editing, setEditing] = React.useState(false)
   const [statusEditing, setStatusEditing] = React.useState(false)
   const mutation = useSiteMutation()
@@ -256,7 +256,7 @@ export const WorkLogActions: React.FC<{ taskId: string; workLog?: Entry }> = ({
   taskId,
   workLog,
 }) => {
-  const { user } = useAppContext()
+  const { user } = useAppContext() ?? {}
   const [editing, setEditing] = React.useState(false)
   const stopEditing = React.useCallback(() => setEditing(false), [])
   const startEditing = React.useCallback(() => setEditing(true), [])
@@ -277,7 +277,7 @@ export const WorkLogActions: React.FC<{ taskId: string; workLog?: Entry }> = ({
 export const CreateTaskLink: React.FC<{ projectId?: string | null }> = ({
   projectId,
 }) => {
-  const { user } = useAppContext()
+  const { user } = useAppContext() ?? {}
   return user ? (
     <p>
       <Link

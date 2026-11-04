@@ -5,7 +5,7 @@ import { DialogueList } from './DialogueList'
 import { AdminChatDialoguesStyled } from './styles'
 
 export const AdminChatDialoguesPage: React.FC = () => {
-  const { user, userLoading } = useAppContext()
+  const { user, userLoading = true } = useAppContext() ?? {}
   return (
     <AdminChatDialoguesStyled>
       <h1 tabIndex={-1}>Диалоги чата</h1>

@@ -5,7 +5,7 @@ import { AdminChatDialoguePageView } from './View'
 import { AdminChatDialogueStyled } from './styles'
 
 export const AdminChatDialoguePage: React.FC = () => {
-  const { user, userLoading } = useAppContext()
+  const { user, userLoading = true } = useAppContext() ?? {}
   return (
     <AdminChatDialogueStyled>
       {userLoading ? (

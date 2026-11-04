@@ -9,7 +9,7 @@ import { SignInPageStyled, SignInRegistrationStyled } from './styles'
 export const SignInPage: React.FC = () => {
   useAuthedRedirect('/panel/profile')
   const [params] = useSearchParams()
-  const { user, userLoading } = useAppContext()
+  const { user, userLoading = true } = useAppContext() ?? {}
   return (
     <SignInPageStyled>
       <h1 tabIndex={-1}>Войти</h1>

@@ -16,7 +16,7 @@ export const TimerControl: FC<{
   taskId?: string
   timer?: { id: string; createdById?: string; stoppedAt?: string | null }
 }> = ({ taskId, timer }) => {
-  const { user } = useAppContext()
+  const { user } = useAppContext() ?? {}
   const { run, loading } = useSiteMutation()
   const onClick = useCallback(() => {
     if (loading) {

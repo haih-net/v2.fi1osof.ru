@@ -1,0 +1,24 @@
+fragment PageErrorNoNesting on PageError {
+  url
+  lastOccurredAt
+  statusCode
+  count
+  status
+}
+query pageErrors($sort: PageErrorSort) {
+  pageErrors(sort: $sort) {
+    ...PageErrorNoNesting
+  }
+}
+mutation updatePageError(
+  $url: String!
+  $count: Int!
+  $status: PageErrorStatus!
+) {
+  updatePageError(url: $url, count: $count, status: $status) {
+    ...PageErrorNoNesting
+  }
+}
+mutation clearResolvedPageErrors {
+  clearResolvedPageErrors
+}

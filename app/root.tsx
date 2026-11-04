@@ -1,18 +1,27 @@
+import nunito400Url from '@fontsource/nunito/400.css?url'
+import nunito600Url from '@fontsource/nunito/600.css?url'
+import nunito700Url from '@fontsource/nunito/700.css?url'
+import { loadRoot } from './request/rootLoader.server'
+import { requestMiddleware } from './request/context.server'
 import { App as CustomApp } from './Custom/components/pages/_App'
 import { Statistics } from './components/Statistics'
 import { errorPageStatusCode } from './components/Statistics/status'
-import { HtmlStyled } from './Custom/Layout/styles'
+import { HtmlStyled } from './Custom/theme/global'
 import { SeoHeaders } from './components/seo/SeoHeaders'
+import type { ReactNode } from 'react'
+import { SiteLayout } from './Custom/components/SiteLayout'
+import { locationParts } from './Custom/pages/Site/data'
 
 export const meta = () => [
   { title: 'Fi1osof' },
   { name: 'robots', content: 'noindex' },
 ]
-import type { ReactNode } from 'react'
-import { SiteLayout } from './Custom/components/SiteLayout'
-import { locationParts } from './Custom/pages/Site/data'
-import { loadRoot } from './request/rootLoader.server'
-import { requestMiddleware } from './request/context.server'
+
+export const links = () => [
+  { rel: 'stylesheet', href: nunito400Url },
+  { rel: 'stylesheet', href: nunito600Url },
+  { rel: 'stylesheet', href: nunito700Url },
+]
 
 export const middleware = [requestMiddleware]
 export const loader = loadRoot
@@ -34,8 +43,6 @@ import {
   useRouteLoaderData,
 } from 'react-router'
 
-const betterlyticsId = import.meta.env.BETTERLYTICS_SITE_ID
-
 export function Layout({ children }: { children: ReactNode }) {
   const { locale } = locationParts(useLocation().pathname)
   const rootData = useRouteLoaderData<typeof loader>('root')
@@ -47,18 +54,6 @@ export function Layout({ children }: { children: ReactNode }) {
         <link rel="icon" type="image/jpeg" href="/favicon.jpg" />
         <SeoHeaders />
         <Links />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap"
-          rel="stylesheet"
-        />
-        {betterlyticsId && (
-          <script
-            async
-            src="https://panel.betterlytics.ru/analytics.js"
-            data-site-id={betterlyticsId}
-            data-server-url="https://panel.betterlytics.ru/event"
-          />
-        )}
       </head>
       <body>
         <CustomApp initialApolloState={rootData?.initialApolloState}>

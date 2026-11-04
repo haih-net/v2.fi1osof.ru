@@ -5,6 +5,7 @@ import express, { type ErrorRequestHandler } from 'express'
 import { logDevError } from './errorLogging'
 import { setupChat } from './chat'
 import { createServer } from 'node:http'
+import { listen, getServerUrls } from './listen'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { logEvent, startMetricsServer } from './observability'
@@ -18,7 +19,6 @@ import { setupGraphqlMiddleware } from './middleware/graphql'
 import { imageResizerMiddleware } from './middleware/imageResizer'
 
 const dev = process.env.NODE_ENV === 'development'
-const port = Number(process.env.PORT || 3000)
 
 let stopGraphql: (() => Promise<void>) | null = null
 let vite: ViteDevServer | null = null
@@ -62,6 +62,7 @@ function setupShutdown(server: ReturnType<typeof createServer>) {
 }
 
 async function startServer() {
+  const requestedPort = Number(process.env.PORT || 3000)
   await db.raw('SELECT 1')
   const app = express()
   app.set('trust proxy', true)
@@ -95,7 +96,7 @@ async function startServer() {
     // Development: Vite dev server with HMR
     const { createServer: createVite } = await import('vite')
     vite = await createVite({
-      cacheDir: `node_modules/.vite-${port}`,
+      cacheDir: `node_modules/.vite-${requestedPort}`,
       server: { middlewareMode: true, ws: { server: httpServer } },
       appType: 'custom',
     })
@@ -139,9 +140,9 @@ async function startServer() {
   metricsServer = startMetricsServer()
   setupShutdown(httpServer)
 
-  httpServer.listen(port, '0.0.0.0', () => {
-    logEvent('info', 'server_ready', { port })
-  })
+  const port = await listen(httpServer, requestedPort)
+  logEvent('info', 'server_ready', { port })
+  process.stdout.write(`Сайт доступен: ${getServerUrls(port).join('\n')}\n`)
 }
 
 startServer().catch((err) => {

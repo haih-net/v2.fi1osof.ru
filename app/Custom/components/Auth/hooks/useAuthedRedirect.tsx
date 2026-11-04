@@ -4,7 +4,7 @@ import { useAppContext } from '../../../hooks/useAppContext'
 
 export function useAuthedRedirect(redirectTo?: string): void {
   const navigate = useNavigate()
-  const { user, userLoading } = useAppContext()
+  const { user, userLoading = true } = useAppContext() ?? {}
 
   useEffect(() => {
     if (redirectTo && user && !userLoading) {

@@ -9,7 +9,7 @@ type MarkdownFileProps = {
 }
 
 export const MarkdownFile: React.FC<MarkdownFileProps> = ({ id }) => {
-  const { user } = useAppContext()
+  const { user } = useAppContext() ?? {}
 
   const response = useFileQuery({
     variables: {

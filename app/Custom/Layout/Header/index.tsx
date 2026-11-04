@@ -13,10 +13,10 @@ export const Header: React.FC = () => {
   const accountMenu = useRef<HTMLDetailsElement>(null)
   const header = useRef<HTMLElement>(null)
   const location = useLocation()
-  const { user, userLoading, openFeedback } = useAppContext()
+  const { user, userLoading = true, openFeedback } = useAppContext() ?? {}
 
   const handleFeedback = useCallback(() => {
-    openFeedback()
+    openFeedback?.()
     setIsOpen(false)
   }, [openFeedback])
   const openChat = useOpenChatWithMessage()
@@ -151,6 +151,7 @@ export const Header: React.FC = () => {
             type="button"
             className="feedback-button"
             onClick={handleFeedback}
+            disabled={!openFeedback}
           >
             Написать
           </button>

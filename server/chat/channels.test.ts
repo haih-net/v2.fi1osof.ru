@@ -12,7 +12,9 @@ it('migrates existing dialogues to chat without changing messages', () => {
   const db = new Database(':memory:')
   try {
     initializeSchema(db)
-    db.exec(`DROP TABLE EthTransaction;
+    db.exec(`DROP TABLE PageErrorEvent;
+      DROP TABLE PageError;
+      DROP TABLE EthTransaction;
       DROP TABLE "Transaction";
       DROP INDEX TelegramAccount_externalKey;
       ALTER TABLE TelegramAccount DROP COLUMN externalKey;
@@ -31,7 +33,7 @@ it('migrates existing dialogues to chat without changing messages', () => {
     expect(db.prepare('SELECT payload FROM ChatMessage').get()).toEqual({
       payload: 'original',
     })
-    expect(db.pragma('user_version', { simple: true })).toBe(4)
+    expect(db.pragma('user_version', { simple: true })).toBe(6)
   } finally {
     db.close()
   }

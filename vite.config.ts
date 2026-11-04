@@ -72,9 +72,6 @@ export default defineConfig(({ mode }) => {
       'process.env.NEXT_PUBLIC_TELEGRAM_BOT_NAME': JSON.stringify(
         env.NEXT_PUBLIC_TELEGRAM_BOT_NAME || '',
       ),
-      'import.meta.env.BETTERLYTICS_SITE_ID': JSON.stringify(
-        env.BETTERLYTICS_SITE_ID || '',
-      ),
     },
   }
 })

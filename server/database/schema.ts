@@ -4,10 +4,17 @@ export function initializeSchema(connection: Database): void {
   connection
     .transaction(() => {
       const version = connection.pragma('user_version', { simple: true })
-      if (version === 4) {
+      if (version === 6) {
         return
       }
-      if (version !== 0 && version !== 1 && version !== 2 && version !== 3) {
+      if (
+        version !== 0 &&
+        version !== 1 &&
+        version !== 2 &&
+        version !== 3 &&
+        version !== 4 &&
+        version !== 5
+      ) {
         throw new Error('Unsupported database schema version')
       }
       if (version === 0) {
@@ -121,7 +128,8 @@ export function initializeSchema(connection: Database): void {
         PRAGMA user_version = 3;
       `)
       }
-      connection.exec(`
+      if (version < 4) {
+        connection.exec(`
         CREATE TABLE "Transaction" (
           id TEXT PRIMARY KEY NOT NULL,
           createdAt INTEGER NOT NULL DEFAULT (unixepoch() * 1000),
@@ -142,6 +150,28 @@ export function initializeSchema(connection: Database): void {
         ALTER TABLE "TelegramAccount" ADD COLUMN externalKey TEXT;
         CREATE UNIQUE INDEX TelegramAccount_externalKey ON "TelegramAccount"(externalKey);
         PRAGMA user_version = 4;
+      `)
+      }
+      if (version < 5) {
+        connection.exec(`
+        CREATE TABLE "PageError" (
+          url TEXT PRIMARY KEY NOT NULL,
+          lastOccurredAt INTEGER NOT NULL,
+          count INTEGER NOT NULL DEFAULT 1,
+          status TEXT CHECK (status IN ('Review', 'Resolved'))
+        );
+        CREATE TABLE "PageErrorEvent" (
+          eventKey TEXT PRIMARY KEY NOT NULL,
+          url TEXT NOT NULL REFERENCES "PageError"(url) ON DELETE CASCADE
+        );
+        CREATE INDEX PageError_lastOccurredAt ON "PageError"(lastOccurredAt DESC);
+        CREATE INDEX PageErrorEvent_url ON "PageErrorEvent"(url);
+        PRAGMA user_version = 5;
+      `)
+      }
+      connection.exec(`
+        ALTER TABLE "PageError" ADD COLUMN statusCode INTEGER CHECK (statusCode BETWEEN 400 AND 599);
+        PRAGMA user_version = 6;
       `)
     })
     .immediate()

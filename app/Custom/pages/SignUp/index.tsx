@@ -6,7 +6,7 @@ import { useAppContext } from 'app/Custom/hooks/useAppContext'
 import { SignUpPageStyled } from './styles'
 export const SignUpPage: React.FC = () => {
   useAuthedRedirect('/')
-  const { user, userLoading } = useAppContext()
+  const { user, userLoading = true } = useAppContext() ?? {}
   return (
     <SignUpPageStyled>
       <h1>Регистрация</h1>

@@ -1,3 +1,6 @@
+import type { Knex } from 'knex'
+import { db } from './database'
+import { recordPageError } from './schema/types/PageError/storage'
 import { GraphQLError } from 'graphql'
 import type { Request } from 'express'
 import {
@@ -144,14 +147,18 @@ const unavailable = (): GraphQLError =>
 export const logStatistics = async (
   data: unknown,
   req: Request,
+  database: Knex = db,
 ): Promise<SavedStatistic[] | null> => {
   const endpoint: string | undefined = process.env.AGENTS_CENTER_ENDPOINT
   const token: string | undefined = process.env.AGENTS_CENTER_TOKEN
-  if (!endpoint || !token) {
-    return null
-  }
   const packet: StatisticsPacket = validatePacket(data)
   const event = packet.events[0]
+  if (event.eventId === 'page.viewed') {
+    await recordPageError(database, event)
+  }
+  if (!endpoint || !token) {
+    return [{ id: event.eventKey }]
+  }
   const requestReferer: string | undefined = req.get('referer')?.slice(0, 4096)
   let response: Response
   let body: unknown

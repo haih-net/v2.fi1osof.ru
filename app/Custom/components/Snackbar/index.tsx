@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { SnackbarMessageStyled, SnackbarStackStyled } from './styles'
 import {
   SnackbarContext,
@@ -13,18 +13,45 @@ export const SnackbarProvider: React.FC<React.PropsWithChildren> = ({
   children,
 }) => {
   const [messages, setMessages] = useState<Message[]>([])
-  const addMessage = useCallback<SnackbarContextValue['addMessage']>(
-    (text, options) =>
-      setMessages((values) => [
-        ...values,
-        { id: crypto.randomUUID(), text, variant: options?.variant ?? 'info' },
-      ]),
-    [],
-  )
-  const dismiss = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
-    const id = event.currentTarget.value
+  const timersRef = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  useEffect(() => {
+    const timers = timersRef.current
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer))
+      timers.clear()
+    }
+  }, [])
+  const removeMessage = useCallback((id: string) => {
+    const timer = timersRef.current.get(id)
+    if (timer !== undefined) {
+      clearTimeout(timer)
+      timersRef.current.delete(id)
+    }
     setMessages((values) => values.filter((message) => message.id !== id))
   }, [])
+  const addMessage = useCallback<SnackbarContextValue['addMessage']>(
+    (text, options) => {
+      const id = crypto.randomUUID()
+      const autoHideDuration = options?.autoHideDuration ?? 3000
+      setMessages((values) => [
+        ...values,
+        { id, text, variant: options?.variant ?? 'info' },
+      ])
+      if (autoHideDuration !== 0) {
+        timersRef.current.set(
+          id,
+          setTimeout(() => removeMessage(id), autoHideDuration),
+        )
+      }
+    },
+    [removeMessage],
+  )
+  const dismiss = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      removeMessage(event.currentTarget.value)
+    },
+    [removeMessage],
+  )
   return (
     <SnackbarContext.Provider value={{ addMessage }}>
       {children}
