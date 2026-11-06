@@ -1,7 +1,7 @@
 import { builder } from '../../builder'
 import type { ProjectRecord } from './interfaces'
 import { User } from '../User/types'
-import type { UserRecord } from '../User/interfaces'
+import type { UserRecordLegacy } from '../User/interfaces'
 import { translated } from '../../helpers/translated'
 
 export const Project = builder.objectRef<ProjectRecord>('Project')
@@ -25,7 +25,11 @@ Project.implement({
     CreatedBy: t.field({
       type: User,
       resolve: (r, _, c) =>
-        c.dbOld<UserRecord>('User').where('id', r.createdById).first(),
+        c
+          .dbOld<UserRecordLegacy>('User')
+          .select('*', c.dbOld.raw('true as legacy'))
+          .where('id', r.createdById)
+          .first(),
     }),
   }),
 })

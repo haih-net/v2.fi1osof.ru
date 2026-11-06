@@ -1,3 +1,4 @@
+import { legacyReadOnly } from '../../../../Site/data'
 import React, { useCallback } from 'react'
 import * as yup from 'yup'
 import {
@@ -242,6 +243,9 @@ export const ProjectEditForm: React.FC<ProjectEditFormProps> = ({
     ),
     [fieldId],
   )
+  if (legacyReadOnly) {
+    return <p>Этот раздел доступен только для чтения.</p>
+  }
   return (
     <FormProvider {...form}>
       <ProjectEditFormStyled onSubmit={onSubmit} noValidate>

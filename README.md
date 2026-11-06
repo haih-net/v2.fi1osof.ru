@@ -1,5 +1,13 @@
 # fi1osof.ru — перенос на новый движок
 
+## Local database boundary
+
+The fi1osof.ru application uses SQLite for current users, authentication, certificate login, uploads, and chat administration. The server context authenticates `currentUser` against SQLite; `currentUserLegacy` is always `null` and is not exposed to the frontend.
+
+PostgreSQL (`dbOld`, configured through `DATABASE_URL`) serves legacy public content only. Its application connections start with `default_transaction_read_only=on`; legacy editing and timer controls are disabled. This does not change PostgreSQL data, schema, or global settings.
+
+SQLite schema version 10 adds nullable `User.oldID` for a one-time manual reference. It is not exposed as an editable API field and is not used to associate users or permissions. Users and sessions are not imported from PostgreSQL. New accounts and administrator access use the template's SQLite registration, certificate login, or `npm run user:create-admin` flow. The migration runs when SQLite opens.
+
 Текущий этап: общий лейаут оригинального сайта и публичные разделы. Запуск без контейнера: `PORT=3111 npm run dev`. PostgreSQL берётся из существующего `.env`, файлы — из настроенного `UPLOADS_DIR`.
 
 - Главная и материалы разрешаются по `KBConcept.uri` и `SiteRoute`; доступны база знаний, проекты, задачи, журнал, таймеры, пользователи и «Обо мне».

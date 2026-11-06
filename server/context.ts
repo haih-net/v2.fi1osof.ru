@@ -15,7 +15,8 @@ export async function createContext(
   return {
     req,
     dbOld: databaseOld,
-    currentUser: token ? await authenticate(token, databaseOld) : null,
+    currentUser: token ? await authenticate(token, database) : null,
+    currentUserLegacy: null,
     db: database,
   }
 }

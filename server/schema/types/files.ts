@@ -7,9 +7,10 @@ import { Transform, type Readable } from 'node:stream'
 import { GraphQLError } from 'graphql'
 import { builder, type Context } from 'server/schema/builder'
 import { User } from './User/types'
-import type { UserRecord } from './User/interfaces'
+import type { UserRecord, UserRecordLegacy } from './User/interfaces'
 
 export interface FileRecord {
+  legacy?: true
   id: string
   createdAt: Date
   updatedAt: Date
@@ -67,13 +68,26 @@ const FileType = builder.objectRef<FileRecord>('File').implement({
     CreatedBy: t.field({
       type: User,
       nullable: true,
-      resolve: async (file, _, ctx) =>
-        file.createdById
-          ? ((await ctx
-              .dbOld<UserRecord>('User')
+      resolve: async (file, _, ctx) => {
+        if (!file.createdById) {
+          return null
+        }
+        if (file.legacy) {
+          return (
+            (await ctx
+              .dbOld<UserRecordLegacy>('User')
+              .select('*', ctx.dbOld.raw('true as legacy'))
               .where('id', file.createdById)
-              .first()) ?? null)
-          : null,
+              .first()) ?? null
+          )
+        }
+        return (
+          (await ctx
+            .db<UserRecord>('User')
+            .where('id', file.createdById)
+            .first()) ?? null
+        )
+      },
     }),
   }),
 })
@@ -106,7 +120,7 @@ export async function findFile(
   }
   return (
     (await ctx
-      .dbOld<FileRecord>('File')
+      .db<FileRecord>('File')
       .where(Object.fromEntries(conditions))
       .first()) ?? null
   )
@@ -139,7 +153,7 @@ builder.mutationField('updateFile', (t) =>
         throw new GraphQLError('Нельзя редактировать чужой файл')
       }
       const [updated] = await ctx
-        .dbOld<FileRecord>('File')
+        .db<FileRecord>('File')
         .where('id', file.id)
         .update({ ...args.data, updatedAt: new Date() })
         .returning('*')
@@ -184,7 +198,7 @@ builder.mutationField('singleUpload', (t) =>
         )
         const digest = hash.digest('hex')
         const existing = await ctx
-          .dbOld<FileRecord>('File')
+          .db<FileRecord>('File')
           .where('hash', digest)
           .first()
         if (existing) {
@@ -192,7 +206,7 @@ builder.mutationField('singleUpload', (t) =>
           return existing
         }
         const [file] = await ctx
-          .dbOld<FileRecord>('File')
+          .db<FileRecord>('File')
           .insert({
             id: randomUUID(),
             path: `uploads/${relative}`,
@@ -213,7 +227,7 @@ builder.mutationField('singleUpload', (t) =>
           return file
         }
         const duplicate = await ctx
-          .dbOld<FileRecord>('File')
+          .db<FileRecord>('File')
           .where('hash', digest)
           .first()
         if (!duplicate) {

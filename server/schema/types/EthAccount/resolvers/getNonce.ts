@@ -16,7 +16,7 @@ builder.mutationField('ethAccountNonce', (t) =>
       } catch {
         throw new Error('Некорректный адрес Ethereum')
       }
-      const nonce = await generateNonce(address, ctx.dbOld)
+      const nonce = await generateNonce(address, ctx.db)
       return { nonce, message: buildSignMessage(nonce) }
     },
   }),

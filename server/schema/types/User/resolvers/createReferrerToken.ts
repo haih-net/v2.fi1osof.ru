@@ -26,7 +26,7 @@ builder.mutationField('createReferrerToken', (t) =>
       if (!payload || typeof payload === 'string' || !payload.exp) {
         throw new Error('Некорректный срок приглашения')
       }
-      await ctx.dbOld<TokenRecord>('Token').insert({
+      await ctx.db<TokenRecord>('Token').insert({
         id,
         userId: ctx.currentUser.id,
         createdAt: new Date(),

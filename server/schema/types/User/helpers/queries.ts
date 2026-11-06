@@ -5,8 +5,8 @@ import type { UserWhere, UserWhereUnique } from '../inputs'
 
 type UserQuery = Knex.QueryBuilder<UserRecord, UserRecord[]>
 
-export function findUser(dbOld: Knex, where: UserWhereUnique): UserQuery {
-  const query = dbOld<UserRecord>('User')
+export function findUser(db: Knex, where: UserWhereUnique): UserQuery {
+  const query = db<UserRecord>('User')
   let supplied = false
   for (const key of ['id', 'email', 'username'] as const) {
     if (where[key] !== null && where[key] !== undefined) {
@@ -102,11 +102,11 @@ function stringFilter(
 }
 
 export function usersQuery(
-  dbOld: Knex,
+  db: Knex,
   where: UserWhere | null | undefined,
   currentUser: UserRecord | null,
 ): UserQuery {
-  const query = dbOld<UserRecord>('User')
+  const query = db<UserRecord>('User')
   if (!currentUser?.sudo) {
     query.whereNot('status', 'blocked')
   }

@@ -2,7 +2,7 @@ import type { ConceptRecord } from './interfaces'
 import { GraphQLError } from 'graphql'
 import { builder, type Context } from '../../builder'
 import { User } from '../User/types'
-import type { UserRecord } from '../User/interfaces'
+import type { UserRecordLegacy } from '../User/interfaces'
 import type { FileRecord } from '../files'
 import '../files'
 
@@ -67,11 +67,13 @@ const ConceptFile = builder
       File: t.field({
         type: FileType,
         nullable: true,
-        resolve: async (relation, _args, ctx) =>
-          (await ctx
+        resolve: async (relation, _args, ctx) => {
+          const file = await ctx
             .dbOld<FileRecord>('File')
             .where('id', relation.fileId)
-            .first()) ?? null,
+            .first()
+          return file ? { ...file, legacy: true as const } : null
+        },
       }),
     }),
   })
@@ -118,7 +120,8 @@ const Concept = builder.objectRef<ConceptRecord>('KBConcept').implement({
       nullable: true,
       resolve: async (concept, _args, ctx) =>
         (await ctx
-          .dbOld<UserRecord>('User')
+          .dbOld<UserRecordLegacy>('User')
+          .select('*', ctx.dbOld.raw('true as legacy'))
           .where('id', concept.createdById)
           .first()) ?? null,
     }),

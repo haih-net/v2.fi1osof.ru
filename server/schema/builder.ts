@@ -5,7 +5,7 @@ import SimpleObjectsPlugin from '@pothos/plugin-simple-objects'
 import type { Request } from 'express'
 import SchemaBuilder from '@pothos/core'
 import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
-import { UserRecord } from './types/User/interfaces'
+import { UserRecord, UserRecordLegacy } from './types/User/interfaces'
 import { Knex } from 'knex'
 
 export interface Context {
@@ -13,6 +13,7 @@ export interface Context {
   dbOld: Knex
   db: Knex
   currentUser: UserRecord | null
+  currentUserLegacy: UserRecordLegacy | null
 }
 
 export const builder = new SchemaBuilder<{

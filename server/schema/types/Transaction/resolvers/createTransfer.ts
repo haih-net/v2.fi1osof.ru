@@ -26,7 +26,7 @@ export async function createTransfer(
   if (data.toUserId === user.id) {
     throw new Error('Нельзя переводить самому себе')
   }
-  return ctx.dbOld.transaction(async (db) => {
+  return ctx.db.transaction(async (db) => {
     const updated = await db<BalanceRecord>('Balance')
       .where('userId', user.id)
       .where('amount', '>=', data.amount)

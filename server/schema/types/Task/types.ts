@@ -1,7 +1,7 @@
 import { builder } from '../../builder'
 import type { TaskRecord } from './interfaces'
 import { User } from '../User/types'
-import type { UserRecord } from '../User/interfaces'
+import type { UserRecordLegacy } from '../User/interfaces'
 import { translated } from '../../helpers/translated'
 import { Project } from '../Project/types'
 import type { ProjectRecord } from '../Project/interfaces'
@@ -33,13 +33,21 @@ Task.implement({
     CreatedBy: t.field({
       type: User,
       resolve: (r, _, c) =>
-        c.dbOld<UserRecord>('User').where('id', r.createdById).first(),
+        c
+          .dbOld<UserRecordLegacy>('User')
+          .select('*', c.dbOld.raw('true as legacy'))
+          .where('id', r.createdById)
+          .first(),
     }),
     Assignee: t.field({
       type: User,
       resolve: (r, _, c) =>
         r.assigneeId
-          ? c.dbOld<UserRecord>('User').where('id', r.assigneeId).first()
+          ? c
+              .dbOld<UserRecordLegacy>('User')
+              .select('*', c.dbOld.raw('true as legacy'))
+              .where('id', r.assigneeId)
+              .first()
           : null,
     }),
     WorkLogs: t.field({

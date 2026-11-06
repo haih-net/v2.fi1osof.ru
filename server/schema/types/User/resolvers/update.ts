@@ -23,7 +23,7 @@ builder.mutationField('updateCurrentUser', (t) =>
       }
       const changes = await profileChanges(data)
       const [user] = await ctx
-        .dbOld<UserRecord>('User')
+        .db<UserRecord>('User')
         .where('id', ctx.currentUser.id)
         .update(changes)
         .returning('*')
@@ -65,7 +65,7 @@ builder.mutationField('updateUser', (t) =>
         changes.sudo = sudo
       }
       const [user] = await ctx
-        .dbOld<UserRecord>('User')
+        .db<UserRecord>('User')
         .where('id', where.id)
         .update(changes)
         .returning('*')

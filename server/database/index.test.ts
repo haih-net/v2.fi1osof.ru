@@ -28,6 +28,7 @@ async function query(source: string, currentUser: UserRecord | null = null) {
   const context: Context = {
     db,
     dbOld: db,
+    currentUserLegacy: null,
     currentUser,
     req: {} as Request,
   }

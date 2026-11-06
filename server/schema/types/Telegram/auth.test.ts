@@ -45,6 +45,7 @@ it('links an account, issues a session and rejects linking it to another user', 
   const result = await authViaTelegram(signed(), {
     db,
     dbOld: db,
+    currentUserLegacy: null,
     currentUser: user,
     req: {} as Request,
   })
@@ -55,6 +56,7 @@ it('links an account, issues a session and rejects linking it to another user', 
     authViaTelegram(signed(), {
       db,
       dbOld: db,
+      currentUserLegacy: null,
       currentUser: other,
       req: {} as Request,
     }),

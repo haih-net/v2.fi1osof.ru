@@ -44,7 +44,13 @@ test('GraphQL execution errors with HTTP 200 are recorded as server failures', a
     '/api',
     express.json(),
     expressMiddleware(api, {
-      context: async ({ req }) => ({ req, dbOld, db, currentUser: null }),
+      context: async ({ req }) => ({
+        req,
+        dbOld,
+        db,
+        currentUserLegacy: null,
+        currentUser: null,
+      }),
     }),
   )
   const server: Server = createServer(app)

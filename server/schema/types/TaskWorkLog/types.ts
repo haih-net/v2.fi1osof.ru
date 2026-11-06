@@ -1,7 +1,7 @@
 import { builder } from '../../builder'
 import type { WorkLogRecord } from './interfaces'
 import { User } from '../User/types'
-import type { UserRecord } from '../User/interfaces'
+import type { UserRecordLegacy } from '../User/interfaces'
 import { translated } from '../../helpers/translated'
 import { Task } from '../Task/types'
 import type { TaskRecord } from '../Task/interfaces'
@@ -23,7 +23,11 @@ WorkLog.implement({
     CreatedBy: t.field({
       type: User,
       resolve: (r, _, c) =>
-        c.dbOld<UserRecord>('User').where('id', r.createdById).first(),
+        c
+          .dbOld<UserRecordLegacy>('User')
+          .select('*', c.dbOld.raw('true as legacy'))
+          .where('id', r.createdById)
+          .first(),
     }),
   }),
 })

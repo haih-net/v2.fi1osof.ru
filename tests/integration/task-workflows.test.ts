@@ -33,7 +33,12 @@ async function run(
     schema,
     source,
     variableValues: variables,
-    contextValue: { dbOld: trx, currentUser: user, req: { headers: {} } },
+    contextValue: {
+      dbOld: trx,
+      currentUserLegacy: null,
+      currentUser: user,
+      req: { headers: {} },
+    },
   })
 }
 beforeEach(async () => {

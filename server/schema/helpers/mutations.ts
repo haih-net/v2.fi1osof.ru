@@ -1,14 +1,14 @@
 import { GraphQLError } from 'graphql'
 import type { Context } from '../builder'
-import type { UserRecord } from '../types/User/interfaces'
+import type { UserRecordLegacy } from '../types/User/interfaces'
 
-export function authenticated(ctx: Context): UserRecord {
-  if (!ctx.currentUser) {
+export function authenticated(ctx: Context): UserRecordLegacy {
+  if (!ctx.currentUserLegacy) {
     throw new GraphQLError('Не авторизован', {
       extensions: { code: 'UNAUTHENTICATED' },
     })
   }
-  return ctx.currentUser
+  return ctx.currentUserLegacy
 }
 export function requiredId(id: string | null | undefined): string {
   if (!id) {

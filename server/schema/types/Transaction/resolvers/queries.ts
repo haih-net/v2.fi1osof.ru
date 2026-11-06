@@ -14,7 +14,7 @@ builder.queryField('myTransactions', (t) =>
         throw new Error('Некорректная пагинация')
       }
       return ctx
-        .dbOld<TransactionRecord>('Transaction')
+        .db<TransactionRecord>('Transaction')
         .where('userId', ctx.currentUser.id)
         .orderBy('createdAt', 'desc')
         .orderBy('id', 'desc')
@@ -31,7 +31,7 @@ builder.queryField('myTransactionsCount', (t) =>
         throw new Error('Доступ запрещён')
       }
       const row = await ctx
-        .dbOld('Transaction')
+        .db('Transaction')
         .where('userId', ctx.currentUser.id)
         .count({ count: '*' })
         .first()

@@ -12,7 +12,8 @@ it('migrates existing dialogues to chat without changing messages', () => {
   const db = new Database(':memory:')
   try {
     initializeSchema(db)
-    db.exec(`DROP TABLE ClientCertificateAccount;
+    db.exec(`ALTER TABLE "User" DROP COLUMN oldID;
+      DROP TABLE ClientCertificateAccount;
       DROP TABLE PageErrorEvent;
       DROP TABLE PageError;
       DROP TABLE EthTransaction;
@@ -34,7 +35,7 @@ it('migrates existing dialogues to chat without changing messages', () => {
     expect(db.prepare('SELECT payload FROM ChatMessage').get()).toEqual({
       payload: 'original',
     })
-    expect(db.pragma('user_version', { simple: true })).toBe(9)
+    expect(db.pragma('user_version', { simple: true })).toBe(10)
   } finally {
     db.close()
   }

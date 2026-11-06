@@ -1,6 +1,6 @@
 import { builder } from '../../builder'
 import { UserStatusEnum } from './inputs'
-import type { UserRecord } from './interfaces'
+import type { UserRecord, UserRecordLegacy } from './interfaces'
 
 interface EthAccountRecord {
   id: string
@@ -51,71 +51,73 @@ export const Balance = builder.objectRef<BalanceRecord>('Balance').implement({
     userId: t.exposeString('userId'),
   }),
 })
-export const User = builder.objectRef<UserRecord>('User').implement({
-  fields: (t) => ({
-    id: t.exposeID('id', { nullable: false }),
-    createdAt: t.expose('createdAt', { type: 'DateTime', nullable: false }),
-    updatedAt: t.expose('updatedAt', { type: 'DateTime', nullable: false }),
-    email: t.string({
-      nullable: true,
-      resolve: (user, _args, ctx) =>
-        user.id === ctx.currentUser?.id ? user.email : null,
+export const User = builder
+  .objectRef<UserRecord | UserRecordLegacy>('User')
+  .implement({
+    fields: (t) => ({
+      id: t.exposeID('id', { nullable: false }),
+      createdAt: t.expose('createdAt', { type: 'DateTime', nullable: false }),
+      updatedAt: t.expose('updatedAt', { type: 'DateTime', nullable: false }),
+      email: t.string({
+        nullable: true,
+        resolve: (user, _args, ctx) =>
+          !user.legacy && user.id === ctx.currentUser?.id ? user.email : null,
+      }),
+      image: t.exposeString('image'),
+      content: t.exposeString('content'),
+      intro: t.exposeString('intro'),
+      username: t.exposeString('username', { nullable: true }),
+      fullname: t.exposeString('fullname', { nullable: true }),
+      sudo: t.exposeBoolean('sudo', { nullable: true }),
+      isAiAgent: t.exposeBoolean('isAiAgent', { nullable: false }),
+      status: t.field({
+        type: UserStatusEnum,
+        nullable: false,
+        resolve: (user) => user.status,
+      }),
+      certificateFingerprints: t.stringList({
+        nullable: true,
+        resolve: (user, _args, ctx) =>
+          !user.legacy && user.id === ctx.currentUser?.id
+            ? ctx
+                .db('ClientCertificateAccount')
+                .where({ userId: user.id })
+                .orderBy('fingerprint')
+                .pluck('fingerprint')
+            : null,
+      }),
+      EthAccount: t.field({
+        type: EthAccount,
+        nullable: true,
+        resolve: async (user, _args, ctx) =>
+          !user.legacy && user.id === ctx.currentUser?.id
+            ? ((await ctx
+                .db<EthAccountRecord>('EthAccount')
+                .where('userId', user.id)
+                .first()) ?? null)
+            : null,
+      }),
+      TelegramAccount: t.field({
+        type: TelegramAccount,
+        nullable: true,
+        resolve: async (user, _args, ctx) =>
+          !user.legacy && user.id === ctx.currentUser?.id
+            ? ((await ctx
+                .db<TelegramAccountRecord>('TelegramAccount')
+                .where('userId', user.id)
+                .first()) ?? null)
+            : null,
+      }),
+      Balance: t.field({
+        type: Balance,
+        nullable: true,
+        resolve: async (user, _args, ctx) =>
+          !user.legacy && user.id === ctx.currentUser?.id
+            ? ((await ctx
+                .db<BalanceRecord>('Balance')
+                .where('userId', user.id)
+                .first()) ?? null)
+            : null,
+      }),
     }),
-    image: t.exposeString('image'),
-    content: t.exposeString('content'),
-    intro: t.exposeString('intro'),
-    username: t.exposeString('username', { nullable: true }),
-    fullname: t.exposeString('fullname', { nullable: true }),
-    sudo: t.exposeBoolean('sudo', { nullable: true }),
-    isAiAgent: t.exposeBoolean('isAiAgent', { nullable: false }),
-    status: t.field({
-      type: UserStatusEnum,
-      nullable: false,
-      resolve: (user) => user.status,
-    }),
-    certificateFingerprints: t.stringList({
-      nullable: true,
-      resolve: (user, _args, ctx) =>
-        user.id === ctx.currentUser?.id
-          ? ctx
-              .db('ClientCertificateAccount')
-              .where({ userId: user.id })
-              .orderBy('fingerprint')
-              .pluck('fingerprint')
-          : null,
-    }),
-    EthAccount: t.field({
-      type: EthAccount,
-      nullable: true,
-      resolve: async (user, _args, ctx) =>
-        user.id === ctx.currentUser?.id
-          ? ((await ctx
-              .dbOld<EthAccountRecord>('EthAccount')
-              .where('userId', user.id)
-              .first()) ?? null)
-          : null,
-    }),
-    TelegramAccount: t.field({
-      type: TelegramAccount,
-      nullable: true,
-      resolve: async (user, _args, ctx) =>
-        user.id === ctx.currentUser?.id
-          ? ((await ctx
-              .dbOld<TelegramAccountRecord>('TelegramAccount')
-              .where('userId', user.id)
-              .first()) ?? null)
-          : null,
-    }),
-    Balance: t.field({
-      type: Balance,
-      nullable: true,
-      resolve: async (user, _args, ctx) =>
-        user.id === ctx.currentUser?.id
-          ? ((await ctx
-              .dbOld<BalanceRecord>('Balance')
-              .where('userId', user.id)
-              .first()) ?? null)
-          : null,
-    }),
-  }),
-})
+  })

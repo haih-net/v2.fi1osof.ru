@@ -18,6 +18,7 @@ let receiver: UserRecord
 const context = (user: UserRecord | null): Context => ({
   db,
   dbOld: db,
+  currentUserLegacy: null,
   currentUser: user,
   req: {} as Request,
 })

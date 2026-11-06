@@ -51,7 +51,7 @@ export async function creditTopUp(
     throw new Error('Доступ запрещён')
   }
   validateAmount(amount)
-  return ctx.dbOld.transaction(async (db) => {
+  return ctx.db.transaction(async (db) => {
     const balance = await upsertBalance(db, user.id)
     if (!Number.isSafeInteger(Math.round((balance.amount + amount) * 1e6))) {
       throw new Error('Превышен допустимый баланс')
@@ -93,7 +93,7 @@ builder.mutationField('topUpBalance', (t) =>
         throw new Error('Доступ запрещён')
       }
       const account = await ctx
-        .dbOld<{ address: string }>('EthAccount')
+        .db<{ address: string }>('EthAccount')
         .where('userId', ctx.currentUser.id)
         .first()
       if (!account) {
@@ -112,12 +112,12 @@ builder.mutationField('topUpBalance', (t) =>
         .first()
       if (existing) {
         const credited = await ctx
-          .dbOld<TransactionRecord>('Transaction')
+          .db<TransactionRecord>('Transaction')
           .where({ id: existing.transactionId, userId: ctx.currentUser.id })
           .first()
         const balance = credited
           ? await ctx
-              .dbOld<BalanceRecord>('Balance')
+              .db<BalanceRecord>('Balance')
               .where('id', credited.balanceId)
               .first()
           : undefined

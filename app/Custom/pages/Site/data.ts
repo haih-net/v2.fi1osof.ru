@@ -1,3 +1,5 @@
+export const legacyReadOnly: boolean = true
+
 import type { DocumentNode } from 'graphql'
 import {
   ProjectsDocument,

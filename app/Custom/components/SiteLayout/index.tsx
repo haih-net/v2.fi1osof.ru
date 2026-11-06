@@ -1,4 +1,4 @@
-import { useTimersQuery } from '../../../gql/generated'
+import { TimersDocument } from '../../../gql/generated'
 import React, { useMemo } from 'react'
 import { TimerControl } from '../TimerControl'
 import {
@@ -8,8 +8,9 @@ import {
   useMatches,
   useNavigate,
 } from 'react-router'
-import { useApolloClient } from '@apollo/client/react'
+import { skipToken, useQuery, useApolloClient } from '@apollo/client/react'
 import {
+  legacyReadOnly,
   labels,
   localized,
   locationParts,
@@ -47,13 +48,18 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [open, setOpen] = React.useState(false)
   const { user } = useAppContext() ?? {}
   const client = useApolloClient()
-  const timerQuery = useTimersQuery({
-    variables: { activeOnly: true, take: 1 },
-    pollInterval: 5000,
-    ssr: false,
-    fetchPolicy: 'network-only',
-    context: { headers: { 'x-locale': locale } },
-  })
+  const timerQuery = useQuery(
+    TimersDocument,
+    legacyReadOnly
+      ? skipToken
+      : {
+          variables: { activeOnly: true, take: 1 },
+          pollInterval: 5000,
+          ssr: false,
+          fetchPolicy: 'network-only',
+          context: { headers: { 'x-locale': locale } },
+        },
+  )
   const timer = timerQuery.data
     ? timerQuery.data.timers?.[0]
     : page?.activeTimer

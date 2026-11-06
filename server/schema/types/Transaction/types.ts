@@ -29,7 +29,7 @@ Transaction.implement({
       type: User,
       resolve: async (row, _args, ctx) => {
         const user = await ctx
-          .dbOld<UserRecord>('User')
+          .db<UserRecord>('User')
           .where('id', row.userId)
           .first()
         if (!user) {
@@ -44,7 +44,7 @@ Transaction.implement({
       resolve: async (row, _args, ctx) =>
         row.parentId
           ? ((await ctx
-              .dbOld<TransactionRecord>('Transaction')
+              .db<TransactionRecord>('Transaction')
               .where('id', row.parentId)
               .first()) ?? null)
           : null,
@@ -52,7 +52,7 @@ Transaction.implement({
     Children: t.field({
       type: [Transaction],
       resolve: (row, _args, ctx) =>
-        ctx.dbOld<TransactionRecord>('Transaction').where('parentId', row.id),
+        ctx.db<TransactionRecord>('Transaction').where('parentId', row.id),
     }),
   }),
 })

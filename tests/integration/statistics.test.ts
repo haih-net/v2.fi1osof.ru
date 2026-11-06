@@ -24,7 +24,15 @@ const executeStatistics = async (
       query: 'mutation ($data: Json!) { logStats(data: $data) { id } }',
       variables: { data },
     },
-    { contextValue: { req: request, dbOld, db, currentUser: null } },
+    {
+      contextValue: {
+        req: request,
+        dbOld,
+        db,
+        currentUserLegacy: null,
+        currentUser: null,
+      },
+    },
   )
   if (response.body.kind !== 'single') {
     throw new Error('Expected a single response')

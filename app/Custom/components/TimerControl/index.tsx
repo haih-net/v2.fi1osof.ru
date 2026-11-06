@@ -1,3 +1,4 @@
+import { legacyReadOnly } from '../../pages/Site/data'
 import type {
   CreateTimerMutation,
   CreateTimerMutationVariables,
@@ -37,7 +38,11 @@ export const TimerControl: FC<{
       )
     }
   }, [run, timer, taskId, loading])
-  if (!user || (timer && (timer.stoppedAt || timer.createdById !== user.id))) {
+  if (
+    legacyReadOnly ||
+    !user ||
+    (timer && (timer.stoppedAt || timer.createdById !== user.id))
+  ) {
     return null
   }
   return (

@@ -88,6 +88,7 @@ describe.each(['guest', 'authenticated', 'sudo'] as const)(
           },
         } as Request,
         db,
+        db,
       )
       if (bearer === authToken) {
         expect(contextValue.currentUser?.sudo ?? null).toBe(

@@ -21,7 +21,7 @@ import { Link, useNavigate } from 'react-router'
 import { useAppContext } from '../../hooks/useAppContext'
 import { useSiteMutation } from '../../hooks/useSiteMutation'
 import { TimerControl } from '../../components/TimerControl'
-import type { Entry } from './data'
+import { legacyReadOnly, type Entry } from './data'
 import { EditorFormStyled } from './styles'
 
 const MarkdownEditor = React.lazy(async () => {
@@ -97,6 +97,9 @@ export const TaskForm: React.FC<{
       setTitle(event.target.value),
     [],
   )
+  if (legacyReadOnly) {
+    return <p>Этот раздел доступен только для чтения.</p>
+  }
   return (
     <EditorFormStyled onSubmit={submit}>
       <fieldset disabled={mutation.loading}>
@@ -164,6 +167,9 @@ export const WorkLogForm: React.FC<{
     },
     [content, mutation, workLog, taskId, onCancel],
   )
+  if (legacyReadOnly) {
+    return <p>Этот раздел доступен только для чтения.</p>
+  }
   return (
     <EditorFormStyled onSubmit={submit}>
       <fieldset disabled={mutation.loading}>
@@ -220,7 +226,11 @@ export const TaskActions: React.FC<{ task: Entry; full?: boolean }> = ({
     },
     [mutation, task.id],
   )
-  if (!user || (!user.sudo && (!full || task.CreatedBy?.id !== user.id))) {
+  if (
+    legacyReadOnly ||
+    !user ||
+    (!user.sudo && (!full || task.CreatedBy?.id !== user.id))
+  ) {
     return null
   }
   if (editing) {
@@ -260,7 +270,11 @@ export const WorkLogActions: React.FC<{ taskId: string; workLog?: Entry }> = ({
   const [editing, setEditing] = React.useState(false)
   const stopEditing = React.useCallback(() => setEditing(false), [])
   const startEditing = React.useCallback(() => setEditing(true), [])
-  if (!user || (workLog && workLog.CreatedBy?.id !== user.id)) {
+  if (
+    legacyReadOnly ||
+    !user ||
+    (workLog && workLog.CreatedBy?.id !== user.id)
+  ) {
     return null
   }
   return editing ? (
@@ -278,7 +292,7 @@ export const CreateTaskLink: React.FC<{ projectId?: string | null }> = ({
   projectId,
 }) => {
   const { user } = useAppContext() ?? {}
-  return user ? (
+  return !legacyReadOnly && user ? (
     <p>
       <Link
         to={

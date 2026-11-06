@@ -106,7 +106,8 @@ it('upgrades schema version 1 without changing existing records and rejects unkn
   try {
     initializeSchema(connection)
     connection.exec(
-      `DROP TABLE ClientCertificateAccount;
+      `ALTER TABLE "User" DROP COLUMN oldID;
+      DROP TABLE ClientCertificateAccount;
       DROP TABLE PageErrorEvent;
       DROP TABLE PageError;
       DROP TABLE EthTransaction;
@@ -117,7 +118,7 @@ it('upgrades schema version 1 without changing existing records and rejects unkn
     )
     initializeSchema(connection)
     initializeSchema(connection)
-    expect(connection.pragma('user_version', { simple: true })).toBe(9)
+    expect(connection.pragma('user_version', { simple: true })).toBe(10)
     expect(connection.prepare('SELECT id FROM User').all()).toEqual([
       { id: 'existing' },
     ])

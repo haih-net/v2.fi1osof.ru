@@ -18,7 +18,7 @@ builder.queryField('user', (t) =>
     nullable: true,
     args: { where: t.arg({ type: UserWhereUniqueInput, required: true }) },
     resolve: async (_root, { where }, ctx) => {
-      const query = findUser(ctx.dbOld, where)
+      const query = findUser(ctx.db, where)
       if (!ctx.currentUser?.sudo) {
         query.whereNot('status', 'blocked')
       }
@@ -44,7 +44,7 @@ builder.queryField('users', (t) =>
           extensions: { code: 'BAD_USER_INPUT' },
         })
       }
-      const query = usersQuery(ctx.dbOld, where, ctx.currentUser)
+      const query = usersQuery(ctx.db, where, ctx.currentUser)
         .orderBy('createdAt', 'desc')
         .orderBy('id')
       if (skip !== null && skip !== undefined) {
@@ -62,7 +62,7 @@ builder.queryField('usersCount', (t) =>
     authScopes: { sudo: true },
     args: { where: t.arg({ type: UserWhereInput }) },
     resolve: async (_root, { where }, ctx) => {
-      const result = await usersQuery(ctx.dbOld, where, ctx.currentUser).count<
+      const result = await usersQuery(ctx.db, where, ctx.currentUser).count<
         { count: string }[]
       >({ count: '*' })
       return Number(result[0]?.count ?? 0)

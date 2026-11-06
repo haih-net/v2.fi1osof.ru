@@ -9,7 +9,10 @@ export function createDatabase(): Knex {
 
   return knex({
     client: 'pg',
-    connection,
+    connection: {
+      connectionString: connection,
+      options: '-c default_transaction_read_only=on',
+    },
     pool: { min: 0, max: 10 },
     acquireConnectionTimeout: 10000,
   })

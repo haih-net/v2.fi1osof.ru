@@ -13,6 +13,7 @@ import { resolveUploadPath } from '../types/files'
 
 const user: UserRecord = {
   id: 'owner',
+  oldID: null,
   createdAt: new Date(),
   updatedAt: new Date(),
   status: 'active',
@@ -44,6 +45,7 @@ function setup(currentUser: UserRecord | null = user) {
   const context: Context = {
     db: db as unknown as Knex,
     dbOld: db as unknown as Knex,
+    currentUserLegacy: null,
     currentUser,
     req: {} as Request,
   }

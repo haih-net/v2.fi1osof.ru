@@ -12,8 +12,8 @@ export async function signup(
     throw new Error('Вы уже вошли в учётную запись')
   }
   const { referrerToken, ...profile } = data
-  const referrerId = await checkReferrerToken(referrerToken, ctx.dbOld)
-  return ctx.dbOld.transaction(async (db) => {
+  const referrerId = await checkReferrerToken(referrerToken, ctx.db)
+  return ctx.db.transaction(async (db) => {
     const user = await insertUser(db, profile, referrerId)
     return { success: true, message: null, token: await createToken(user, db) }
   })

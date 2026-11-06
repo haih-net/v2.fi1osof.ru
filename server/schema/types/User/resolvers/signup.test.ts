@@ -24,7 +24,13 @@ afterEach(async () => {
   vi.unstubAllEnvs()
 })
 it('creates a password account and a usable session, rejects duplicate logins', async () => {
-  const ctx = { db, dbOld: db, currentUser: null, req: {} as Request }
+  const ctx = {
+    db,
+    dbOld: db,
+    currentUserLegacy: null,
+    currentUser: null,
+    req: {} as Request,
+  }
   const result = await signup(data, ctx)
   const user = await authenticate(result.token, db)
   expect(user).toMatchObject({
@@ -43,7 +49,13 @@ it('requires a valid invitation when registration is restricted and records its 
     .insert({ id: 'owner' })
     .returning('*')
   vi.stubEnv('NEXT_PUBLIC_SITE_SIGNUP_STRATEGY', '')
-  const ctx = { db, dbOld: db, currentUser: null, req: {} as Request }
+  const ctx = {
+    db,
+    dbOld: db,
+    currentUserLegacy: null,
+    currentUser: null,
+    req: {} as Request,
+  }
   await expect(signup(data, ctx)).rejects.toThrow('приглашения')
   const invitation = await graphql({
     schema,
@@ -60,7 +72,13 @@ it('requires a valid invitation when registration is restricted and records its 
   ).toMatchObject({ referrerId: owner.id })
 })
 it('rejects invalid registration data without writing records', async () => {
-  const ctx = { db, dbOld: db, currentUser: null, req: {} as Request }
+  const ctx = {
+    db,
+    dbOld: db,
+    currentUserLegacy: null,
+    currentUser: null,
+    req: {} as Request,
+  }
   await expect(signup({ ...data, password: 'weak' }, ctx)).rejects.toThrow(
     'Пароль',
   )

@@ -44,7 +44,13 @@ async function challenge(signer = wallet) {
   }
 }
 function context(currentUser: UserRecord | null = null): Context {
-  return { db, dbOld: db, currentUser, req: {} as Request }
+  return {
+    db,
+    dbOld: db,
+    currentUserLegacy: null,
+    currentUser,
+    req: {} as Request,
+  }
 }
 async function referral(userId: string, expired = false): Promise<string> {
   const id = randomUUID()

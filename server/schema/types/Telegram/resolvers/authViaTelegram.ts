@@ -53,7 +53,7 @@ export async function authViaTelegram(
   if (!checkTelegramAuth(data)) {
     throw new Error('Данные Telegram недействительны или устарели')
   }
-  return ctx.dbOld.transaction(async (db) => {
+  return ctx.db.transaction(async (db) => {
     // Acquire a write lock before checking account ownership.
     await db('TelegramAccount')
       .where('externalKey', data.id)

@@ -12,17 +12,14 @@ export function jwtSecret(): string {
   return secret
 }
 
-export async function createToken(
-  user: UserRecord,
-  dbOld: Knex,
-): Promise<string> {
+export async function createToken(user: UserRecord, db: Knex): Promise<string> {
   const id = randomUUID()
   const token = jwt.sign(
     { userId: user.id, type: 'Auth', tokenId: id },
     jwtSecret(),
     { algorithm: 'HS256' },
   )
-  await dbOld<TokenRecord>('Token').insert({
+  await db<TokenRecord>('Token').insert({
     id,
     userId: user.id,
     createdAt: new Date(),
@@ -33,7 +30,7 @@ export async function createToken(
 
 export async function authenticate(
   token: string,
-  dbOld: Knex,
+  db: Knex,
 ): Promise<UserRecord | null> {
   const secret = jwtSecret()
   let payload: jwt.JwtPayload | string
@@ -50,7 +47,7 @@ export async function authenticate(
   ) {
     return null
   }
-  const stored = await dbOld<TokenRecord>('Token')
+  const stored = await db<TokenRecord>('Token')
     .where({ id: payload.tokenId, userId: payload.userId })
     .first()
   if (
@@ -59,7 +56,7 @@ export async function authenticate(
   ) {
     return null
   }
-  const user = await dbOld<UserRecord>('User')
+  const user = await db<UserRecord>('User')
     .where({ id: payload.userId })
     .first()
   return user && user.status !== 'blocked' ? user : null

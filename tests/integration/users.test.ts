@@ -39,7 +39,12 @@ async function run(
     schema,
     source: query,
     variableValues: variables,
-    contextValue: { req: { headers: {} }, dbOld: trx, currentUser: user },
+    contextValue: {
+      req: { headers: {} },
+      dbOld: trx,
+      currentUserLegacy: null,
+      currentUser: user,
+    },
   })
 }
 const signin =
@@ -97,7 +102,7 @@ describe('Пользователи и авторизация через Knex', (
       const req = {
         headers: { authorization: `Bearer ${auth.token}` },
       } as Request
-      const context = await createContext(req, trx)
+      const context = await createContext(req, trx, trx)
       expect(context.currentUser?.id).toBe(owner.id)
       const me = await graphql({
         schema,

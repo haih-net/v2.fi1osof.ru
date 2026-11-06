@@ -66,6 +66,7 @@ describe('Concept visibility during migration', () => {
     const context: Context = {
       db: dbOld,
       dbOld,
+      currentUserLegacy: null,
       req: {} as Request,
       currentUser: null,
     }

@@ -1,9 +1,15 @@
+import { skipToken, useQuery } from '@apollo/client/react'
 import * as React from 'react'
 import { Link } from 'react-router'
-import { useProjectQuery } from '../../../gql/generated'
+import { ProjectDocument } from '../../../gql/generated'
 import { useAppContext } from '../../hooks/useAppContext'
 import { ProjectEditForm } from './Project/View/Form'
-import { localized, type Entry, type Locale } from '../Site/data'
+import {
+  legacyReadOnly,
+  localized,
+  type Entry,
+  type Locale,
+} from '../Site/data'
 import { projectsViewLexicon } from '../Site/projectsLexicon'
 
 export const ProjectActions: React.FC<{ project: Entry; locale: Locale }> = ({
@@ -13,14 +19,18 @@ export const ProjectActions: React.FC<{ project: Entry; locale: Locale }> = ({
   const { user } = useAppContext() ?? {}
   const [editing, setEditing] = React.useState(false)
   const canEdit = Boolean(
-    user && (user.sudo || project.CreatedBy?.id === user.id),
+    !legacyReadOnly && user && (user.sudo || project.CreatedBy?.id === user.id),
   )
-  const { data, loading, error } = useProjectQuery({
-    variables: { where: { id: project.id } },
-    skip: !editing || !canEdit,
-    fetchPolicy: 'no-cache',
-    context: { headers: { 'x-locale': 'ru' } },
-  })
+  const { data, loading, error } = useQuery(
+    ProjectDocument,
+    !editing || !canEdit
+      ? skipToken
+      : {
+          variables: { where: { id: project.id } },
+          fetchPolicy: 'no-cache',
+          context: { headers: { 'x-locale': 'ru' } },
+        },
+  )
   const startEditing = React.useCallback(() => setEditing(true), [])
   const stopEditing = React.useCallback(() => setEditing(false), [])
   if (!canEdit) {
@@ -60,7 +70,7 @@ export const ProjectActions: React.FC<{ project: Entry; locale: Locale }> = ({
 
 export const CreateProjectLink: React.FC<{ locale: Locale }> = ({ locale }) => {
   const { user } = useAppContext() ?? {}
-  return user?.sudo ? (
+  return !legacyReadOnly && user?.sudo ? (
     <p>
       <Link to={localized('/projects/create', locale)}>
         {projectsViewLexicon[locale].hero.create}

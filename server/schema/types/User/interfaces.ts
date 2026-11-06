@@ -1,6 +1,15 @@
 export type UserStatus = 'newbie' | 'active' | 'blocked'
 
-export interface UserRecord {
+export interface UserRecord extends UserFields {
+  oldID: string | null
+  legacy?: false
+}
+
+export interface UserRecordLegacy extends UserFields {
+  legacy: true
+}
+
+interface UserFields {
   id: string
   createdAt: Date
   updatedAt: Date
