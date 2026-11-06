@@ -4,7 +4,7 @@ export function initializeSchema(connection: Database): void {
   connection
     .transaction(() => {
       const version = connection.pragma('user_version', { simple: true })
-      if (version === 6) {
+      if (version === 9) {
         return
       }
       if (
@@ -13,7 +13,10 @@ export function initializeSchema(connection: Database): void {
         version !== 2 &&
         version !== 3 &&
         version !== 4 &&
-        version !== 5
+        version !== 5 &&
+        version !== 6 &&
+        version !== 7 &&
+        version !== 8
       ) {
         throw new Error('Unsupported database schema version')
       }
@@ -169,9 +172,23 @@ export function initializeSchema(connection: Database): void {
         PRAGMA user_version = 5;
       `)
       }
-      connection.exec(`
+      if (version < 6) {
+        connection.exec(`
         ALTER TABLE "PageError" ADD COLUMN statusCode INTEGER CHECK (statusCode BETWEEN 400 AND 599);
         PRAGMA user_version = 6;
+      `)
+      }
+      if (version < 7) {
+        connection.exec(`
+        CREATE TABLE "ClientCertificateAccount" (
+          fingerprint TEXT PRIMARY KEY NOT NULL,
+          userId TEXT NOT NULL REFERENCES "User"(id)
+        );
+      `)
+      }
+      connection.exec(`
+        DROP TABLE IF EXISTS "ClientCertificateLogin";
+        PRAGMA user_version = 9;
       `)
     })
     .immediate()

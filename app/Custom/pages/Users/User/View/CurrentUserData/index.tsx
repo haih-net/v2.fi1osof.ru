@@ -3,6 +3,7 @@ import { Wallet, MessageCircle } from 'lucide-react'
 import { CurrentUserDataRowStyled, CurrentUserDataStyled } from './styles'
 import { MetaMaskAuth } from 'app/Custom/components/Auth/MetaMaskAuth'
 import { TelegramAuthForm } from 'app/Custom/components/TelegramAuthForm'
+import { CertificateKeys } from './CertificateKeys'
 import { Balance } from './Balance'
 import { Transactions } from './Transactions'
 
@@ -51,6 +52,11 @@ export const CurrentUserData: React.FC<{ currentUser: MeUserFragment }> = ({
             <TelegramAuthForm buttonSize="small" referrerToken={null} />
           )}
         </CurrentUserDataRowStyled>
+      )}
+      {import.meta.env.VITE_CLIENT_CERT_LOGIN === 'true' && (
+        <CertificateKeys
+          fingerprints={currentUser.certificateFingerprints ?? []}
+        />
       )}
       <Balance currentUser={currentUser} />
       <Transactions />

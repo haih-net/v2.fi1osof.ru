@@ -5,6 +5,7 @@ import {
 } from 'app/gql/generated'
 
 type getUsersQueryVariablesProps = {
+  search?: string
   page: number
   first?: number
   currentUser: MeUserFragment | null | undefined
@@ -13,10 +14,11 @@ type getUsersQueryVariablesProps = {
 export function getUsersQueryVariables({
   currentUser,
   page,
+  search,
   first = 10,
 }: getUsersQueryVariablesProps): UsersConnectionQueryVariables {
   return {
-    where: { status: currentUser ? undefined : UserStatusEnum.ACTIVE },
+    where: { search, status: currentUser ? undefined : UserStatusEnum.ACTIVE },
     skip: (page - 1) * first,
     first,
   }

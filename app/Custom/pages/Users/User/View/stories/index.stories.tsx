@@ -28,6 +28,7 @@ const mockCurrentUser: MeUserFragment = {
   content: 'Profile description',
   intro: '',
   Balance: null,
+  certificateFingerprints: [],
   EthAccount: null,
   TelegramAccount: null,
 }

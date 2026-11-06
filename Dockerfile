@@ -7,13 +7,17 @@ RUN apt-get update \
     && npm ci
 
 FROM dependencies AS development
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
 COPY . .
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
 
 FROM development AS build
+ARG VITE_CLIENT_CERT_LOGIN=false
 ENV NODE_OPTIONS="--dns-result-order=ipv4first"
-RUN npm run types && npm run build
+RUN npm run generate:types && npm run types && npm run build
 
 FROM node:22.22.3-bookworm-slim AS production
 ENV NODE_ENV=production

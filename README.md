@@ -261,6 +261,18 @@ Browser tests simulate the injected wallet and GraphQL responses. They verify
 session refresh, bearer headers, redirect and mobile layout; they do not replace
 a manual check with the real MetaMask extension.
 
+## Client certificate sign-in
+
+Each site can enable certificate sign-in alongside its existing sign-in methods. Traefik requests an optional client certificate during the site’s HTTPS handshake, so the browser may prompt when the site first opens. Visitors can continue without a certificate. The sign-in button sends a POST to the same site and receives the usual JWT. Linking a key sends the current Bearer token with the POST. The application checks the certificate’s public key against the site’s allowlist in `storage/client-certificate/authorized-keys.pem` before granting access.
+
+- **Link a key to an existing account.** Sign in with any supported method, open your profile and link your certificate. Each key can be linked once per site. Attempting to link it again, even to the same account, returns HTTP 409.
+- **Sign in with a linked key.** Select certificate sign-in on `/signin` to access the linked account with its current permissions. Blocked accounts are denied access.
+- **Create the first administrator.** An allowlisted, unlinked key creates a passwordless account with `sudo = true` only if the database has no sudo user. If one already exists, the confirmation form still appears, but confirming (`force=true`) currently returns HTTP 403. Cancel, sign in to the intended account and link the key from its profile.
+
+To reuse one certificate across sites, add its public key to each clone’s allowlist and link it separately on each site. Keep the private key on the client. In each clone’s `docker/.env`, set `VITE_CLIENT_CERT_LOGIN=true` before building and pass the same value to the running app (Compose loads it from `docker/.env`). To disable both certificate endpoints, set the value to `false` and recreate the app container. Rebuild the frontend to hide the buttons. Generate the route with `node scripts/configure-certificate-route.mjs --local` for development or pass `--host <site-domain>` and your HTTPS entry point for deployment. Install it on the Traefik instance that terminates TLS for that site. The standard Compose files support this setup. [Local setup, browser import and deployment guide (Russian)](docker/traefik/CERTIFICATE-LOGIN.md)
+
+Run the server-side certificate sign-in tests with `npm test -- server/middleware/clientCertificate/index.test.ts`.
+
 ## Tests
 
 | Command                          | Scope and prerequisites                                                                                                                                            |

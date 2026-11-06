@@ -73,6 +73,17 @@ export const User = builder.objectRef<UserRecord>('User').implement({
       nullable: false,
       resolve: (user) => user.status,
     }),
+    certificateFingerprints: t.stringList({
+      nullable: true,
+      resolve: (user, _args, ctx) =>
+        user.id === ctx.currentUser?.id
+          ? ctx
+              .db('ClientCertificateAccount')
+              .where({ userId: user.id })
+              .orderBy('fingerprint')
+              .pluck('fingerprint')
+          : null,
+    }),
     EthAccount: t.field({
       type: EthAccount,
       nullable: true,

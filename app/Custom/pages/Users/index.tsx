@@ -7,12 +7,13 @@ import { UsersView } from './View'
 import { getUsersQueryVariables } from './helpers'
 import type { usersPageGetInitialProps } from './usersPageGetInitialProps'
 export const UsersPage: React.FC = () => {
-  const { page } = useLoaderData<typeof usersPageGetInitialProps>()
+  const { page, search } = useLoaderData<typeof usersPageGetInitialProps>()
   const { user, userLoading = true } = useAppContext() ?? {}
   const { data, loading, error } = useUsersConnectionQuery({
     ssr: false,
+    fetchPolicy: 'network-only',
     skip: userLoading || user?.sudo !== true,
-    variables: getUsersQueryVariables({ currentUser: user, page }),
+    variables: getUsersQueryVariables({ currentUser: user, page, search }),
   })
   return (
     <CustomLayoutSectionStyled>
@@ -33,6 +34,7 @@ export const UsersPage: React.FC = () => {
           count={data?.usersCount ?? 0}
           limit={10}
           page={page}
+          search={search}
         />
       )}
     </CustomLayoutSectionStyled>

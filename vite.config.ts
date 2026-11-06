@@ -56,6 +56,7 @@ export default defineConfig(({ mode }) => {
           '*.{crt,pem}',
           '**/.git/**',
           '**/storage/**',
+          '**/docker/traefik/certs/**',
           '**/server/database/data/**',
         ],
       },

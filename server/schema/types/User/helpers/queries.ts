@@ -120,6 +120,14 @@ export function usersQuery(
       }
     })
   }
+  const search = where?.search?.trim().toLowerCase()
+  if (search) {
+    query.where(function () {
+      for (const field of ['email', 'username', 'fullname']) {
+        this.orWhereRaw('instr(lower(??), ?) > 0', [field, search])
+      }
+    })
+  }
   for (const key of ['id', 'email', 'isAiAgent'] as const) {
     if (where?.[key] !== undefined && where[key] !== null) {
       query.where(key, where[key])

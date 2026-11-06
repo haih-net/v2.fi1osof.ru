@@ -44,10 +44,9 @@ builder.queryField('users', (t) =>
           extensions: { code: 'BAD_USER_INPUT' },
         })
       }
-      const query = usersQuery(ctx.dbOld, where, ctx.currentUser).orderBy(
-        'createdAt',
-        'desc',
-      )
+      const query = usersQuery(ctx.dbOld, where, ctx.currentUser)
+        .orderBy('createdAt', 'desc')
+        .orderBy('id')
       if (skip !== null && skip !== undefined) {
         query.offset(skip)
       }

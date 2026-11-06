@@ -8,17 +8,23 @@ export async function usersPageGetInitialProps({
   request,
   context,
 }: LoaderFunctionArgs) {
-  const raw = new URL(request.url).searchParams.get('page')
+  const params = new URL(request.url).searchParams
+  const search = params.get('q')?.trim() || undefined
+  const raw = params.get('page')
   const page = raw === null ? 1 : Number(raw)
   if (!Number.isSafeInteger(page) || page < 1 || (page - 1) * 10 > 2147483647) {
     throw new Response('Страница не найдена', { status: 404 })
   }
   if (!usersLoaderQueriesEnabled) {
-    return { page }
+    return { page, search }
   }
   return getInitialProps(context, async (apolloClient) => {
     const me = apolloClient.readQuery({ query: MeDocument })
-    const variables = getUsersQueryVariables({ currentUser: me?.me, page })
+    const variables = getUsersQueryVariables({
+      currentUser: me?.me,
+      page,
+      search,
+    })
     const result = await apolloClient.query({
       query: UsersConnectionDocument,
       variables,
@@ -26,6 +32,6 @@ export async function usersPageGetInitialProps({
     if (page > 1 && !result.data?.users.length) {
       throw new Response('Страница не найдена', { status: 404 })
     }
-    return { page }
+    return { page, search }
   })
 }

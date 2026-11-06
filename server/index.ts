@@ -14,6 +14,7 @@ import type { ViteDevServer } from 'vite'
 
 import { setupMedia } from './schema/types/media'
 import { setupSitemap } from './sitemap'
+import { setupClientCertificate } from './middleware/clientCertificate'
 
 import { setupGraphqlMiddleware } from './middleware/graphql'
 import { imageResizerMiddleware } from './middleware/imageResizer'
@@ -78,6 +79,7 @@ async function startServer() {
 
   setupMedia(app)
 
+  setupClientCertificate(app, db)
   setupSitemap(app)
   setupChat({ app, usersDatabase: dbOld, storage: undefined })
 

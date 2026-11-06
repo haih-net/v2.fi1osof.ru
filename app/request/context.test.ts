@@ -40,11 +40,29 @@ beforeEach(() => {
   })
 })
 
+// Static metadata emitted by the React Router build for this SSR fixture.
+const buildMetadata = {
+  assets: {
+    entry: { imports: [], module: '' },
+    routes: {},
+    url: '',
+    version: 'test',
+  },
+  publicPath: '/',
+  assetsBuildDirectory: 'build/client',
+  future: {},
+  ssr: true,
+  isSpaMode: false,
+  prerender: [],
+  routeDiscovery: { mode: 'initial' as const, manifestPath: '/__manifest' },
+}
+
 function handler(
   parent: LoaderFunction,
   child: LoaderFunction,
 ): ReturnType<typeof createRequestHandler> {
   const build: ServerBuild = {
+    ...buildMetadata,
     entry: {
       module: {
         default: (_request, status, _headers, entry, context) => {
@@ -94,19 +112,6 @@ function handler(
         module: { default: Empty, loader: child },
       },
     },
-    assets: {
-      entry: { imports: [], module: '' },
-      routes: {},
-      url: '',
-      version: 'test',
-    },
-    publicPath: '/',
-    assetsBuildDirectory: 'build/client',
-    future: {},
-    ssr: true,
-    isSpaMode: false,
-    prerender: [],
-    routeDiscovery: { mode: 'initial', manifestPath: '/__manifest' },
   }
   return createRequestHandler(build, 'test')
 }

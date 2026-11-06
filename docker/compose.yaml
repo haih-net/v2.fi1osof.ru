@@ -17,6 +17,8 @@ services:
   app:
     build:
       context: ../
+      args:
+        VITE_CLIENT_CERT_LOGIN: ${VITE_CLIENT_CERT_LOGIN:-false}
     env_file:
       - .env
     init: true
@@ -44,9 +46,12 @@ services:
       METRICS_PORT: '9464'
   traefik:
     image: traefik:v3.6.1
+    environment:
+      CLIENT_CERT_APP_CONTAINER: ${COMPOSE_PROJECT_NAME}-app-1
     volumes:
       - ${TRAEFIK_STATIC_CONFIG:-./traefik/traefik.yml}:/etc/traefik/traefik.yml:ro
       - ${TRAEFIK_DYNAMIC_DIR:-./traefik/dynamic/local}:/etc/traefik/dynamic:ro
+      - ../storage/client-certificate/routes:/etc/traefik/dynamic/client-login:ro
       - ./traefik/logs:/var/log/traefik
       - ./traefik/certs:/etc/traefik/certs
     networks:

@@ -9,11 +9,6 @@ import type { userPageGetInitialProps } from './userPageGetInitialProps'
 export const UserPage: React.FC = () => {
   const { userId } = useLoaderData<typeof userPageGetInitialProps>()
   const { user, userLoading = true } = useAppContext() ?? {}
-  const { data, loading, error } = useUserQuery({
-    ssr: false,
-    skip: userLoading || user?.sudo !== true,
-    variables: getUserQueryVariables(userId),
-  })
   return (
     <CustomLayoutSectionStyled>
       {userLoading ? (
@@ -23,15 +18,27 @@ export const UserPage: React.FC = () => {
           Доступ разрешён только администраторам.{' '}
           {!user && <Link to="/signin">Войти</Link>}
         </p>
-      ) : error ? (
-        <p role="alert">Не удалось загрузить профиль: {error.message}</p>
-      ) : loading && !data ? (
-        <p role="status">Загрузка…</p>
-      ) : data?.object ? (
-        <UserPageView key={data.object.id} user={data.object} />
       ) : (
-        <p>Пользователь не найден</p>
+        <AdminUserProfile userId={userId} />
       )}
     </CustomLayoutSectionStyled>
+  )
+}
+
+function AdminUserProfile({ userId }: { userId: string }) {
+  const { data, loading, error } = useUserQuery({
+    ssr: false,
+    variables: getUserQueryVariables(userId),
+  })
+  if (error) {
+    return <p role="alert">Не удалось загрузить профиль: {error.message}</p>
+  }
+  if (loading && !data) {
+    return <p role="status">Загрузка…</p>
+  }
+  return data?.object ? (
+    <UserPageView key={data.object.id} user={data.object} />
+  ) : (
+    <p>Пользователь не найден</p>
   )
 }

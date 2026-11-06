@@ -8,6 +8,7 @@ import {
   UserPageViewAvatarStyled,
   UserPageViewInfoStyled,
 } from './styles'
+import { ManagedUserForm } from './ManagedUserForm'
 import { UserEditForm } from './Form'
 import { Button } from 'app/Custom/components/Button'
 import { useAppContext } from 'app/Custom/hooks/useAppContext'
@@ -54,16 +55,20 @@ export const UserPageView: React.FC<{
             <FormattedDate value={user.createdAt} />
           </p>
         </div>
-        {isCurrentUser && !isEditing && (
+        {(isCurrentUser || currentUser?.sudo) && !isEditing && (
           <UserPageActionsStyled>
             <Button onClick={handleEditClick}>Редактировать профиль</Button>
           </UserPageActionsStyled>
         )}
       </UserPageViewToolbarStyled>
-      {isEditing && isCurrentUser ? (
+      {isEditing && (isCurrentUser || currentUser?.sudo) ? (
         <UserPageViewInfoStyled>
           <h2>Редактирование профиля</h2>
-          <UserEditForm user={user} closeForm={handleCloseForm} />
+          {isCurrentUser ? (
+            <UserEditForm user={user} closeForm={handleCloseForm} />
+          ) : (
+            <ManagedUserForm user={user} closeForm={handleCloseForm} />
+          )}
         </UserPageViewInfoStyled>
       ) : (
         <UserPageViewInfoStyled>
