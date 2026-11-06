@@ -49,6 +49,16 @@ export default defineConfig(({ mode }) => {
       serveShared(),
     ],
     server: {
+      watch: {
+        ignored: [
+          resolve(import.meta.dirname, 'server/database/data/**'),
+          resolve(import.meta.dirname, 'build/**'),
+          resolve(import.meta.dirname, 'shared/**'),
+          resolve(import.meta.dirname, 'storage/**'),
+          resolve(import.meta.dirname, 'uploads/**'),
+          resolve(import.meta.dirname, 'docker/**'),
+        ],
+      },
       fs: {
         deny: [
           '.env',

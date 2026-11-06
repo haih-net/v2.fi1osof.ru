@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process'
 import { createServer } from 'node:net'
 import { constants } from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { resolve } from 'node:path'
 import { listenWithPortFallback } from './devPort'
 
 async function main(): Promise<void> {
@@ -18,6 +19,18 @@ async function main(): Promise<void> {
     [
       fileURLToPath(import.meta.resolve('tsx/cli')),
       'watch',
+      '--exclude',
+      resolve(import.meta.dirname, '../server/database/data/**'),
+      '--exclude',
+      resolve(import.meta.dirname, '../build/**'),
+      '--exclude',
+      resolve(import.meta.dirname, '../shared/**'),
+      '--exclude',
+      resolve(import.meta.dirname, '../storage/**'),
+      '--exclude',
+      resolve(import.meta.dirname, '../uploads/**'),
+      '--exclude',
+      resolve(import.meta.dirname, '../docker/**'),
       'server/index.ts',
       ...process.argv.slice(2),
     ],
