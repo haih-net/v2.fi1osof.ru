@@ -74,9 +74,26 @@ ${[
 }
 
 function getMainPages(): SitemapItem[] {
-  return ['/', '/concepts', '/projects', '/tasks', '/worklogs', '/about'].map(
-    (uri) => ({ uri }),
-  )
+  return [
+    '/',
+    '/concepts',
+    '/projects',
+    '/tasks',
+    '/worklogs',
+    '/about',
+    '/solutions',
+    '/solutions/ai-seller',
+    '/solutions/incremental-sales',
+    '/solutions/business-operations',
+    '/solutions/ai-visibility',
+    '/clients',
+    '/clients/kilfor',
+    '/clients/happybaby2000',
+    '/clients/balldecor',
+    '/prices',
+    '/terms',
+    '/terms/polza.ai',
+  ].map((uri) => ({ uri }))
 }
 
 async function getConcepts(): Promise<SitemapItem[]> {

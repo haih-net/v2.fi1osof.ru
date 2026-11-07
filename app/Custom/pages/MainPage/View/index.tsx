@@ -1,294 +1,182 @@
-import React, { useCallback } from 'react'
-// import { Link } from 'react-router'
-import { ArrowUpRight, Send } from 'lucide-react'
-import { useChatContext } from '../../../components/Chat/ChatWidget/context'
+import React from 'react'
 import { MainPageViewStyled } from './styles'
-import { useAppContext } from '../../../hooks/useAppContext'
+import { GoogleQuestions } from 'app/Custom/components/GoogleQuestions'
+import { Link } from 'react-router'
+import { SupportContact } from 'app/Custom/components/SupportContact'
 import portrait from './assets/portrait.webp'
+
 // import technologies from './assets/technologies.webp'
 // import projectBefore from './assets/project-before.webp'
 // import projectAfter from './assets/project-after.webp'
 
 export const MainPageView: React.FC = () => {
-  const { openFeedback } = useAppContext() ?? {}
-  const chat = useChatContext()
-  const { setIsOpen } = chat
-  const openChat = useCallback((): void => setIsOpen(true), [setIsOpen])
-
   return (
     <MainPageViewStyled>
       <section className="intro" aria-labelledby="intro-title">
-        <div>
-          <h1 id="intro-title" tabIndex={-1}>
-            Николай Ланец.
-            <br />
-            Программист, исследователь,
-            <br />
-            ИТ / ИИ-консультант
-          </h1>
-          <p>
-            С 2007 года я занимаюсь разработкой: разбираюсь в чужом коде, создаю
-            собственные платформы, поддерживаю работающие системы и исследую
-            новые технологии. За это время я работал самостоятельно, руководил
-            разработкой и участвовал в проектах крупных компаний.
-          </p>
-          <p>
-            Сегодня я консультирую по ИТ и ИИ, внедряю агентов в реальные
-            процессы и помогаю бизнесу поддерживать и развивать своё присутствие
-            в интернете. Могу подключиться к отдельному вопросу или взять на
-            себя длительную работу с проектом.
-          </p>
-          <p>
-            Чтобы познакомиться, необязательно иметь большое техническое
-            задание. Иногда полезнее начать с разговора.
-          </p>
-          <div className="actions">
-            <button
-              className="primary-action"
-              type="button"
-              onClick={openFeedback}
-              disabled={!openFeedback}
-            >
-              Обсудить вашу задачу
-            </button>
-            <button className="text-action" onClick={openChat} type="button">
-              Пообщаться с моим ИИ <span aria-hidden="true">→</span>
-            </button>
+        <div className="intro-layout">
+          <div className="intro-heading">
+            <p className="intro-name">Николай Ланец · Fi1osof</p>
+            <h1 id="intro-title" tabIndex={-1}>
+              Получите услуги энтерпрайз уровня по цене фриланса
+            </h1>
           </div>
-        </div>
-        <img
-          className="portrait"
-          src={portrait}
-          alt="Николай Ланец"
-          width={317}
-          height={350}
-          fetchPriority="high"
-        />
-      </section>
-
-      <section aria-labelledby="experience-title">
-        <h2 id="experience-title">Опыт разработки с 2007 года</h2>
-        <div className="two-columns">
-          <p>
-            Я продолжаю быть программистом, потому что это моя суть. С опытом
-            многие специалисты переходят к управлению. У меня тоже был опыт
-            технического руководства, но мне по-прежнему важно самому
-            разбираться, писать код и проверять идеи в работе.
-          </p>
-          <p>
-            Я основал MODX-Клуб в 2013 году, развивал собственные CMS и
-            образовательную площадку Freecode Academy. Работал тимлидом и
-            ведущим программистом в СберЛаб виртуальной и дополненной
-            реальности. Сейчас исследую практическое применение ИИ и создаю
-            собственные инструменты.
-          </p>
-        </div>
-        {/* <h3 className="technology-title">
-          Работаю с разными поколениями веб-технологий
-        </h3>
-        <div className="technology-strip">
           <img
-            src={technologies}
-            width={677}
-            height={59}
-            alt="TypeScript, React, Node.js, GraphQL, Docker, PostgreSQL, PHP, MODX, Next.js, Prisma, Three.js"
-            loading="lazy"
+            className="portrait"
+            src={portrait}
+            alt="Николай Ланец"
+            width={317}
+            height={350}
+            fetchPriority="high"
           />
-        </div> */}
+          <div className="intro-description">
+            <p className="lead">
+              Вы занимаетесь бизнесом. Работу и развитие вашего сайта беру на
+              себя я.
+            </p>
+            <p>
+              Лично разберусь в вашем проекте, предложу решение и доведу работу
+              до результата. Опыт разработки с 2007 года и технического
+              руководства в СберЛаб — для задач вашего бизнеса.
+            </p>
+            <p className="intro-price">
+              <strong>
+                Постоянная поддержка и развитие сайта — от 30 000 ₽ в месяц.
+              </strong>
+            </p>
+          </div>
+        </div>
+        <GoogleQuestions title="Не верите мне? Спросите у Google." />
       </section>
 
-      <section aria-labelledby="services-title">
-        <h2 id="services-title">Разработка, ИИ-интеграции и ИТ-консалтинг</h2>
-        <div className="service-row">
-          <h3>
-            ИТ / ИИ-консультант
-            <br />и ментор
-          </h3>
-          <div>
+      <section aria-labelledby="clients-title">
+        <h2 id="clients-title">
+          Клиенты, с которыми мы работаем больше десяти лет
+        </h2>
+        <p>
+          Когда-то я сделал им сайты. В 2026 году мы перешли к комплексному
+          сопровождению и полностью переработали эти проекты. Теперь продолжаем
+          развивать их на моей технологической основе.
+        </p>
+        <div className="case-list">
+          <article>
+            <h3>
+              <Link to="/clients/kilfor">Kilfor.Ru</Link>
+            </h3>
             <p>
-              Помогу разобраться в техническом вопросе, оценить предложенное
-              решение или понять, с чего начать. Можно обратиться с конкретной
-              проблемой, архитектурой проекта или вопросами о применении ИИ.
+              Бизнес-центр: сайт, пропуска и заявки в диспетчерскую. Созданные
+              мной системы работают здесь с 2016 года.
             </p>
+          </article>
+          <article>
+            <h3>
+              <Link to="/clients/happybaby2000">HappyBaby2000.Ru</Link>
+            </h3>
             <p>
-              Работаю с владельцами бизнеса, разработчиками и командами.
-              Объясняю ход рассуждений и последствия решений — чтобы вы могли
-              дальше действовать осознанно.
+              Магазин детских товаров: новая витрина на существующей базе,
+              интеллектуальный поиск и собственный ИИ-консультант.
             </p>
-          </div>
-          <button
-            className="text-action"
-            type="button"
-            onClick={openFeedback}
-            disabled={!openFeedback}
-          >
-            Обсудить вопрос <span aria-hidden="true">→</span>
-          </button>
+          </article>
+          <article>
+            <h3>
+              <Link to="/clients/balldecor">BallDecor.Ru</Link>
+            </h3>
+            <p>
+              Воздушные шары и оформление мероприятий: обновлённый сайт давнего
+              клиента и постоянная работа над его развитием.
+            </p>
+          </article>
         </div>
-        <div className="service-row">
-          <h3>Внедрение ИИ-агентов и чат-ботов</h3>
-          <div>
-            <p>
-              Встраиваю ИИ в существующие сайты и рабочие процессы: диалоги с
-              посетителями, работу с информацией, инструменты и действия
-              агентов. Начинаю с задачи и доступных данных.
-            </p>
-            <p>
-              Разрабатываю собственных агентов и чаты. Могу разобраться, где
-              готового решения достаточно, а где нужны индивидуальная логика,
-              память или интеграция с вашей системой.
-            </p>
-          </div>
-          <button
-            className="text-action"
-            type="button"
-            onClick={openFeedback}
-            disabled={!openFeedback}
-          >
-            Рассказать о процессе <span aria-hidden="true">→</span>
-          </button>
-        </div>
-        <div className="service-row">
-          <h3>Разработка и поддержка сайтов для бизнеса</h3>
-          <div>
-            <p>
-              Разбираюсь в состоянии сайтов и связанных систем, восстанавливаю
-              функции и последовательно развиваю проект. Необязательно заранее
-              составлять список технических задач.
-            </p>
-            <p>
-              Мой сильный опыт — сложные и устаревшие проекты. Чужой код,
-              накопленные доработки и отсутствие документации не мешают начать
-              разбор. Важно сохранить данные, полезные функции и привычные
-              процессы.
-            </p>
-          </div>
-          <button
-            className="text-action"
-            type="button"
-            onClick={openFeedback}
-            disabled={!openFeedback}
-          >
-            Показать ваш проект <span aria-hidden="true">→</span>
-          </button>
-        </div>
+        <p>
+          Предлагаю стать одним из таких клиентов — с перспективой многолетнего
+          сотрудничества со специалистом, который лично знает ваш проект.
+        </p>
       </section>
-
-      <section id="ai-chat" aria-labelledby="chat-title">
-        <h2 id="chat-title">ИИ-помощник на сайте — попробуйте в разговоре</h2>
-        <div className="two-columns chat-columns">
-          <div>
-            <p>
-              Я создаю собственных ИИ-агентов для разных задач. Это могут быть
-              помощники для сайта, внутренние инструменты, чаты с доступом к
-              вашим данным и интеграциями в рабочие процессы.
-            </p>
-            <p>
-              Один из моих ИИ-чатов уже работает на этом сайте. Вы можете задать
-              ему вопрос, попросить совет или обсудить идею. Так проще понять,
-              как может выглядеть подобный помощник в вашей задаче.
-            </p>
-          </div>
-          <div className="chat-preview">
-            <div className="chat-heading">
-              <img
-                src={portrait}
-                alt=""
-                width={44}
-                height={44}
-                loading="lazy"
-              />
-              <strong>Мой ИИ-помощник</strong>
-            </div>
-            <p className="chat-greeting">
-              Здравствуйте! Что вы хотели бы обсудить?
-            </p>
-            <button className="chat-launch" type="button" onClick={openChat}>
-              <span>Ваш вопрос</span>
-              <span className="send-icon">
-                <Send size={20} aria-hidden="true" />
-              </span>
-              <span className="visually-hidden"> — открыть чат</span>
-            </button>
-          </div>
-        </div>
+      <section aria-labelledby="solutions-title">
+        <h2 id="solutions-title">Что может получить ваш сайт</h2>
+        <p>
+          Я создаю собственные инструменты и применяю их там, где они полезны
+          бизнесу. Вот несколько примеров:
+        </p>
+        <ul>
+          <li>
+            <Link to="/solutions/ai-seller">ИИ-продавец и консультант</Link> —
+            помогает посетителю разобраться и выбрать, используя данные сайта.
+          </li>
+          <li>
+            <Link to="/solutions/incremental-sales">
+              Дополнительные возможности для продаж
+            </Link>{' '}
+            — поиск, рекомендации и помощь уже пришедшим покупателям.
+          </li>
+          <li>
+            <Link to="/solutions/business-operations">
+              Рабочие системы бизнеса
+            </Link>{' '}
+            — кабинеты, пропуска, заявки и повседневные процессы.
+          </li>
+          <li>
+            <Link to="/solutions/ai-visibility">
+              Компания в генеративном поиске
+            </Link>{' '}
+            — достоверное и понятное представление бизнеса для внешних ИИ.
+          </li>
+        </ul>
+        <p>
+          Это примеры моих возможностей. Услуга одна — постоянная поддержка и
+          развитие вашего сайта. Состав решений определяю по задачам проекта.
+        </p>
       </section>
-
-      {/* <section aria-labelledby="projects-title">
-        <h2 id="projects-title">Примеры проектов</h2>
-        <h3>HappyBaby2000 — развитие существующего магазина</h3>
-        <div className="two-columns project-images">
-          <figure>
-            <img
-              src={projectBefore}
-              alt="Прежняя витрина магазина HappyBaby2000"
-              width={325}
-              height={214}
-              loading="lazy"
-            />
-            <figcaption>До</figcaption>
-          </figure>
-          <figure>
-            <img
-              src={projectAfter}
-              alt="Обновлённая витрина магазина HappyBaby2000"
-              width={315}
-              height={214}
-              loading="lazy"
-            />
-            <figcaption>После</figcaption>
-          </figure>
-        </div>
-        <div className="project-description">
-          <p>
-            В этом проекте новая публичная часть связана с существующей базой.
-            Управление магазином осталось в привычной MODX-админке. Такой подход
-            позволяет обновлять сайт постепенно, сохраняя каталог, исторические
-            адреса и рабочие процессы.
-          </p>
-          <Link className="text-action" to="/projects">
-            Все проекты <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-        <div className="two-columns upcoming-projects">
-          {[1, 2].map((project) => (
-            <figure key={project}>
-              <div className="placeholder-pair" aria-hidden="true">
-                <div />
-                <div />
-              </div>
-              <figcaption>Материалы следующего проекта</figcaption>
-            </figure>
-          ))}
-        </div>
-      </section> */}
-
-      <section aria-labelledby="contact-title">
-        <h2 id="contact-title">Обсудить разработку или внедрение ИИ</h2>
-        <div className="two-columns">
-          <div>
-            <p>
-              Большой проект не обязателен. Можно прийти с небольшим вопросом,
-              показать непонятную ошибку или попросить взгляд со стороны. Даже
-              короткий разговор иногда помогает понять, куда двигаться.
-            </p>
-            <a
-              className="primary-action telegram-action"
-              href="https://t.me/Fi1osof"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Send size={20} aria-hidden="true" /> Написать в Telegram{' '}
-              <ArrowUpRight size={18} aria-hidden="true" />
-            </a>
-          </div>
-          <p>
-            Я открыт и к небольшим, недорогим проектам. Они позволяют мне
-            продолжать любимую работу — исследовать новые технологии и находить
-            им практическое применение. Расскажите о своей задаче и бюджете, и
-            мы обсудим подходящий объём работы.
-          </p>
-        </div>
+      <section aria-labelledby="partnership-title">
+        <h2 id="partnership-title">
+          Почему такой уровень работы доступен от 30 000 ₽
+        </h2>
+        <p>
+          Я исследователь и разработчик собственных решений. Придумываю
+          инструменты, создаю их, внедряю, изучаю результат и снова
+          совершенствую. Это моя основная профессиональная заинтересованность.
+        </p>
+        <p>
+          Беру проекты, в которых мои разработки полезны и есть возможность
+          работать самостоятельно, с минимумом согласований. Готовая
+          технологическая основа и знание её устройства позволяют быстро
+          двигаться без расходов на передачу задач между исполнителями.
+        </p>
+        <p>
+          По сути, мы становимся партнёрами по исследованиям: вы получаете
+          развитие сайта, а я проверяю применимость инструментов в настоящем
+          бизнесе. Их ценность определяется тем, помогают ли они вашим клиентам
+          и работе компании.
+        </p>
+        <p>
+          Повседневные технические решения и организацию работы беру на себя. Вы
+          видите изменения и отчёты, без необходимости управлять каждой
+          доработкой. Важные условия сотрудничества согласуем в начале.
+        </p>
+      </section>
+      <section aria-labelledby="guarantee-title">
+        <h2 id="guarantee-title">Первый месяц — возможность оценить работу</h2>
+        <p>
+          Если результаты первого месяца вас не устраивают и вы отказываетесь от
+          продолжения, я полностью возвращаю оплату за этот месяц.
+        </p>
+        <p>
+          Вы сохраняете новую версию сайта, страницы и функции. По вашему
+          запросу разверну её на вашем сервере и передам в ваше управление.
+          Продолжать сотрудничество только ради сохранения сделанного не
+          потребуется.
+        </p>
+      </section>
+      <section aria-labelledby="start-title">
+        <h2 id="start-title">
+          Могу принять ещё три проекта для долгой совместной работы
+        </h2>
+        <p>
+          Я работаю лично и выбираю ограниченное число клиентов. Сейчас готов
+          взять ещё три подходящих проекта от 30 000 ₽ в месяц. Сначала изучу
+          ваш сайт и задачи, чтобы понять, будет ли такая работа полезна нам
+          обоим.
+        </p>
+        <SupportContact />
       </section>
     </MainPageViewStyled>
   )

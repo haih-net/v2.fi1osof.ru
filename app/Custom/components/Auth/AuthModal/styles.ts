@@ -15,7 +15,6 @@ export const AuthModalLink = styled.button`
   cursor: pointer;
   font-size: inherit;
   padding: 0;
-  text-decoration: underline;
 
   &:hover {
     opacity: 0.8;

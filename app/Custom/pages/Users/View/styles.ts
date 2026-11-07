@@ -29,10 +29,6 @@ export const UsersViewCardStyled = styled.div`
   gap: 16px;
   > a {
     font-weight: 700;
-    text-decoration: none;
-  }
-  > a:hover {
-    text-decoration: underline;
   }
   time {
     color: ${theme.colors.text.secondary};

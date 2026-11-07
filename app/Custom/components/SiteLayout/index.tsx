@@ -1,21 +1,7 @@
-import { TimersDocument } from '../../../gql/generated'
 import React, { useMemo } from 'react'
-import { TimerControl } from '../TimerControl'
-import {
-  Link,
-  NavLink,
-  useLocation,
-  useMatches,
-  useNavigate,
-} from 'react-router'
-import { skipToken, useQuery, useApolloClient } from '@apollo/client/react'
-import {
-  legacyReadOnly,
-  labels,
-  localized,
-  locationParts,
-  type PageData,
-} from '../../pages/Site/data'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router'
+import { useApolloClient } from '@apollo/client/react'
+import { labels, localized, locationParts } from '../../pages/Site/data'
 import { useAppContext } from '../../hooks/useAppContext'
 import { SiteShell } from './styles'
 import { ChatProvider } from '../Chat/ChatWidget/context'
@@ -41,28 +27,12 @@ const sections = ['about', 'projects', 'worklogs', 'concepts'] as const
 export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
   const location = useLocation()
   const navigate = useNavigate()
-  const matches = useMatches()
   const { locale } = locationParts(location.pathname)
   const t = labels[locale]
-  const page = matches.at(-1)?.loaderData as PageData | undefined
   const [open, setOpen] = React.useState(false)
   const { user } = useAppContext() ?? {}
   const client = useApolloClient()
-  const timerQuery = useQuery(
-    TimersDocument,
-    legacyReadOnly
-      ? skipToken
-      : {
-          variables: { activeOnly: true, take: 1 },
-          pollInterval: 5000,
-          ssr: false,
-          fetchPolicy: 'network-only',
-          context: { headers: { 'x-locale': locale } },
-        },
-  )
-  const timer = timerQuery.data
-    ? timerQuery.data.timers?.[0]
-    : page?.activeTimer
+
   React.useEffect(() => {
     setOpen(false)
     document.documentElement.lang = locale
@@ -89,6 +59,25 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
     return links
   }, [locale, t, user])
 
+  const closeMenu = React.useCallback((): void => setOpen(false), [])
+
+  const primaryLinks = (
+    <>
+      <NavLink to="/solutions" onClick={closeMenu}>
+        Решения
+      </NavLink>
+      <NavLink to="/clients" onClick={closeMenu}>
+        Клиенты
+      </NavLink>
+      <NavLink to="/prices" onClick={closeMenu}>
+        Цены
+      </NavLink>
+      <a href="https://t.me/Fi1osof" target="_blank" rel="noopener noreferrer">
+        Telegram ↗
+      </a>
+    </>
+  )
+
   const logout = React.useCallback(async (): Promise<void> => {
     localStorage.removeItem('token')
     await client.resetStore()
@@ -108,7 +97,7 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
               <span className="full-name">{t.name}</span>
             </Link>
             <nav className="desktop-nav" aria-label={t.navigation}>
-              {links}
+              {primaryLinks}
             </nav>
             <ContactButton />
             <button
@@ -122,24 +111,13 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
               ☰
             </button>
           </div>
-          <div className="activity-row">
-            <Link
-              className="timer"
-              to={localized('/timers', locale)}
-              title={timer?.Task?.title || t.idle}
-            >
-              ● {timer ? timer.Task?.title || t.running : t.idle}
-            </Link>
-            {timer && <TimerControl timer={timer} />}
-            <Link to={localized('/tasks', locale)}>{t.tasks}</Link>
-          </div>
           {open && (
             <nav
               id="mobile-navigation"
               className="mobile-nav"
               aria-label={t.menu}
             >
-              {links}
+              {primaryLinks}
             </nav>
           )}
         </div>
@@ -158,10 +136,13 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
                 <span>{t.name}</span>
               </Link>
               <p className="muted">
-                Программист, исследователь, ИТ / ИИ-консультант
+                Футурист, программист, исследователь, ИТ / ИИ-консультант
               </p>
             </div>
-            <nav aria-label={t.navigation}>{links}</nav>
+            <nav aria-label={t.navigation}>
+              {links}
+              <Link to="/terms">Термины и технологии</Link>
+            </nav>
             <div>
               <p>
                 <a
@@ -170,11 +151,6 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
                   rel="noreferrer"
                 >
                   GitHub: Fi1osof
-                </a>
-              </p>
-              <p>
-                <a href="https://t.me/Fi1osof" target="_blank" rel="noreferrer">
-                  Telegram: @Fi1osof
                 </a>
               </p>
             </div>
@@ -193,8 +169,12 @@ export const SiteLayout: React.FC<React.PropsWithChildren> = ({ children }) => {
               <Link to={localized('/signin', locale)}>{t.signin}</Link>
             )}
           </div>
+          <p className="muted">© {new Date().getUTCFullYear()} fi1osof.ru</p>
           <p className="muted">
-            © {new Date().getUTCFullYear()} fi1osof.ru · {t.tagline}
+            Вся информация, размещенная на сайте, включая цены на товары,
+            наличие, условия доставки, сборки и т.д.- не является публичной
+            офертой с определениями статей 437 Гражданского Кодекса РФ и другими
+            статьями действующего законодательства.
           </p>
         </div>
       </footer>

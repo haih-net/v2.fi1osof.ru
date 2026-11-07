@@ -58,4 +58,8 @@ export const HtmlStyled = styled.html`
       transition-duration: 0.01ms !important;
     }
   }
+
+  a {
+    color: #bd302b;
+  }
 `

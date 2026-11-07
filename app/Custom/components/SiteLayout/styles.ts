@@ -15,9 +15,6 @@ export const SiteShell = styled.div`
     16px/1.55 Arial,
     sans-serif;
   overflow-wrap: anywhere;
-  a {
-    color: inherit;
-  }
   h1,
   h2,
   h3,
@@ -229,5 +226,67 @@ export const SiteShell = styled.div`
       grid-template-columns: 1.2fr 1.3fr auto;
       align-items: start;
     }
+  }
+
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+  line-height: 1.7;
+  h1 {
+    font-size: clamp(30px, 5vw, 46px);
+    line-height: 1.15;
+    margin: 24px 0;
+  }
+  h2 {
+    font-size: clamp(24px, 3vw, 30px);
+    line-height: 1.3;
+    margin: 40px 0 18px;
+  }
+  h3 {
+    font-size: 22px;
+    margin: 24px 0 12px;
+  }
+  p {
+    margin: 0 0 18px;
+  }
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .lead {
+    font-size: 22px;
+  }
+  .card {
+    border: 1px solid #dce3ec;
+    border-radius: 20px;
+    padding: 24px;
+    margin: 20px 0;
+  }
+  .card h2,
+  .card h3 {
+    margin-top: 0;
+  }
+  .note {
+    border-left: 3px solid #5279ad;
+    padding: 12px 20px;
+    background: #f6f8fb;
+    color: #202124;
+  }
+  button {
+    padding: 12px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font: inherit;
+  }
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
+  }
+
+  ul,
+  ol {
+    margin-left: 16px;
   }
 `

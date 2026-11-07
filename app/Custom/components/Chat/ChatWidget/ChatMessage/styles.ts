@@ -29,10 +29,6 @@ export const MessageStyled = styled.div`
     border-bottom-left-radius: 20px;
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
     ${MarkdownStyled} {
-      a {
-        color: inherit;
-      }
-
       code,
       kbd {
         color: #f8fafc;
